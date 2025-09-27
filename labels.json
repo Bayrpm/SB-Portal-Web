@@ -1,0 +1,19 @@
+{"name": "bug", "color": "d73a4a", "description": "Bug relacionado con un funcionamiento incorrecto."}
+{"name": "enhancement", "color": "a2eeef", "description": "Mejora en la funcionalidad existente."}
+{"name": "feature", "color": "0e8a16", "description": "Nueva característica que se va a implementar."}
+{"name": "documentation", "color": "0075ca", "description": "Documentación relacionada con el proyecto."}
+{"name": "help wanted", "color": "008672", "description": "Ayuda solicitada para resolver problemas."}
+{"name": "question", "color": "d876e3", "description": "Pregunta relacionada con el proyecto."}
+{"name": "in progress", "color": "fbca04", "description": "Tarea en progreso."}
+{"name": "ready for review", "color": "cfd3d7", "description": "Listo para revisión."}
+{"name": "needs testing", "color": "e4e669", "description": "Necesita pruebas antes de ser completado."}
+{"name": "blocked", "color": "b60205", "description": "Tarea bloqueada por algún motivo."}
+{"name": "wontfix", "color": "ffffff", "description": "No se va a solucionar."}
+{"name": "duplicate", "color": "cccccc", "description": "Tarea que se considera duplicada."}
+{"name": "design", "color": "f7c6c7", "description": "Tarea relacionada con diseño."}
+{"name": "web", "color": "0052cc", "description": "Tarea relacionada con el desarrollo web."}
+{"name": "móvil", "color": "5319e7", "description": "Tarea relacionada con el desarrollo móvil."}
+{"name": "admin", "color": "1d76db", "description": "Tarea relacionada con administración."}
+{"name": "inspector", "color": "bfe5bf", "description": "Tarea relacionada con inspector."}
+{"name": "ciudadano", "color": "f9d0c4", "description": "Tarea relacionada con ciudadano."}
+{"name": "municipio", "color": "fbca04", "description": "Tarea relacionada con municipio."}
