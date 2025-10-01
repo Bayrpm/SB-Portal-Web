@@ -1,38 +1,113 @@
-# SB-Portal-Web
+# 🌆 Portal Web — Proyecto Denuncias San Bernardo  
+> **Uso interno**: plataforma web para **administradores y operadores** municipales.  
+> **Estado del proyecto:** 🛠️ *En desarrollo* (este README se actualizará conforme avancemos).
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
 
-## Getting Started
+## 🧭 Índice
+1. [¿Qué es este portal?](#qué-es-este-portal)
+2. [Ámbito del repositorio](#ámbito-del-repositorio)
+3. [¿Para quién es?](#para-quién-es)
+4. [Beneficios clave](#beneficios-clave)
+5. [Flujo general de uso](#flujo-general-de-uso)
+6. [Privacidad y seguridad](#privacidad-y-seguridad)
+7. [Indicadores (visión general)](#indicadores-visión-general)
+8. [Preguntas frecuentes (FAQ)](#preguntas-frecuentes-faq)
+9. [Equipo](#equipo)
+10. [Contacto](#contacto)
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ¿Qué es este portal?
+El **Portal Web de Denuncias San Bernardo** es la herramienta institucional para **recibir, revisar y gestionar** denuncias ciudadanas relacionadas con seguridad y convivencia, así como **dar seguimiento** a su atención y resultados.  
+Está orientado a **mejorar la coordinación interna** y **tomar decisiones informadas** con base en datos.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
+## Ámbito del repositorio
+- Este repositorio corresponde **exclusivamente al portal web** (uso interno).  
+- La **aplicación móvil** para la ciudadanía tiene **su propio repositorio** y ciclo de publicación.  
+- El acceso a este portal está **restringido a administradores y operadores** municipales.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## ¿Para quién es?
 
-To learn more about Next.js, take a look at the following resources:
+| Perfil interno | Propósito principal |
+|---|---|
+| **Administradores** | Supervisar la gestión, definir parámetros operativos y revisar resultados agregados. |
+| **Operadores** | Recibir, priorizar y hacer seguimiento de denuncias, coordinando su atención. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> La ciudadanía **no** accede a este portal.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Beneficios clave
+- **Canal unificado de gestión**: todo el ciclo de la denuncia en un solo lugar.  
+- **Trazabilidad**: historial claro de acciones y estados.  
+- **Mejor coordinación**: información ordenada para priorizar y derivar.  
+- **Transparencia interna**: datos consistentes para evaluar y mejorar procesos.  
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Flujo general de uso
+1. **Ingreso**: personal autorizado accede al portal con sus credenciales.  
+2. **Revisión**: se consultan las denuncias registradas (y su estado).  
+3. **Gestión**: se prioriza, se registra avance y se documentan acciones.  
+4. **Seguimiento**: se visualiza la evolución y el cierre de las atenciones.  
+5. **Aprendizaje**: se identifican patrones para optimizar tiempos y recursos.
+
+> *Este flujo es de alto nivel y puede ajustarse conforme el proyecto evolucione.*
+
+---
+
+## Privacidad y seguridad
+- **Acceso restringido**: solo personal municipal autorizado.  
+- **Protección de datos**: resguardo de información sensible conforme a buenas prácticas.  
+- **Trazabilidad interna**: registro de acciones y cambios relevantes.  
+- **Comunicación segura**: uso de canales cifrados (HTTPS) en todos los puntos de acceso.
+
+---
+
+## Indicadores (visión general)
+> Los indicadores específicos pueden variar; esta es una referencia de alto nivel.
+
+| Indicador | ¿Qué aporta? |
+|---|---|
+| **Tiempos de atención** | Evalúa la rapidez desde el ingreso hasta la resolución. |
+| **Volumen de denuncias** | Permite dimensionar carga de trabajo y estacionalidad. |
+| **Distribución por categorías** | Ayuda a orientar esfuerzos y políticas. |
+| **Ubicación geográfica** | Apoya la coordinación territorial y la focalización. |
+
+---
+
+## Preguntas frecuentes (FAQ)
+
+**¿La ciudadanía puede entrar a este portal?**  
+No. Este portal es **interno** para administradores y operadores municipales.
+
+**¿Dónde se reportan las denuncias?**  
+La ciudadanía utiliza **la aplicación móvil** (repositorio y publicación independientes).
+
+**¿Qué datos se registran?**  
+Información suficiente para **gestionar internamente** cada denuncia y su evolución, resguardando la **privacidad** y el **uso responsable** de los datos.
+
+**¿Cómo se actualiza el estado de una denuncia?**  
+Los operadores realizan la actualización dentro del portal, dejando **historial** de acciones y observaciones.
+
+---
+
+## Equipo
+**Bayron Ahumada · Cristóbal Aravena · Sebastián Muñoz**  
+Equipo responsable del desarrollo y la mejora continua del portal web.
+
+---
+
+## Contacto
+- **Unidad municipal responsable:** _[indicar área o dirección]_  
+- **Correo de contacto:** _[indicar correo oficial]_  
+- **Acceso al portal (entorno oficial):** _[indicar URL cuando corresponda]_  
+
+---
+
+> *Nota:* Este README se mantendrá **actualizado** a medida que avancemos en el desarrollo y validaciones internas.
