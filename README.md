@@ -104,9 +104,9 @@ Equipo responsable del desarrollo y la mejora continua del portal web.
 ---
 
 ## Contacto
-- **Unidad municipal responsable:** _[indicar área o dirección]_  
-- **Correo de contacto:** _[indicar correo oficial]_  
-- **Acceso al portal (entorno oficial):** _[indicar URL cuando corresponda]_  
+- **Unidad municipal responsable:** _XXXXX_  
+- **Correo de contacto:** _XXXXX_  
+- **Acceso al portal (entorno oficial):** _XXXXX_  
 
 ---
 
