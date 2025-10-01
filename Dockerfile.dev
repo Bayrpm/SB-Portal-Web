@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+ENV NODE_ENV=development
+# Hace que Next.js detecte cambios en bind mounts (especialmente Win/Mac)
+ENV WATCHPACK_POLLING=true
+
+COPY package*.json ./
+RUN npm ci
+
+# Copiamos el código inicialmente (en dev se sobreescribe con volume)
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
