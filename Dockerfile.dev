@@ -2,13 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 ENV NODE_ENV=development
-# Hace que Next.js detecte cambios en bind mounts (especialmente Win/Mac)
+# Para que Next/Turbopack detecte cambios en bind mounts (Win/Mac)
 ENV WATCHPACK_POLLING=true
+ENV CHOKIDAR_USEPOLLING=true
 
 COPY package*.json ./
 RUN npm ci
 
-# Copiamos el código inicialmente (en dev se sobreescribe con volume)
+# Copiamos el código (luego el volume lo sobreescribe en runtime)
 COPY . .
 
 EXPOSE 3000
