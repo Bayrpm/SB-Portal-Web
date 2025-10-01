@@ -4,11 +4,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: portal-web-dev
+    container_name: sb-portal-web-dev
     ports:
       - "3000:3000"
     env_file:
-      - .env.local   # tus variables de desarrollo
+      - .env.local
     volumes:
-      - .:/app               # bind mount: editas en VS Code y se refleja
-      - /app/node_modules    # evita pisar node_modules del contenedor
+      - .:/app               # Editas en VS Code y se refleja
+      - /app/node_modules    # Evita pisar node_modules del contenedor
