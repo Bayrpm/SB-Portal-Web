@@ -1,3 +1,5 @@
+➡️ Versión interna (tecnología & ejecución): [README-interno.md](./README-interno.md)
+
 # 🌆 Portal Web — Proyecto Denuncias San Bernardo  
 > **Uso interno**: plataforma web para **administradores y operadores** municipales.  
 > **Estado del proyecto:** 🛠️ *En desarrollo* (este README se actualizará conforme avancemos).
