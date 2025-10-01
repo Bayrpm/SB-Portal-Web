@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: portal-web-dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local   # tus variables de desarrollo
+    volumes:
+      - .:/app               # bind mount: editas en VS Code y se refleja
+      - /app/node_modules    # evita pisar node_modules del contenedor
