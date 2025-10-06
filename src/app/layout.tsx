@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { UserProvider } from "@/context/UserContext";
 
 export const metadata: Metadata = {
   title: "SB Portal Web",
@@ -8,13 +9,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {children}
+    <html lang="es">
+      <body>
+        <UserProvider>{children}</UserProvider>
       </body>
     </html>
   );
