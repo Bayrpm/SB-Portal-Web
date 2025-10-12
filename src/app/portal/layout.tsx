@@ -182,8 +182,7 @@ export default function PortalLayout({
       <div className="flex-1 bg-gray-50 flex flex-col">
         {/* Header */}
         <header
-          className="fixed top-0 left-72 right-0 h-20 flex items-center justify-end px-8 py-4 z-20"
-          style={{ backgroundColor: "#0085CA" }}
+          className="fixed top-0 left-72 right-0 h-20 flex items-center justify-end px-8 py-4 z-20 bg-[#0085CA]"
         >
           <span className="text-sm text-white mr-4">{roleLabel}</span>
           <span className="flex items-center gap-2">
