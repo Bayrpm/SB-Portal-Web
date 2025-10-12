@@ -5,6 +5,7 @@ import { getUserInfo } from "@/api/users/userInfo";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import Loader from "./components/Loader";
+import Image from "next/image";
 
 export default function Login() {
   const router = useRouter();
@@ -54,7 +55,6 @@ export default function Login() {
       return;
     }
 
-
     // Guarda explícitamente el rol y nombre en el contexto
     setRole(userInfo.role);
     setName(userInfo.name);
@@ -75,78 +75,91 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
-          Iniciar sesión en tu cuenta
-        </h2>
-      </div>
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        {errorMsg && (
-          <div className="mb-4 text-red-500 text-sm text-center">
-            {errorMsg}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm/6 font-medium text-gray-100"
-            >
-              Correo electrónico
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
-              />
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: "#003C96" }}
+    >
+      <div className="w-full max-w-sm mx-auto -mt-72">
+        <div className="flex justify-center mb-8">
+          <Image
+            src={"/Logotipo vertical blanco.png"}
+            alt="Logotipo Municipalidad de San Bernardo"
+            width={180}
+            height={220}
+            priority
+          />
+        </div>
+
+        <div className="bg-white/10 rounded-xl shadow-lg p-8">
+          <h2 className="mb-8 text-center text-2xl font-bold tracking-tight text-white">
+            Iniciar sesión en tu cuenta
+          </h2>
+          {errorMsg && (
+            <div className="mb-4 text-red-500 text-sm text-center">
+              {errorMsg}
             </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between">
+          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
               <label
-                htmlFor="password"
-                className="block text-sm/6 font-medium text-gray-100"
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-100"
               >
-                Contraseña
+                Correo electrónico
               </label>
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-semibold text-indigo-400 hover:text-indigo-300"
-                >
-                  ¿Olvidaste tu contraseña?
-                </a>
+              <div className="mt-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-black placeholder:text-gray-500 focus:outline-2 focus:outline-indigo-500"
+                />
               </div>
             </div>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
-              />
+            <div>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-100"
+                >
+                  Contraseña
+                </label>
+                <div className="text-sm">
+                  <a
+                    href="#"
+                    className="font-semibold text-indigo-200 hover:text-indigo-100"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                </div>
+              </div>
+              <div className="mt-2">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-black placeholder:text-gray-500 focus:outline-2 focus:outline-indigo-500"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-            >
-              Iniciar sesión
-            </button>
-          </div>
-        </form>
+            <div>
+              <button
+                type="submit"
+                className="flex w-full justify-center rounded-md bg-blue-400 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-indigo-500"
+              >
+                Iniciar sesión
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
