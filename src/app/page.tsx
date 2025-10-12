@@ -76,8 +76,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: "#003C96" }}
+      className="min-h-screen flex items-center justify-center bg-[#003C96]"
     >
       <div className="w-full max-w-sm mx-auto -mt-72">
         <div className="flex justify-center mb-8">
