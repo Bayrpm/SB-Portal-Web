@@ -107,6 +107,10 @@ export default function DenunciasPage() {
 
   // Exportar a CSV
   const exportToCSV = () => {
+    if (!denuncias || denuncias.length === 0) {
+      alert("No hay datos para exportar.");
+      return;
+    }
     const headers = Object.keys(denuncias[0]).join(",");
     const rows = filteredDenuncias.map((d) =>
       Object.values(d)
