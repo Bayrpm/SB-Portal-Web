@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Eye, Edit, Trash2, Download } from "lucide-react";
+import { Search, Eye, Edit, Download } from "lucide-react";
 import Link from "next/link";
 
 type Denuncia = {
@@ -164,7 +164,7 @@ export default function DenunciasPage() {
 
       {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1">
+        <div className="flex-1 max-w-xs">
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -173,14 +173,14 @@ export default function DenunciasPage() {
             <input
               type="text"
               placeholder="Buscar por folio, título..."
-              className="pl-6 pr-4 py-2 w-full border rounded-md"
+              className="pl-10 pr-4 py-2 w-full border rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="w-full md:w-64">
+        <div className="w-60">
           <select
             className="w-full border rounded-md py-2 px-4 appearance-none"
             value={estadoFilter}
@@ -306,9 +306,6 @@ export default function DenunciasPage() {
                     </button>
                     <button className="p-1 hover:bg-gray-100 rounded">
                       <Edit size={18} className="text-gray-500" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <Trash2 size={18} className="text-gray-500" />
                     </button>
                   </div>
                 </td>
