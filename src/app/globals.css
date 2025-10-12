@@ -11,7 +11,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.sidebar-bg {
-  background-color: #003C96 !important;
+body .sidebar-bg {
+  background-color: #003C96;
   color: #fff;
 }
