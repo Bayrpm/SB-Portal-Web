@@ -54,7 +54,6 @@ export default function Login() {
       return;
     }
 
-    console.log("Guardando en contexto:", userInfo);
 
     // Guarda explícitamente el rol y nombre en el contexto
     setRole(userInfo.role);
