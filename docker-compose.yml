@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: sb-portal-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      # Si usas variables .env, compón con env_file:
+      # - env_file: .env
+    env_file:
+      - .env.local
+    volumes:
+      - .:/app:cached # código con hot-reload
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+    # Limita RAM para contener el consumo
+    mem_limit: 1g
+    # Si tu proyecto necesita red interna con otros servicios, agrega aquí
+    # depends_on:
+    #   - api
+volumes:
+  node_modules:
+  next_cache:

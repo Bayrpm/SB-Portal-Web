@@ -1,0 +1,102 @@
+[
+  {
+    "Folio": "SB-2025-0001",
+    "Título": "Ruidos molestos en la noche",
+    "Categoría": "Ruidos molestos",
+    "Ubicación": "Av. San Martín 1234",
+    "Contacto": "Juan Pérez",
+    "Estado": "Pendiente",
+    "Inspector": "María Soto",
+    "Fecha Creación": "2025-01-15"
+  },
+  {
+    "Folio": "SB-2025-0002",
+    "Título": "Basura acumulada en vereda",
+    "Categoría": "Aseo",
+    "Ubicación": "Calle Los Robles 567",
+    "Contacto": "Ana Gómez",
+    "Estado": "En curso",
+    "Inspector": "Carlos Ruiz",
+    "Fecha Creación": "2025-02-03"
+  },
+  {
+    "Folio": "SB-2025-0003",
+    "Título": "Fuga de agua en la calle",
+    "Categoría": "Infraestructura",
+    "Ubicación": "Pasaje Las Flores 89",
+    "Contacto": "Mario Fernández",
+    "Estado": "Cerrada",
+    "Inspector": "Patricia León",
+    "Fecha Creación": "2025-02-20"
+  },
+  {
+    "Folio": "SB-2025-0004",
+    "Título": "Vehículo abandonado",
+    "Categoría": "Tránsito",
+    "Ubicación": "Av. Portales 222",
+    "Contacto": "Sofía Martínez",
+    "Estado": "Pendiente",
+    "Inspector": "Luis Torres",
+    "Fecha Creación": "2025-03-10"
+  },
+  {
+    "Folio": "SB-2025-0005",
+    "Título": "Luminaria pública apagada",
+    "Categoría": "Iluminación",
+    "Ubicación": "Calle Central 456",
+    "Contacto": "Ricardo Silva",
+    "Estado": "En curso",
+    "Inspector": "María Soto",
+    "Fecha Creación": "2025-03-22"
+  },
+  {
+    "Folio": "SB-2025-0006",
+    "Título": "Perro peligroso suelto",
+    "Categoría": "Mascotas",
+    "Ubicación": "Av. O'Higgins 789",
+    "Contacto": "Camila Rojas",
+    "Estado": "Cerrada",
+    "Inspector": "Carlos Ruiz",
+    "Fecha Creación": "2025-04-05"
+  },
+  {
+    "Folio": "SB-2025-0007",
+    "Título": "Obstrucción de vereda",
+    "Categoría": "Infraestructura",
+    "Ubicación": "Calle Nueva 321",
+    "Contacto": "Fernando Díaz",
+    "Estado": "Pendiente",
+    "Inspector": "Patricia León",
+    "Fecha Creación": "2025-04-18"
+  },
+  {
+    "Folio": "SB-2025-0008",
+    "Título": "Venta ambulante ilegal",
+    "Categoría": "Comercio",
+    "Ubicación": "Plaza de Armas",
+    "Contacto": "Paula Méndez",
+    "Estado": "En curso",
+    "Inspector": "Luis Torres",
+    "Fecha Creación": "2025-05-02"
+  },
+  {
+    "Folio": "SB-2025-0009",
+    "Título": "Falta de señalización vial",
+    "Categoría": "Tránsito",
+    "Ubicación": "Av. Libertad 654",
+    "Contacto": "Jorge Vera",
+    "Estado": "Cerrada",
+    "Inspector": "María Soto",
+    "Fecha Creación": "2025-05-15"
+  },
+  {
+    "Folio": "SB-2025-0010",
+    "Título": "Árbol caído en vía pública",
+    "Categoría": "Medio ambiente",
+    "Ubicación": "Calle Los Pinos 101",
+    "Contacto": "Valentina Castro",
+    "Estado": "Pendiente",
+    "Inspector": "Carlos Ruiz",
+    "Fecha Creación": "2025-06-01"
+  }
+]

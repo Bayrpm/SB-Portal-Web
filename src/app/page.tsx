@@ -1,31 +1,79 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { login } from "@/api/users/login";
+import { getUserInfo } from "@/api/users/userInfo";
 import { useUser } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
+import Loader from "./components/Loader";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const { setRole } = useUser();
+  const [loading, setLoading] = useState(false); // Nuevo estado para loading
+  const [checkingSession, setCheckingSession] = useState(true);
+  const { setRole, setName } = useUser();
+
+  useEffect(() => {
+    // Mostrar loader mientras se verifica la sesión
+    const expireAt = localStorage.getItem("sessionExpireAt");
+    if (expireAt && Date.now() < Number(expireAt)) {
+      // Si hay sesión válida, mostrar loader y redirigir
+      setCheckingSession(true);
+      router.push("/portal/dashboard");
+    } else {
+      // Si no hay sesión, mostrar login
+      setCheckingSession(false);
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true); // Activa el loader
 
     const formData = new FormData();
     formData.append("email", email);
     formData.append("password", password);
 
+    // 1. Login y validación de activo
     const result = await login(formData);
 
     if (result && result.error) {
       setErrorMsg(result.error);
-    } else if (result && result.success) {
-      setRole(result.role);
-      window.location.href = "./home/page.tsx";
+      setLoading(false); // Desactiva el loader
+      return;
     }
+
+    // 2. Obtener info del usuario y guardar en contexto
+    const userInfo = await getUserInfo(email);
+    if (userInfo.error) {
+      setErrorMsg(userInfo.error);
+      setLoading(false); // Desactiva el loader
+      return;
+    }
+
+    console.log("Guardando en contexto:", userInfo);
+
+    // Guarda explícitamente el rol y nombre en el contexto
+    setRole(userInfo.role);
+    setName(userInfo.name);
+
+    // Guardar la expiración de la sesión (12 horas)
+    const expireAt = Date.now() + 12 * 60 * 60 * 1000; // 12 horas en ms
+    localStorage.setItem("sessionExpireAt", String(expireAt));
+    router.push("/portal/dashboard");
+    // No es necesario desactivar el loader aquí porque se redirige
   };
+
+  if (checkingSession) {
+    return <Loader text="Verificando sesión..." />;
+  }
+
+  if (loading) {
+    return <Loader text="Iniciando sesión..." />;
+  }
 
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">

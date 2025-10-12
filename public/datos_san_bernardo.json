@@ -1,0 +1,462 @@
+{
+  "metrics_anuales": {
+    "anio": 2025,
+    "meses": [
+      {
+        "mes": "Enero",
+        "denuncias_registradas": 120,
+        "denuncias_asignadas": 95,
+        "denuncias_cerradas": 70,
+        "tiempo_promedio_cierre_dias": 8.4
+      },
+      {
+        "mes": "Febrero",
+        "denuncias_registradas": 110,
+        "denuncias_asignadas": 88,
+        "denuncias_cerradas": 75,
+        "tiempo_promedio_cierre_dias": 7.9
+      },
+      {
+        "mes": "Marzo",
+        "denuncias_registradas": 135,
+        "denuncias_asignadas": 112,
+        "denuncias_cerradas": 90,
+        "tiempo_promedio_cierre_dias": 8.2
+      },
+      {
+        "mes": "Abril",
+        "denuncias_registradas": 128,
+        "denuncias_asignadas": 104,
+        "denuncias_cerradas": 86,
+        "tiempo_promedio_cierre_dias": 8.1
+      },
+      {
+        "mes": "Mayo",
+        "denuncias_registradas": 142,
+        "denuncias_asignadas": 121,
+        "denuncias_cerradas": 96,
+        "tiempo_promedio_cierre_dias": 7.6
+      },
+      {
+        "mes": "Junio",
+        "denuncias_registradas": 150,
+        "denuncias_asignadas": 127,
+        "denuncias_cerradas": 102,
+        "tiempo_promedio_cierre_dias": 7.8
+      },
+      {
+        "mes": "Julio",
+        "denuncias_registradas": 160,
+        "denuncias_asignadas": 134,
+        "denuncias_cerradas": 110,
+        "tiempo_promedio_cierre_dias": 7.5
+      },
+      {
+        "mes": "Agosto",
+        "denuncias_registradas": 155,
+        "denuncias_asignadas": 129,
+        "denuncias_cerradas": 108,
+        "tiempo_promedio_cierre_dias": 7.7
+      },
+      {
+        "mes": "Septiembre",
+        "denuncias_registradas": 148,
+        "denuncias_asignadas": 124,
+        "denuncias_cerradas": 100,
+        "tiempo_promedio_cierre_dias": 7.9
+      },
+      {
+        "mes": "Octubre",
+        "denuncias_registradas": 165,
+        "denuncias_asignadas": 140,
+        "denuncias_cerradas": 118,
+        "tiempo_promedio_cierre_dias": 7.3
+      },
+      {
+        "mes": "Noviembre",
+        "denuncias_registradas": 158,
+        "denuncias_asignadas": 133,
+        "denuncias_cerradas": 112,
+        "tiempo_promedio_cierre_dias": 7.4
+      },
+      {
+        "mes": "Diciembre",
+        "denuncias_registradas": 172,
+        "denuncias_asignadas": 149,
+        "denuncias_cerradas": 125,
+        "tiempo_promedio_cierre_dias": 7.1
+      }
+    ]
+  },
+  "inspectores": [
+    {
+      "id": "1",
+      "nombre": "Roberto Mendoza López",
+      "cuadrante": "Norte"
+    },
+    {
+      "id": "2",
+      "nombre": "Marcela Fuentes Rivas",
+      "cuadrante": "Centro"
+    },
+    {
+      "id": "3",
+      "nombre": "Paula Alvarado Soto",
+      "cuadrante": "Sur"
+    },
+    {
+      "id": "4",
+      "nombre": "Diego Arancibia Pérez",
+      "cuadrante": "Poniente"
+    }
+  ],
+  "derivaciones": [
+    {
+      "id": "DV-2025-0001",
+      "denuncia_id": "SB-2025-0001",
+      "inspector_id": "1",
+      "estado": "En proceso",
+      "fecha_derivacion": "2025-03-04T14:30:00Z",
+      "fecha_termino": null,
+      "observaciones": [
+        {
+          "fecha": "2025-03-04T14:35:00Z",
+          "autor": "Operador",
+          "texto": "Asignada a Roberto, cuadrante Norte"
+        },
+        {
+          "fecha": "2025-03-05T10:10:00Z",
+          "autor": "Roberto Mendoza López",
+          "texto": "Visita programada 11:00"
+        }
+      ]
+    },
+    {
+      "id": "DV-2025-0002",
+      "denuncia_id": "SB-2025-0002",
+      "inspector_id": "2",
+      "estado": "Pendiente",
+      "fecha_derivacion": "2025-04-12T09:05:00Z",
+      "fecha_termino": null,
+      "observaciones": [
+        {
+          "fecha": "2025-04-12T09:06:00Z",
+          "autor": "Operador",
+          "texto": "Se solicita primera revisión"
+        }
+      ]
+    },
+    {
+      "id": "DV-2025-0003",
+      "denuncia_id": "SB-2025-0003",
+      "inspector_id": "3",
+      "estado": "Finalizada",
+      "fecha_derivacion": "2025-05-21T16:40:00Z",
+      "fecha_termino": "2025-05-22T12:20:00Z",
+      "observaciones": [
+        {
+          "fecha": "2025-05-21T16:42:00Z",
+          "autor": "Operador",
+          "texto": "Asignada a Paula, cuadrante Sur"
+        },
+        {
+          "fecha": "2025-05-22T12:15:00Z",
+          "autor": "Paula Alvarado Soto",
+          "texto": "Atención realizada, se coordinó con aseo y ornato"
+        },
+        {
+          "fecha": "2025-05-22T12:20:00Z",
+          "autor": "Operador",
+          "texto": "Derivación finalizada con evidencia fotográfica"
+        }
+      ]
+    }
+  ],
+  "denuncias": [
+    {
+      "id": "1",
+      "folio": "SB-2025-0001",
+      "titulo": "Robo de tapas de alcantarilla",
+      "descripcion": "Falta de tapas en varias alcantarillas provoca riesgo para peatones.",
+      "categoria": "Seguridad",
+      "subcategoria": "Infraestructura crítica",
+      "ubicacion_texto": "Av. Colón 1450, San Bernardo",
+      "coords_mock": {
+        "x": 0.58,
+        "y": 0.33
+      },
+      "evidencias": [
+        {
+          "id": "1",
+          "tipo": "foto",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Alcantarilla sin tapa"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "Anónimo",
+        "email": "",
+        "telefono": "",
+        "esAnonimo": true
+      },
+      "estado": "Pendiente",
+      "inspector_asignado_id": "1",
+      "prioridad": "Alta",
+      "fecha_creacion": "2025-01-18T11:20:00Z",
+      "fecha_cierre": null,
+      "observaciones_operador": "Riesgo alto en horario punta",
+      "observaciones_inspector": []
+    },
+    {
+      "id": "2",
+      "folio": "SB-2025-0002",
+      "titulo": "Basural en sitio eriazo",
+      "descripcion": "Acumulación de basura y escombros, presencia de roedores.",
+      "categoria": "Aseo y ornato",
+      "subcategoria": "Microbasurales",
+      "ubicacion_texto": "Pasaje Los Copihues 320, San Bernardo",
+      "coords_mock": {
+        "x": 0.41,
+        "y": 0.52
+      },
+      "evidencias": [
+        {
+          "id": "2",
+          "tipo": "foto",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Acopio de escombros"
+        },
+        {
+          "id": "3",
+          "tipo": "video",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Registro del lugar"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "María José Andrade",
+        "email": "maria.andrade@email.com",
+        "telefono": "+56 9 5555 2244",
+        "esAnonimo": false
+      },
+      "estado": "En proceso",
+      "inspector_asignado_id": "2",
+      "prioridad": "Media",
+      "fecha_creacion": "2025-03-10T09:00:00Z",
+      "fecha_cierre": null,
+      "observaciones_operador": "Coordinar con camión tolva",
+      "observaciones_inspector": [
+        {
+          "fecha": "2025-03-11T10:00:00Z",
+          "autor": "Marcela Fuentes Rivas",
+          "texto": "Se solicita apoyo de cuadrilla",
+          "rolAutor": "INSPECTOR"
+        }
+      ],
+      "historial": [
+        {
+          "fecha": "2025-03-10T09:00:00Z",
+          "accion": "Creación",
+          "detalle": "Denuncia ingresada al sistema",
+          "usuario": "Operador"
+        },
+        {
+          "fecha": "2025-03-10T09:30:00Z",
+          "accion": "Asignación",
+          "detalle": "Asignado a Marcela Fuentes Rivas",
+          "usuario": "Operador"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "folio": "SB-2025-0003",
+      "titulo": "Contenedor incendiado",
+      "descripcion": "Contenedor de basura con signos de incendio reciente.",
+      "categoria": "Emergencias",
+      "subcategoria": "Incendios menores",
+      "ubicacion_texto": "Av. América 700, San Bernardo",
+      "coords_mock": {
+        "x": 0.74,
+        "y": 0.28
+      },
+      "evidencias": [
+        {
+          "id": "4",
+          "tipo": "foto",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Daños visibles"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "Felipe Ibáñez",
+        "email": "felipe.ibanez@email.com",
+        "telefono": "+56 9 1111 2233",
+        "esAnonimo": false
+      },
+      "estado": "Cerrada",
+      "inspector_asignado_id": "3",
+      "prioridad": "Alta",
+      "fecha_creacion": "2025-05-21T16:20:00Z",
+      "fecha_cierre": "2025-05-22T12:20:00Z",
+      "observaciones_operador": "Se coordina con Bomberos y Aseo",
+      "observaciones_inspector": [
+        {
+          "fecha": "2025-05-21T18:10:00Z",
+          "autor": "Paula Alvarado Soto",
+          "texto": "Riesgo controlado",
+          "rolAutor": "INSPECTOR"
+        }
+      ],
+      "historial": [
+        {
+          "fecha": "2025-05-21T16:20:00Z",
+          "accion": "Creación",
+          "detalle": "Denuncia ingresada al sistema",
+          "usuario": "Operador"
+        },
+        {
+          "fecha": "2025-05-21T16:45:00Z",
+          "accion": "Asignación",
+          "detalle": "Asignado a Paula Alvarado Soto",
+          "usuario": "Operador"
+        },
+        {
+          "fecha": "2025-05-22T12:20:00Z",
+          "accion": "Cierre",
+          "detalle": "Caso resuelto",
+          "usuario": "Operador"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "folio": "SB-2025-0004",
+      "titulo": "Semáforo dañado en intersección principal",
+      "descripcion": "El semáforo de la intersección no funciona correctamente, causando confusión entre conductores y peligro para peatones.",
+      "categoria": "Infraestructura",
+      "subcategoria": "Semáforos Dañados",
+      "ubicacion_texto": "Av. Portales con Eyzaguirre, San Bernardo",
+      "coords_mock": {
+        "x": 0.62,
+        "y": 0.41
+      },
+      "evidencias": [
+        {
+          "id": "6",
+          "tipo": "foto",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Semáforo apagado"
+        },
+        {
+          "id": "7",
+          "tipo": "video",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Video del tráfico"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "Pedro Ramírez",
+        "email": "pedro.ramirez@email.com",
+        "telefono": "+56 9 9876 5432",
+        "esAnonimo": false
+      },
+      "estado": "Pendiente",
+      "inspector_asignado_id": "3",
+      "prioridad": "Alta",
+      "fecha_creacion": "2024-12-20T15:45:00Z",
+      "fecha_cierre": null,
+      "observaciones_operador": "Requiere atención urgente por seguridad vial",
+      "observaciones_inspector": [
+        {
+          "fecha": "2024-12-21T10:00:00Z",
+          "autor": "Roberto Mendoza López",
+          "texto": "Verificado en terreno, programando reparación",
+          "rolAutor": "INSPECTOR"
+        }
+      ],
+      "historial": [
+        {
+          "fecha": "2024-12-20T15:45:00Z",
+          "accion": "Creación",
+          "detalle": "Denuncia ingresada al sistema",
+          "usuario": "Carlos Rodríguez"
+        },
+        {
+          "fecha": "2024-12-20T16:00:00Z",
+          "accion": "Asignación",
+          "detalle": "Asignado a Roberto Mendoza López",
+          "usuario": "Carlos Rodríguez"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "folio": "SB-2025-0005",
+      "titulo": "Iluminación pública defectuosa",
+      "descripcion": "Varias luminarias apagadas dejan la calle a oscuras.",
+      "categoria": "Infraestructura",
+      "subcategoria": "Alumbrado",
+      "ubicacion_texto": "Pasaje Las Rosas 85, San Bernardo",
+      "coords_mock": {
+        "x": 0.26,
+        "y": 0.63
+      },
+      "evidencias": [
+        {
+          "id": "8",
+          "tipo": "foto",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Poste sin luz"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "Anónimo",
+        "email": "",
+        "telefono": "",
+        "esAnonimo": true
+      },
+      "estado": "En proceso",
+      "inspector_asignado_id": "4",
+      "prioridad": "Media",
+      "fecha_creacion": "2025-07-02T20:15:00Z",
+      "fecha_cierre": null,
+      "observaciones_operador": "Coordinar con empresa eléctrica",
+      "observaciones_inspector": []
+    },
+    {
+      "id": "6",
+      "folio": "SB-2025-0006",
+      "titulo": "Ruidos molestos en horario nocturno",
+      "descripcion": "Fiestas recurrentes generan ruidos que superan lo permitido.",
+      "categoria": "Convivencia",
+      "subcategoria": "Ruidos molestos",
+      "ubicacion_texto": "Calle O'Higgins 512, San Bernardo",
+      "coords_mock": {
+        "x": 0.49,
+        "y": 0.47
+      },
+      "evidencias": [
+        {
+          "id": "9",
+          "tipo": "audio",
+          "urlMock": "/api/placeholder/400/300",
+          "titulo": "Audio nocturno"
+        }
+      ],
+      "persona_contacto": {
+        "nombre": "Luis Contreras",
+        "email": "luis.contreras@email.com",
+        "telefono": "+56 9 7777 8899",
+        "esAnonimo": false
+      },
+      "estado": "Pendiente",
+      "inspector_asignado_id": "2",
+      "prioridad": "Baja",
+      "fecha_creacion": "2025-08-15T01:30:00Z",
+      "fecha_cierre": null,
+      "observaciones_operador": "Verificar con Carabineros si corresponde",
+      "observaciones_inspector": []
+    }
+  ]
+}

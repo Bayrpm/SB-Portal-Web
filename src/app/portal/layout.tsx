@@ -11,11 +11,25 @@ import {
   Settings,
   ShieldCheck,
   ChevronDown,
+  User2,
+  Menu,
 } from "lucide-react";
+import { useUser } from "@/context/UserContext"; // Asegúrate de tener nombre y rol en el contexto
 
-export default function Dashboard() {
+export default function PortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [activeItem, setActiveItem] = useState("dashboard");
   const [catalogOpen, setCatalogOpen] = useState(false);
+
+  // Ejemplo de datos desde el contexto
+  const { role, name } = useUser();
+
+  // Traducción de rol
+  const roleLabel =
+    role === 1 ? "Administrador" : role === 2 ? "Operador" : "Usuario";
 
   return (
     <div className="flex min-h-screen">
@@ -31,8 +45,9 @@ export default function Dashboard() {
         <nav className="flex-1 px-4 py-6">
           <ul className="space-y-2">
             <li>
-              <button
-                className={`w-full flex items-center px-4 py-2 rounded-lg ${
+              <Link
+                href="/portal/dashboard"
+                className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "dashboard"
                     ? "bg-gray-200 text-blue-700"
                     : "hover:bg-gray-100 text-gray-700"
@@ -41,11 +56,11 @@ export default function Dashboard() {
               >
                 <Home className="w-5 h-5 mr-3" />
                 <span>Dashboard</span>
-              </button>
+              </Link>
             </li>
             <li>
               <Link
-                href="/denuncias"
+                href="/portal/denuncias"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "denuncias"
                     ? "bg-gray-200 text-blue-700"
@@ -59,7 +74,7 @@ export default function Dashboard() {
             </li>
             <li>
               <Link
-                href="/derivaciones"
+                href="/portal/derivaciones"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "derivaciones"
                     ? "bg-gray-200 text-blue-700"
@@ -73,7 +88,7 @@ export default function Dashboard() {
             </li>
             <li>
               <Link
-                href="/mapa"
+                href="/portal/mapa"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "mapa"
                     ? "bg-gray-200 text-blue-700"
@@ -87,7 +102,7 @@ export default function Dashboard() {
             </li>
             <li>
               <Link
-                href="/usuarios"
+                href="/portal/usuarios"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "usuarios"
                     ? "bg-gray-200 text-blue-700"
@@ -120,7 +135,7 @@ export default function Dashboard() {
                 <ul className="ml-8 mt-2 space-y-1">
                   <li>
                     <Link
-                      href="/catalogos/tipo"
+                      href="/portal/catalogos/tipo"
                       className="block px-2 py-1 text-sm text-gray-600 hover:text-blue-700"
                     >
                       Inspectores
@@ -128,7 +143,7 @@ export default function Dashboard() {
                   </li>
                   <li>
                     <Link
-                      href="/catalogos/estado"
+                      href="/portal/catalogos/estado"
                       className="block px-2 py-1 text-sm text-gray-600 hover:text-blue-700"
                     >
                       Categorias
@@ -139,7 +154,7 @@ export default function Dashboard() {
             </li>
             <li>
               <Link
-                href="/auditoria"
+                href="/portal/auditoria"
                 className={`flex items-center px-4 py-2 rounded-lg ${
                   activeItem === "auditoria"
                     ? "bg-gray-200 text-blue-700"
@@ -155,13 +170,21 @@ export default function Dashboard() {
         </nav>
       </div>
 
-      {/* Contenido principal */}
-      <div className="flex-1 bg-gray-50 p-8">
-        <div className="h-full w-full rounded-xl bg-white border border-gray-200 flex items-center justify-center">
-          <h1 className="text-gray-800 text-2xl font-semibold">
-            Dashboard Content
-          </h1>
-        </div>
+      {/* Main content */}
+      <div className="flex-1 bg-gray-50 flex flex-col">
+        {/* Header */}
+        <header className="flex items-center justify-end px-8 py-4 border-b border-gray-200 bg-white">
+          <Menu className="w-6 h-6 text-gray-500 mr-auto" />
+          <span className="text-sm text-gray-500 mr-4">{roleLabel}</span>
+          <span className="flex items-center gap-2">
+            <span className="bg-blue-900 text-white rounded-full w-8 h-8 flex items-center justify-center">
+              <User2 className="w-5 h-5" />
+            </span>
+            <span className="text-gray-900 font-medium">{name}</span>
+          </span>
+        </header>
+        {/* Page content */}
+        <main className="flex-1 p-0">{children}</main>
       </div>
     </div>
   );
