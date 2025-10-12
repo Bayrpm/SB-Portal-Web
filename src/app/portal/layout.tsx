@@ -34,7 +34,10 @@ export default function PortalLayout({
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-screen w-72 sidebar-bg text-white flex flex-col z-30">
+      <div
+        className="fixed top-0 left-0 h-screen w-72 sidebar-bg text-white flex flex-col z-[var(--sidebar-z-index)]"
+        style={{ "--sidebar-z-index": 30 } as React.CSSProperties}
+      >
         {/* Logo y título */}
         <div className="px-6 py-4 border-b border-gray-200">
           <Image
