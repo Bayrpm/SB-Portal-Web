@@ -232,7 +232,7 @@ export default function TableComponent<T>({
         <div className="flex items-center justify-between px-6 py-3 border-t bg-white">
           <div className="text-sm text-gray-600">
             {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)} de{" "}
-            {total} denuncias
+            {total} {total === 1 ? "registro" : "registros"}
           </div>
 
           <div className="flex items-center gap-2">
