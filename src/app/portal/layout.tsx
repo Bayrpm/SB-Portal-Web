@@ -18,6 +18,7 @@ import {
   ChevronDown,
   LogOut,
 } from "lucide-react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function PortalLayout({
   children,
@@ -160,6 +161,7 @@ export default function PortalLayout({
       {/* Contenido Principal */}
       <main className="pt-20 min-h-screen">
         <div className="w-full">{children}</div>
+        <SpeedInsights />
       </main>
     </div>
   );
