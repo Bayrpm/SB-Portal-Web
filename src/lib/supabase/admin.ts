@@ -12,7 +12,7 @@ function createAdminClientWithRetries(retries = 3, timeout = 15000) {
         throw new Error("La clave de servicio de Supabase no está configurada");
     }
 
-    console.log(`Creando cliente Supabase Admin (${retries} reintentos, ${timeout}ms timeout)`);
+    console.log("Creando cliente Supabase Admin");
 
     // Verificación adicional para depurar
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith('eyJ')) {
