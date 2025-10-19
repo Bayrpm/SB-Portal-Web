@@ -37,6 +37,6 @@ export async function getUserInfo(email: string) {
 
     return {
         role: usuario.rol_id,
-        name: nombreCompleto || null
+        name: nombreCompleto
     };
 }

@@ -55,7 +55,7 @@ export default function Login() {
     }
 
     setRole(userInfo.role);
-    setName(userInfo.name);
+    setName(userInfo.name ?? null);
 
     const expireAt = Date.now() + 12 * 60 * 60 * 1000;
     localStorage.setItem("sessionExpireAt", String(expireAt));
