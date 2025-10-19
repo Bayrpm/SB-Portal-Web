@@ -48,7 +48,7 @@ export async function GET() {
             .map(u => u.usuario_id);
 
         // Batch fetch auth users for missing profiles
-        let authUsersMap = new Map();
+        const authUsersMap = new Map();
         if (missingProfileIds.length > 0) {
             // Supabase Admin API does not support filtering by IDs, so we fetch all users and filter in-memory
             // If user base is large, consider paginating or chunking
