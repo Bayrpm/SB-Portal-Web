@@ -24,50 +24,79 @@ export async function GET() {
             return NextResponse.json({ employees: [] });
         }
 
+        // 1. Batch fetch all profiles for portal users
+        const usuarioIds = portalUsers.map(u => u.usuario_id);
+        const { data: perfilesCiudadanos, error: perfilesError } = await supabase
+            .from("perfiles_ciudadanos")
+            .select("usuario_id, nombre, apellido, email")
+            .in("usuario_id", usuarioIds);
+
+        if (perfilesError) {
+            console.error("Error obteniendo perfiles_ciudadanos:", perfilesError);
+            return NextResponse.json({ error: perfilesError.message }, { status: 500 });
+        }
+
+        // Map usuario_id to profile
+        const perfilesMap = new Map();
+        for (const perfil of perfilesCiudadanos || []) {
+            perfilesMap.set(perfil.usuario_id, perfil);
+        }
+
+        // Find usuario_ids missing a profile
+        const missingProfileIds = portalUsers
+            .filter(u => !perfilesMap.has(u.usuario_id))
+            .map(u => u.usuario_id);
+
+        // Batch fetch auth users for missing profiles
+        let authUsersMap = new Map();
+        if (missingProfileIds.length > 0) {
+            // Supabase Admin API does not support filtering by IDs, so we fetch all users and filter in-memory
+            // If user base is large, consider paginating or chunking
+            const { data: allAuthUsers, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
+            if (authListError) {
+                console.error("Error obteniendo usuarios de auth:", authListError);
+                return NextResponse.json({ error: authListError.message }, { status: 500 });
+            }
+            for (const user of allAuthUsers.users || []) {
+                if (missingProfileIds.includes(user.id)) {
+                    authUsersMap.set(user.id, user);
+                }
+            }
+        }
+
+        // Build employees array
         const employees = [];
-
         for (const user of portalUsers) {
-            try {
-                // Intentamos obtener el perfil desde perfiles_ciudadanos
-                const { data: profile } = await supabase
-                    .from("perfiles_ciudadanos")
-                    .select("nombre, apellido, email")
-                    .eq("usuario_id", user.usuario_id)
-                    .maybeSingle();
-
-                if (profile) {
-                    // Si encontramos perfil en perfiles_ciudadanos, lo usamos
+            const perfil = perfilesMap.get(user.usuario_id);
+            if (perfil) {
+                employees.push({
+                    id: user.usuario_id,
+                    name: `${perfil.nombre || ''} ${perfil.apellido || ''}`.trim() || 'Sin nombre',
+                    email: perfil.email || '',
+                    rol_id: user.rol_id,
+                    activo: user.activo
+                });
+            } else {
+                const authUser = authUsersMap.get(user.usuario_id);
+                if (authUser) {
+                    const metadata = authUser.user_metadata || {};
                     employees.push({
                         id: user.usuario_id,
-                        name: `${profile.nombre || ''} ${profile.apellido || ''}`.trim() || 'Sin nombre',
-                        email: profile.email || '',
+                        name: `${metadata.name || ''} ${metadata.last_name || ''}`.trim() || 'Sin nombre',
+                        email: authUser.email || '',
                         rol_id: user.rol_id,
                         activo: user.activo
                     });
                 } else {
-                    // Si no hay perfil en perfiles_ciudadanos, obtenemos datos desde auth.users
-                    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin
-                        .getUserById(user.usuario_id);
-
-                    if (authError) {
-                        console.error(`Error obteniendo datos de auth para el usuario ${user.usuario_id}:`, authError);
-                        continue;
-                    }
-
-                    if (authUser?.user) {
-                        const metadata = authUser.user.user_metadata || {};
-                        employees.push({
-                            id: user.usuario_id,
-                            name: `${metadata.name || ''} ${metadata.last_name || ''}`.trim() || 'Sin nombre',
-                            email: authUser.user.email || '',
-                            rol_id: user.rol_id,
-                            activo: user.activo
-                        });
-                    }
+                    // No profile or auth user found, skip or add minimal info
+                    employees.push({
+                        id: user.usuario_id,
+                        name: 'Sin nombre',
+                        email: '',
+                        rol_id: user.rol_id,
+                        activo: user.activo
+                    });
                 }
-            } catch (userError) {
-                console.error(`Error procesando usuario ${user.usuario_id}:`, userError);
-                // Continuamos con el siguiente usuario
             }
         }
 
