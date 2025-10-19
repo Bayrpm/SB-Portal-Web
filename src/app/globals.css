@@ -15,3 +15,23 @@ body .sidebar-bg {
   background-color: #003C96;
   color: #fff;
 }
+
+@layer utilities {
+  /* Oculta la X nativa en Chrome/Edge Chromium/Safari */
+  .no-native-cancel::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+  /* (Opcional) oculta decoración extra del search */
+  .no-native-cancel::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .no-native-cancel::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

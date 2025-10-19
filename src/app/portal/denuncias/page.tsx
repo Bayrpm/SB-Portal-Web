@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Eye, Edit, Download } from "lucide-react";
+import { Eye, Edit } from "lucide-react";
 import Link from "next/link";
+import ButtonComponent from "@/app/components/ButtonComponent";
+import SelectComponent from "@/app/components/SelectComponent";
+import SearchComponent from "@/app/components/SearchComponent";
+import DateRangePicker, { DateRange } from "@/app/components/DateRangePicker";
+import TableComponent from "@/app/components/TableComponent";
+import router from "next/router";
 
 type Denuncia = {
   Folio: string;
@@ -12,7 +18,22 @@ type Denuncia = {
   Contacto: string;
   Estado: string;
   Inspector: string;
-  "Fecha Creación": string;
+  "Fecha Creación": string; // debe contener fecha (ISO o dd/mm/yyyy; opcionalmente con hora)
+};
+
+// ---- Helpers fecha ----
+// Extrae "YYYY-MM-DD" desde un string (soporta ISO o dd/mm/yyyy)
+const extractISODate = (s: string): string | null => {
+  // intenta ISO directo (YYYY-MM-DD)
+  const iso = s.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+  if (iso) return iso;
+  // intenta dd/mm/yyyy
+  const dmy = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (dmy) {
+    const [, dd, mm, yyyy] = dmy;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return null;
 };
 
 export default function DenunciasPage() {
@@ -24,24 +45,31 @@ export default function DenunciasPage() {
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  type Sort = { key: keyof Denuncia | string; dir: "asc" | "desc" };
+  const [sort, setSort] = useState<Sort>({ key: "Folio", dir: "asc" });
 
-  // Lista única de categorías y estados para los filtros
+  // 📅 Rango de fechas
+  const [fecha, setFecha] = useState<DateRange>({
+    start: undefined,
+    end: undefined,
+  });
+
+  // Listas únicas para selects
   const [categorias, setCategorias] = useState<string[]>([]);
   const [estados, setEstados] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/datos_denuncias.json")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: Denuncia[]) => {
         setDenuncias(data);
         setFilteredDenuncias(data);
 
-        // Extraer categorías y estados únicos
         const uniqueCategorias = [
-          ...new Set(data.map((d: Denuncia) => d.Categoría)),
+          ...new Set(data.map((d) => d.Categoría)),
         ] as string[];
         const uniqueEstados = [
-          ...new Set(data.map((d: Denuncia) => d.Estado)),
+          ...new Set(data.map((d) => d.Estado)),
         ] as string[];
 
         setCategorias(uniqueCategorias);
@@ -54,32 +82,44 @@ export default function DenunciasPage() {
       });
   }, []);
 
-  // Aplicar filtros
+  // Filtros (texto, estado, categoría, fecha)
   useEffect(() => {
     let result = denuncias;
 
-    // Filtrar por término de búsqueda
+    // Texto
     if (searchTerm) {
+      const q = searchTerm.toLowerCase();
       result = result.filter(
         (d) =>
-          d.Folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.Título.toLowerCase().includes(searchTerm.toLowerCase())
+          d.Folio.toLowerCase().includes(q) ||
+          d.Título.toLowerCase().includes(q)
       );
     }
 
-    // Filtrar por estado
+    // Estado
     if (estadoFilter) {
       result = result.filter((d) => d.Estado === estadoFilter);
     }
 
-    // Filtrar por categoría
+    // Categoría
     if (categoriaFilter) {
       result = result.filter((d) => d.Categoría === categoriaFilter);
     }
 
+    // 📅 Rango de fechas (si "Fecha Creación" contiene una fecha)
+    if (fecha.start && fecha.end) {
+      const s = fecha.start;
+      const e = fecha.end;
+      result = result.filter((d) => {
+        const iso = extractISODate(d["Fecha Creación"]);
+        if (!iso) return false;
+        return iso >= s && iso <= e;
+      });
+    }
+
     setFilteredDenuncias(result);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, estadoFilter, categoriaFilter, denuncias]);
+    setCurrentPage(1); // reset de página al cambiar filtros
+  }, [searchTerm, estadoFilter, categoriaFilter, fecha, denuncias]);
 
   // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -88,7 +128,6 @@ export default function DenunciasPage() {
     indexOfFirstItem,
     indexOfLastItem
   );
-  const totalPages = Math.ceil(filteredDenuncias.length / itemsPerPage);
 
   // Estado de color
   const getEstadoClass = (estado: string) => {
@@ -112,20 +151,21 @@ export default function DenunciasPage() {
       return;
     }
     const headers = Object.keys(denuncias[0]).join(",");
-    const rows = filteredDenuncias.map((d) =>
-      Object.values(d)
-        .map((value) =>
-          typeof value === "string" && value.includes(",")
-            ? `"${value}"`
-            : value
-        )
-        .join(",")
-    );
-    const csvContent = [headers, ...rows].join("\n");
+    const rows = filteredDenuncias
+      .map((d) =>
+        Object.values(d)
+          .map((value) =>
+            typeof value === "string" && value.includes(",")
+              ? `"${value}"`
+              : value
+          )
+          .join(",")
+      )
+      .join("\n");
+    const csvContent = [headers, rows].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute(
@@ -133,7 +173,6 @@ export default function DenunciasPage() {
       `denuncias_${new Date().toISOString().split("T")[0]}.csv`
     );
     link.style.visibility = "hidden";
-
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -153,211 +192,180 @@ export default function DenunciasPage() {
             Gestión de denuncias ciudadanas
           </p>
         </div>
-        <button
-          onClick={exportToCSV}
-          className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-md"
-        >
-          <Download size={18} />
+        <ButtonComponent accion="descargar" autoLoading onConfirm={exportToCSV}>
           Exportar CSV
-        </button>
+        </ButtonComponent>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-start gap-4 mb-6">
         <div className="flex-1 max-w-xs">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
+          <div className="w-full">
+            <SearchComponent
+              label="Buscar"
+              aria-label="Buscar"
               placeholder="Buscar por folio, título..."
-              className="pl-10 pr-4 py-2 w-full border rounded-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onClear={() => setSearchTerm("")}
+              allowClear
+              size="sm"
+              autoComplete="off"
             />
           </div>
         </div>
 
         <div className="w-60">
-          <select
-            className="w-full border rounded-md py-2 px-4 appearance-none"
+          <SelectComponent
             value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setEstadoFilter(e.target.value)
+            }
+            label="Estado"
+            size="sm"
           >
-            <option value="">Estado</option>
-            {estados.map((estado, index) => (
-              <option key={index} value={estado}>
+            <option value="">Todos los estados</option>
+            {Array.from(new Set(estados)).map((estado) => (
+              <option key={estado} value={estado}>
                 {estado}
               </option>
             ))}
-          </select>
+          </SelectComponent>
         </div>
 
         <div className="w-full md:w-64">
-          <select
-            className="w-full border rounded-md py-2 px-4 appearance-none"
+          <SelectComponent
             value={categoriaFilter}
-            onChange={(e) => setCategoriaFilter(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setCategoriaFilter(e.target.value)
+            }
+            label="Categoría"
+            size="sm"
           >
-            <option value="">Categoría</option>
-            {categorias.map((categoria, index) => (
-              <option key={index} value={categoria}>
+            <option value="">Todas las categorías</option>
+            {Array.from(new Set(categorias)).map((categoria) => (
+              <option key={categoria} value={categoria}>
                 {categoria}
               </option>
             ))}
-          </select>
+          </SelectComponent>
         </div>
 
-        <div className="w-full md:w-64 flex gap-1">
-          <input
-            type="date"
-            className="border rounded-md py-2 px-4 flex-1"
-            placeholder="Fecha inicio"
-          />
-          <span className="flex items-center">—</span>
-          <input
-            type="date"
-            className="border rounded-md py-2 px-4 flex-1"
-            placeholder="Fecha fin"
+        {/* 📅 Reemplazo: DateRangePicker */}
+        <div className="w-full md:w-64">
+          <DateRangePicker
+            label="Fecha"
+            value={fecha}
+            onChange={setFecha}
+            size="sm"
+            placeholderStart="Fecha inicio"
+            placeholderEnd="Fecha fin"
+            // min="2025-01-01"
+            // max="2025-12-31"
           />
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-md shadow overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Folio
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Título
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categoría
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ubicación
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contacto
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Inspector
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fecha Creación
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Evidencia
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {currentItems.map((denuncia, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm font-medium text-blue-600">
-                  <Link href={`/portal/denuncias/${denuncia.Folio}`}>
-                    {denuncia.Folio}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-sm">{denuncia.Título}</td>
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex flex-col">
-                    <span>{denuncia.Categoría}</span>
-                    <span className="text-xs text-gray-400">Subcategoría</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-sm">{denuncia.Ubicación}</td>
-                <td className="px-4 py-3 text-sm">{denuncia.Contacto}</td>
-                <td className="px-4 py-3 text-sm">
-                  <span
-                    className={`text-xs py-1 px-2 rounded-full ${getEstadoClass(
-                      denuncia.Estado
-                    )}`}
-                  >
-                    {denuncia.Estado}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm">{denuncia.Inspector}</td>
-                <td className="px-4 py-3 text-sm">
-                  {denuncia["Fecha Creación"]}
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex justify-center">
-                    <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                      {Math.floor(Math.random() * 3) + 1}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex gap-2 justify-center">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <Eye size={18} className="text-gray-500" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <Edit size={18} className="text-gray-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Paginación */}
-      <div className="flex items-center justify-between mt-4">
-        <div className="text-sm text-gray-500">
-          {indexOfFirstItem + 1}-
-          {Math.min(indexOfLastItem, filteredDenuncias.length)} de{" "}
-          {filteredDenuncias.length} denuncias
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="p-1 rounded border hover:bg-gray-50 disabled:opacity-50"
-          >
-            &lt;
-          </button>
-
-          <span className="flex items-center">
-            <button className="px-3 py-1 rounded bg-blue-600 text-white">
-              {currentPage}
-            </button>
-          </span>
-
-          <button
-            onClick={() =>
-              setCurrentPage(Math.min(totalPages, currentPage + 1))
-            }
-            disabled={currentPage === totalPages}
-            className="p-1 rounded border hover:bg-gray-50 disabled:opacity-50"
-          >
-            &gt;
-          </button>
-
-          <select
-            className="border rounded-md py-1 px-2 text-sm"
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-          >
-            <option value="10">10 / página</option>
-            <option value="20">20 / página</option>
-            <option value="50">50 / página</option>
-          </select>
-        </div>
-      </div>
+      <TableComponent
+        columns={[
+          {
+            key: "Folio",
+            header: "Folio",
+            sortable: true,
+            render: (row) => (
+              <Link
+                href={`/portal/denuncias/${row.Folio}`}
+                className="font-medium text-blue-600"
+              >
+                {row.Folio}
+              </Link>
+            ),
+          },
+          {
+            key: "Título",
+            header: "Título",
+            sortable: true,
+          },
+          {
+            key: "Categoría",
+            header: "Categoría",
+            render: (row) => (
+              <div className="flex flex-col">
+                <span>{row.Categoría}</span>
+                <span className="text-xs text-gray-400">Subcategoría</span>
+              </div>
+            ),
+          },
+          {
+            key: "Ubicación",
+            header: "Ubicación",
+          },
+          {
+            key: "Contacto",
+            header: "Contacto",
+          },
+          {
+            key: "Estado",
+            header: "Estado",
+            render: (row) => (
+              <span
+                className={`text-xs py-1 px-2 rounded-full ${getEstadoClass(
+                  row.Estado
+                )}`}
+              >
+                {row.Estado}
+              </span>
+            ),
+          },
+          {
+            key: "Inspector",
+            header: "Inspector",
+          },
+          {
+            key: "Fecha Creación",
+            header: "Fecha",
+          },
+          {
+            key: "Evidencia",
+            header: "Evidencia",
+            align: "center",
+            render: () => (
+              <div className="flex justify-center">
+                <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {Math.floor(Math.random() * 3) + 1}
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: "acciones",
+            header: "Acciones",
+            align: "center",
+            render: () => (
+              <div className="flex gap-2 justify-center">
+                <button className="p-1 hover:bg-gray-100 rounded">
+                  <Eye size={18} className="text-gray-500" />
+                </button>
+                <button className="p-1 hover:bg-gray-100 rounded">
+                  <Edit size={18} className="text-gray-500" />
+                </button>
+              </div>
+            ),
+          },
+        ]}
+        data={currentItems}
+        loading={loading}
+        emptyMessage="No se encontraron denuncias"
+        sort={sort}
+        onSortChange={setSort}
+        page={currentPage}
+        pageSize={itemsPerPage}
+        total={filteredDenuncias.length}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setItemsPerPage}
+        onRowClick={(row) => router.push(`/portal/denuncias/${row.Folio}`)}
+      />
     </div>
   );
 }
