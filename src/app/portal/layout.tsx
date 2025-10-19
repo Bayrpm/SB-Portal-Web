@@ -160,8 +160,10 @@ export default function PortalLayout({
 
       {/* Contenido Principal */}
       <main className="pt-20 min-h-screen">
-        <div className="w-full">{children}</div>
-        <SpeedInsights />
+        <div className="w-full">
+          {children}
+          <SpeedInsights />
+        </div>
       </main>
     </div>
   );
