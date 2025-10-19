@@ -45,15 +45,15 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
         .then((data) => {
           setRoles(
             Array.isArray(data.roles)
-              ? data.roles.map((nombre: string, idx: number) => ({
-                  id: idx + 1,
-                  nombre,
+              ? data.roles.map((role: { id: number; nombre: string }) => ({
+                  id: role.id,
+                  nombre: role.nombre,
                 }))
               : []
           );
           setForm((prev) => ({
             ...prev,
-            rol_id: 1,
+            rol_id: Array.isArray(data.roles) && data.roles.length > 0 ? data.roles[0].id : 1,
           }));
         })
         .finally(() => setLoadingRoles(false));
