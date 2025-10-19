@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 
 const CHILEAN_PHONE_REGEX = /^\+56\s?9\s?\d{4}\s?\d{4}$/;
 
-export async function POST(req: NextRequest) {
+export async function registerStaff(req: NextRequest) {
     const supabase = createClient();
-    const { email, password, name, last_name, phone } = await req.json();
+    const { email, password, name, last_name, phone, rol_id } = await req.json();
 
     if (!email || !password) {
         return NextResponse.json({ error: 'Email y password requeridos' }, { status: 400 });
@@ -38,6 +38,25 @@ export async function POST(req: NextRequest) {
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    const usuario_id = data?.user?.id;
+    if (!usuario_id) {
+        return NextResponse.json({ error: 'No se pudo obtener el usuario_id.' }, { status: 500 });
+    }
+
+    const { error: portalError } = await (await supabase)
+        .from('usuarios_portal')
+        .insert([
+            {
+                usuario_id,
+                rol_id,
+                activo: true // Por defecto el usuario queda activo
+            }
+        ]);
+
+    if (portalError) {
+        return NextResponse.json({ error: portalError.message }, { status: 400 });
     }
 
     return NextResponse.json({ user: data.user });

@@ -4,6 +4,8 @@ import { useState } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import { User } from "lucide-react";
+import UserModal from "./components/UserModal";
+import Swal from "sweetalert2";
 
 const usuarios = [
   {
@@ -31,9 +33,51 @@ const rolColor: Record<string, string> = {
   Operador: "bg-blue-100 text-blue-700",
 };
 
+interface UserForm {
+  nombre: string;
+  email: string;
+  rol?: string;
+  password?: string;
+  apellido?: string;
+  telefono?: string;
+  rol_id?: number;
+}
+
 export default function UsuariosPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleAddUser = async (formData: UserForm) => {
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      name: formData.nombre,
+      last_name: formData.apellido,
+      phone: formData.telefono,
+      rol_id: formData.rol_id,
+    };
+
+    const res = await fetch("/api/users/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    if (!res.ok) {
+      console.error("Error registering user:", result);
+      Swal.fire({
+        icon: "error",
+        title: "Error al crear usuario",
+        text: result?.error || result?.message || "No se pudo crear el usuario",
+        confirmButtonColor: "#003C96",
+      });
+      return;
+    }
+
+    setModalOpen(false);
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
@@ -49,9 +93,15 @@ export default function UsuariosPage() {
         <ButtonComponent
           accion="agregar"
           className="flex items-center gap-2 bg-[#003C96] hover:bg-[#0085CA]"
+          onClick={() => setModalOpen(true)}
         >
           Nuevo Usuario
         </ButtonComponent>
+        <UserModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAddUser}
+        />
       </div>
 
       {/* Resumen */}
