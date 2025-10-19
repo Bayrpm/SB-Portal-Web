@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useUser } from "@/context/UserContext";
-import { logout } from "@/app/api/users/login";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -34,12 +33,20 @@ export default function PortalLayout({
     role === 1 ? "Administrador" : role === 2 ? "Operador" : "Usuario";
 
   const handleLogout = async () => {
-    const result = await logout();
-    if (result.success) {
-      localStorage.removeItem("sessionExpireAt");
-      router.push("/");
-    } else {
-      console.error("Error al cerrar sesión:", result.error);
+    try {
+      const response = await fetch("/api/users/logout", {
+        method: "POST",
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        localStorage.removeItem("sessionExpireAt");
+        router.push("/");
+      } else {
+        console.error("Error al cerrar sesión:", result.error);
+      }
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
     }
   };
 

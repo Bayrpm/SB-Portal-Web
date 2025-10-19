@@ -1,36 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import { User } from "lucide-react";
 import UserModal from "./components/UserModal";
 import Swal from "sweetalert2";
 
-const usuarios = [
-  {
-    id: 1,
-    nombre: "María González",
-    email: "admin@demo.cl",
-    rol: "Administrador",
-  },
-  {
-    id: 2,
-    nombre: "Carlos Rodríguez",
-    email: "operador@demo.cl",
-    rol: "Operador",
-  },
-];
-
-const resumen = [
-  { label: "Total Usuarios", value: 2 },
-  { label: "Administradores", value: 1 },
-  { label: "Operadores", value: 1 },
-];
-
 const rolColor: Record<string, string> = {
   Administrador: "bg-red-100 text-red-700",
   Operador: "bg-blue-100 text-blue-700",
+};
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  rol_id: number;
+  activo: boolean;
+}
+
+const rolMap: Record<number, string> = {
+  1: "Administrador",
+  2: "Operador",
 };
 
 interface UserForm {
@@ -47,36 +39,91 @@ export default function UsuariosPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddUser = async (formData: UserForm) => {
-    const payload = {
-      email: formData.email,
-      password: formData.password,
-      name: formData.nombre,
-      last_name: formData.apellido,
-      phone: formData.telefono,
-      rol_id: formData.rol_id,
-    };
+  // Cargar funcionarios al montar el componente
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
-    const res = await fetch("/api/users/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  // Función para cargar funcionarios desde el BFF
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/employees");
 
-    const result = await res.json();
-    if (!res.ok) {
-      console.error("Error registering user:", result);
+      if (!res.ok) {
+        throw new Error("Error al obtener funcionarios");
+      }
+
+      const data = await res.json();
+      setEmployees(data.employees || []);
+    } catch (error) {
+      console.error("Error cargando funcionarios:", error);
       Swal.fire({
         icon: "error",
-        title: "Error al crear usuario",
-        text: result?.error || result?.message || "No se pudo crear el usuario",
+        title: "Error",
+        text: "No se pudieron cargar los funcionarios",
         confirmButtonColor: "#003C96",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setModalOpen(false);
+  const handleAddUser = async (formData: UserForm) => {
+    try {
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        name: formData.nombre,
+        last_name: formData.apellido,
+        phone: formData.telefono,
+        rol_id: formData.rol_id,
+      };
+
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        console.error("Error registering user:", result);
+        Swal.fire({
+          icon: "error",
+          title: "Error al crear usuario",
+          text:
+            result?.error || result?.message || "No se pudo crear el usuario",
+          confirmButtonColor: "#003C96",
+        });
+        return;
+      }
+
+      // Mostrar mensaje de éxito
+      Swal.fire({
+        icon: "success",
+        title: "Usuario registrado",
+        text: "El usuario ha sido registrado exitosamente",
+        timer: 2000,
+        confirmButtonColor: "#003C96",
+      });
+
+      // Cerrar modal y actualizar lista
+      setModalOpen(false);
+      fetchEmployees();
+    } catch (error) {
+      console.error("Error registering user:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          error instanceof Error ? error.message : "Error al registrar usuario",
+        confirmButtonColor: "#003C96",
+      });
+    }
   };
 
   return (
@@ -104,64 +151,65 @@ export default function UsuariosPage() {
         />
       </div>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {resumen.map((item) => (
-          <div
-            key={item.label}
-            className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col items-center justify-center"
-          >
-            <span className="text-3xl font-bold text-gray-900">
-              {item.value}
-            </span>
-            <span className="text-sm text-gray-600 mt-2">{item.label}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Tabla de usuarios */}
       <div className="bg-white rounded-xl border border-gray-200 shadow p-2">
         <TableComponent
           columns={[
             {
-              key: "id",
-              header: "ID",
-              width: "60px",
-              align: "center",
-            },
-            {
-              key: "nombre",
+              key: "name",
               header: "Nombre",
+              width: "25%",
               render: (row) => (
                 <span className="flex items-center gap-2 font-medium text-gray-900">
                   <User className="w-4 h-4 text-gray-400" />
-                  {row.nombre}
+                  {row.name}
                 </span>
               ),
             },
             {
               key: "email",
               header: "Email",
+              width: "30%",
             },
             {
-              key: "rol",
+              key: "rol_id",
               header: "Rol",
+              width: "15%",
+              align: "center",
               render: (row) => (
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                    rolColor[row.rol]
-                  } border-transparent`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    rolColor[rolMap[row.rol_id] || "Sin rol"]
+                  }`}
                 >
-                  {row.rol}
+                  {rolMap[row.rol_id] || "Sin rol"}
+                </span>
+              ),
+            },
+            {
+              key: "activo",
+              header: "Estado",
+              width: "15%",
+              align: "center",
+              render: (row) => (
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    row.activo
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {row.activo ? "Activo" : "Inactivo"}
                 </span>
               ),
             },
             {
               key: "acciones",
               header: "Acciones",
+              width: "15%",
               align: "center",
               render: () => (
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <ButtonComponent
                     accion="editar"
                     className="flex items-center gap-1 bg-[#003C96] hover:bg-[#0085CA] px-3 py-1 text-xs"
@@ -178,13 +226,15 @@ export default function UsuariosPage() {
               ),
             },
           ]}
-          data={usuarios}
+          data={employees}
           page={page}
           pageSize={pageSize}
-          total={usuarios.length}
+          total={employees.length}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-          emptyMessage="No hay usuarios registrados"
+          emptyMessage={
+            loading ? "Cargando usuarios..." : "No hay usuarios registrados"
+          }
         />
       </div>
     </div>

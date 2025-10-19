@@ -1,7 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { login } from "@/app/api/users/login";
-import { getUserInfo } from "@/app/api/users/userInfo";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import Loader from "./components/Loader";
@@ -39,27 +37,44 @@ export default function Login() {
     formData.append("email", email);
     formData.append("password", password);
 
-    const result = await login(formData);
+    try {
+      // Llamada a login
+      const loginResponse = await fetch("/api/users/login", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (result && result.error) {
-      setErrorMsg(result.error);
+      const result = await loginResponse.json();
+
+      if (result && result.error) {
+        setErrorMsg(result.error);
+        setLoading(false);
+        return;
+      }
+
+      // Llamada a getUserInfo
+      const userInfoResponse = await fetch(
+        `/api/users?email=${encodeURIComponent(email)}`
+      );
+      const userInfo = await userInfoResponse.json();
+
+      if (userInfo.error) {
+        setErrorMsg(userInfo.error);
+        setLoading(false);
+        return;
+      }
+
+      setRole(userInfo.role);
+      setName(userInfo.name ?? null);
+
+      const expireAt = Date.now() + 12 * 60 * 60 * 1000;
+      localStorage.setItem("sessionExpireAt", String(expireAt));
+      router.push("/portal/dashboard");
+    } catch (error) {
+      console.error("Error durante el inicio de sesión:", error);
+      setErrorMsg("Error de conexión. Intenta nuevamente.");
       setLoading(false);
-      return;
     }
-
-    const userInfo = await getUserInfo(email);
-    if (userInfo.error) {
-      setErrorMsg(userInfo.error);
-      setLoading(false);
-      return;
-    }
-
-    setRole(userInfo.role);
-    setName(userInfo.name ?? null);
-
-    const expireAt = Date.now() + 12 * 60 * 60 * 1000;
-    localStorage.setItem("sessionExpireAt", String(expireAt));
-    router.push("/portal/dashboard");
   };
 
   if (checkingSession) {
