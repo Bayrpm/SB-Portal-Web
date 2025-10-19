@@ -22,7 +22,8 @@ type Accion =
   | "actualizar"
   | "eliminar"
   | "inspeccionar"
-  | "descargar";
+  | "descargar"
+  | "cancelar";
 
 type Size = "sm" | "md" | "lg";
 
@@ -69,6 +70,8 @@ const classesByAccion: Record<Accion, string> = {
     "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100",
   descargar:
     "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100",
+  cancelar:
+    "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200",
 };
 
 const iconByAccion: Record<Accion, React.ReactNode> = {
@@ -81,6 +84,7 @@ const iconByAccion: Record<Accion, React.ReactNode> = {
   eliminar: <Trash2 className="h-4 w-4" />,
   inspeccionar: <Eye className="h-4 w-4" />,
   descargar: <Download className="h-4 w-4" />,
+  cancelar: null,
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -154,6 +158,13 @@ const defaultConfirmByAccion: Record<Accion, ConfirmOptions> = {
     cancelButtonText: "Cancelar",
     icon: "question",
   },
+  cancelar: {
+    title: "¿Cancelar?",
+    text: "¿Deseas cancelar la operación?",
+    confirmButtonText: "Sí, cancelar",
+    cancelButtonText: "Volver",
+    icon: "question",
+  },
 };
 
 // colores SweetAlert por acción
@@ -167,6 +178,7 @@ const confirmColorByAccion: Record<Accion, string> = {
   primario: BRAND,
   secundario: BRAND,
   fantasma: BRAND,
+  cancelar: "#9CA3AF",
 };
 
 const cancelColor = "#9CA3AF";

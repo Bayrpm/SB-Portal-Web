@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { login } from "@/api/users/login";
-import { getUserInfo } from "@/api/users/userInfo";
+import { login } from "@/app/api/users/login";
+import { getUserInfo } from "@/app/api/users/userInfo";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import Loader from "./components/Loader";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@/context/UserContext";
-import { logout } from "@/api/users/login";
+import { logout } from "@/app/api/users/login";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
