@@ -25,8 +25,9 @@ const createAdminClient = () => {
         console.log("Creando cliente Supabase Admin");
 
         // Verificación adicional para depurar
-        if (!supabaseServiceKey.startsWith('eyJ')) {
-            console.warn("⚠️ ADVERTENCIA: La clave de servicio no parece tener el formato JWT esperado (debe comenzar con 'eyJ')");
+        const JWT_REGEX = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+        if (!JWT_REGEX.test(supabaseServiceKey)) {
+            console.warn("⚠️ ADVERTENCIA: La clave de servicio no parece tener el formato JWT esperado (debe ser un JWT con tres partes separadas por puntos)");
         }
     }
 
