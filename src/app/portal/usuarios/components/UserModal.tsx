@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent, useRef } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import { User, Mail, Phone, Lock, UserPlus } from "lucide-react";
+import { generateEmployeeEmailWithSupabase } from "@/lib/emails/employees/formatEmployeeEmails";
+import { createClient } from "@/lib/supabase/client";
 
 type UserForm = {
   nombre: string;
@@ -29,6 +31,9 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
     password: "",
   });
 
+  const [generatingEmail, setGeneratingEmail] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
   // Estado para animación
   const [show, setShow] = useState(open);
 
@@ -53,7 +58,10 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
           );
           setForm((prev) => ({
             ...prev,
-            rol_id: Array.isArray(data.roles) && data.roles.length > 0 ? data.roles[0].id : 1,
+            rol_id:
+              Array.isArray(data.roles) && data.roles.length > 0
+                ? data.roles[0].id
+                : 1,
           }));
         })
         .finally(() => setLoadingRoles(false));
@@ -62,6 +70,36 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
       return () => clearTimeout(timeout);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!form.nombre || !form.apellido) return;
+
+    setGeneratingEmail(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const email = await generateEmployeeEmailWithSupabase(
+          supabase,
+          form.nombre,
+          form.apellido,
+          { table: "perfiles_ciudadanos", column: "email" }
+        );
+        console.log("Correo generado:", email); // <-- Depuración
+        setForm((prev) => ({ ...prev, email }));
+      } catch (e) {
+        console.error("Error generando correo:", e);
+        setForm((prev) => ({ ...prev, email: "" }));
+      } finally {
+        setGeneratingEmail(false);
+      }
+    }, 3000);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [form.nombre, form.apellido]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -171,11 +209,16 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                   type="email"
                   name="email"
                   value={form.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full border rounded-lg px-9 py-2 focus:ring-2 focus:ring-blue-200"
-                  placeholder="usuario@ejemplo.com"
+                  disabled
+                  readOnly
+                  className="w-full border rounded-lg px-9 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
+                  placeholder="usuario@sanbernardo.gob.cl"
                 />
+                {generatingEmail && (
+                  <span className="absolute right-3 top-2.5 text-xs text-blue-500 animate-pulse">
+                    Generando correo...
+                  </span>
+                )}
               </div>
             </div>
             <div className="md:col-span-2">

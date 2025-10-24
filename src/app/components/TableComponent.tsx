@@ -79,6 +79,11 @@ export default function TableComponent<T>({
         }}
       >
         <table className="min-w-full">
+          <colgroup>
+            {columns.map((c) => (
+              <col key={c.key} style={c.width ? { width: c.width } : {}} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               {columns.map((c) => {
@@ -162,6 +167,11 @@ export default function TableComponent<T>({
       {/* Body */}
       <div className="px-6">
         <table className="min-w-full">
+          <colgroup>
+            {columns.map((c) => (
+              <col key={c.key} style={c.width ? { width: c.width } : {}} />
+            ))}
+          </colgroup>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               [...Array(6)].map((_, i) => (

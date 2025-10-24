@@ -124,7 +124,7 @@ export default function PortalLayout({
                 {catalogOpen && (
                   <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50">
                     <Link
-                      href="/portal/catalogos/tipo"
+                      href="/portal/catalogos/inspectores"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Inspectores
