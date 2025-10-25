@@ -20,8 +20,7 @@ export async function GET() {
             id: turno.id,
             nombre: turno.nombre,
             hora_inicio: turno.hora_inicio,
-            hora_termino: turno.hora_termino,
-
+            hora_termino: turno.hora_termino
         })) || [];
 
         return NextResponse.json(turnos);
