@@ -28,7 +28,7 @@ export async function GET() {
         const usuarioIds = portalUsers.map(u => u.usuario_id);
         const { data: perfilesCiudadanos, error: perfilesError } = await supabase
             .from("perfiles_ciudadanos")
-            .select("usuario_id, nombre, apellido, email")
+            .select("usuario_id, nombre, apellido, email, telefono")
             .in("usuario_id", usuarioIds);
 
         if (perfilesError) {
@@ -72,7 +72,9 @@ export async function GET() {
                 employees.push({
                     id: user.usuario_id,
                     name: `${perfil.nombre || ''} ${perfil.apellido || ''}`.trim() || 'Sin nombre',
+                    apellido: perfil.apellido || '',
                     email: perfil.email || '',
+                    telefono: perfil.telefono || '',
                     rol_id: user.rol_id,
                     activo: user.activo
                 });
@@ -83,7 +85,9 @@ export async function GET() {
                     employees.push({
                         id: user.usuario_id,
                         name: `${metadata.name || ''} ${metadata.last_name || ''}`.trim() || 'Sin nombre',
+                        apellido: metadata.last_name || '',
                         email: authUser.email || '',
+                        telefono: metadata.phone || '',
                         rol_id: user.rol_id,
                         activo: user.activo
                     });
@@ -92,7 +96,9 @@ export async function GET() {
                     employees.push({
                         id: user.usuario_id,
                         name: 'Sin nombre',
+                        apellido: '',
                         email: '',
+                        telefono: '',
                         rol_id: user.rol_id,
                         activo: user.activo
                     });

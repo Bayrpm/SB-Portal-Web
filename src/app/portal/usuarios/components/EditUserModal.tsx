@@ -1,38 +1,32 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent, useRef } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
-import { User, Mail, Phone, Lock, UserPlus } from "lucide-react";
-import { generateEmployeeEmailWithSupabase } from "@/lib/emails/employees/formatEmployeeEmails";
-import { createClient } from "@/lib/supabase/client";
+import { User, Phone, Edit } from "lucide-react";
 
-type UserForm = {
+interface EditUserFormData {
   nombre: string;
   apellido: string;
-  email: string;
   telefono: string;
   rol_id: number;
-  password: string;
-};
-
-interface UserModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: UserForm) => void;
 }
 
-export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
-  const [form, setForm] = useState<UserForm>({
-    nombre: "",
-    apellido: "",
-    email: "",
-    telefono: "",
-    rol_id: 1,
-    password: "",
-  });
+interface EditUserModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: EditUserFormData) => void;
+  initialData: EditUserFormData;
+  email: string; // Para mostrarlo pero no editarlo
+}
 
-  const [generatingEmail, setGeneratingEmail] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+export default function EditUserModal({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+  email,
+}: EditUserModalProps) {
+  const [form, setForm] = useState<EditUserFormData>(initialData);
 
   // Estado para animación
   const [show, setShow] = useState(open);
@@ -44,6 +38,7 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
   useEffect(() => {
     if (open) {
       setShow(true);
+      setForm(initialData);
       setLoadingRoles(true);
       fetch("/api/roles")
         .then((res) => res.json())
@@ -56,50 +51,13 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                 }))
               : []
           );
-          setForm((prev) => ({
-            ...prev,
-            rol_id:
-              Array.isArray(data.roles) && data.roles.length > 0
-                ? data.roles[0].id
-                : 1,
-          }));
         })
         .finally(() => setLoadingRoles(false));
     } else {
       const timeout = setTimeout(() => setShow(false), 250);
       return () => clearTimeout(timeout);
     }
-  }, [open]);
-
-  useEffect(() => {
-    if (!form.nombre || !form.apellido) return;
-
-    setGeneratingEmail(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const supabase = createClient();
-        const email = await generateEmployeeEmailWithSupabase(
-          supabase,
-          form.nombre,
-          form.apellido,
-          { table: "perfiles_ciudadanos", column: "email" }
-        );
-        console.log("Correo generado:", email); // <-- Depuración
-        setForm((prev) => ({ ...prev, email }));
-      } catch (e) {
-        console.error("Error generando correo:", e);
-        setForm((prev) => ({ ...prev, email: "" }));
-      } finally {
-        setGeneratingEmail(false);
-      }
-    }, 3000);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [form.nombre, form.apellido]);
+  }, [open, initialData]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -107,7 +65,7 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
     const { name, value } = e.target;
     setForm((prev) => {
       const newValue = name === "rol_id" ? Number(value) : value;
-      return { ...prev, [name as keyof UserForm]: newValue } as UserForm;
+      return { ...prev, [name as keyof EditUserFormData]: newValue };
     });
   };
 
@@ -143,13 +101,13 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-8 pt-8 pb-2">
           <div className="flex items-center gap-3">
-            <UserPlus className="text-blue-700 w-6 h-6" />
+            <Edit className="text-blue-700 w-6 h-6" />
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">
-                Nuevo Usuario
+                Editar Usuario
               </h2>
               <p className="text-gray-500 text-sm mt-1">
-                Completa el formulario para crear un nuevo usuario del portal
+                Actualiza la información del usuario
               </p>
             </div>
           </div>
@@ -200,26 +158,16 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-gray-400">
-                  <Mail className="w-4 h-4" />
-                </span>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  disabled
-                  readOnly
-                  className="w-full border rounded-lg px-9 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
-                  placeholder="usuario@sanbernardo.gob.cl"
-                />
-                {generatingEmail && (
-                  <span className="absolute right-3 top-2.5 text-xs text-blue-500 animate-pulse">
-                    Generando correo...
-                  </span>
-                )}
-              </div>
+              <label className="block text-sm font-medium mb-1">
+                Email (no editable)
+              </label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                readOnly
+                className="w-full border rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Teléfono</label>
@@ -237,7 +185,7 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                 />
               </div>
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Rol</label>
               <div className="relative">
                 <select
@@ -261,32 +209,13 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                 </select>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Contraseña
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-gray-400">
-                  <Lock className="w-4 h-4" />
-                </span>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full border rounded-lg px-9 py-2 focus:ring-2 focus:ring-blue-200"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
           </div>
           <div className="flex justify-end gap-2 mt-8">
             <ButtonComponent accion="cancelar" type="button" onClick={onClose}>
               Cancelar
             </ButtonComponent>
-            <ButtonComponent accion="agregar" type="submit">
-              Crear Usuario
+            <ButtonComponent accion="editar" type="submit">
+              Actualizar Usuario
             </ButtonComponent>
           </div>
         </form>

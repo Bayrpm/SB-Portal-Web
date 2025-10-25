@@ -2,32 +2,41 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent, useRef } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
-import { User, Mail, Phone, Lock, UserPlus } from "lucide-react";
-import { generateEmployeeEmailWithSupabase } from "@/lib/emails/employees/formatEmployeeEmails";
+import { User, Mail, Phone, Lock, UserPlus, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { generateEmailWithSupabase } from "@/lib/emails/inspectors/formatInspectorEmails";
+import TurnoSelectorModal, { Turno } from "./TurnoSelectorModal";
 
-type UserForm = {
+export type InspectorFormData = {
   nombre: string;
   apellido: string;
   email: string;
   telefono: string;
-  rol_id: number;
+  turno_id: number;
+  turno_nombre?: string;
+  turno_horario?: string;
   password: string;
 };
 
-interface UserModalProps {
+interface InspectorModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: UserForm) => void;
+  onSubmit: (data: InspectorFormData) => void;
 }
 
-export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
-  const [form, setForm] = useState<UserForm>({
+export default function InspectorModal({
+  open,
+  onClose,
+  onSubmit,
+}: InspectorModalProps) {
+  const [form, setForm] = useState<InspectorFormData>({
     nombre: "",
     apellido: "",
     email: "",
     telefono: "",
-    rol_id: 1,
+    turno_id: 0,
+    turno_nombre: "",
+    turno_horario: "",
     password: "",
   });
 
@@ -37,34 +46,12 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
   // Estado para animación
   const [show, setShow] = useState(open);
 
-  // Estado para roles dinámicos
-  const [roles, setRoles] = useState<{ id: number; nombre: string }[]>([]);
-  const [loadingRoles, setLoadingRoles] = useState(false);
+  // Estado para modal de turnos
+  const [turnoModalOpen, setTurnoModalOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
       setShow(true);
-      setLoadingRoles(true);
-      fetch("/api/roles")
-        .then((res) => res.json())
-        .then((data) => {
-          setRoles(
-            Array.isArray(data.roles)
-              ? data.roles.map((role: { id: number; nombre: string }) => ({
-                  id: role.id,
-                  nombre: role.nombre,
-                }))
-              : []
-          );
-          setForm((prev) => ({
-            ...prev,
-            rol_id:
-              Array.isArray(data.roles) && data.roles.length > 0
-                ? data.roles[0].id
-                : 1,
-          }));
-        })
-        .finally(() => setLoadingRoles(false));
     } else {
       const timeout = setTimeout(() => setShow(false), 250);
       return () => clearTimeout(timeout);
@@ -80,17 +67,17 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
     debounceRef.current = setTimeout(async () => {
       try {
         const supabase = createClient();
-        const email = await generateEmployeeEmailWithSupabase(
+        const email = await generateEmailWithSupabase(
           supabase,
           form.nombre,
           form.apellido,
           { table: "perfiles_ciudadanos", column: "email" }
         );
         console.log("Correo generado:", email); // <-- Depuración
-        setForm((prev) => ({ ...prev, email }));
+        setForm((prev: InspectorFormData) => ({ ...prev, email }));
       } catch (e) {
         console.error("Error generando correo:", e);
-        setForm((prev) => ({ ...prev, email: "" }));
+        setForm((prev: InspectorFormData) => ({ ...prev, email: "" }));
       } finally {
         setGeneratingEmail(false);
       }
@@ -105,14 +92,36 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => {
-      const newValue = name === "rol_id" ? Number(value) : value;
-      return { ...prev, [name as keyof UserForm]: newValue } as UserForm;
-    });
+    setForm((prev: InspectorFormData) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Función para formatear hora eliminando segundos (15:00:00 -> 15:00)
+  const formatTime = (time: string): string => {
+    if (!time) return "";
+    // Si el formato es HH:MM:SS, tomar solo HH:MM
+    return time.substring(0, 5);
+  };
+
+  const handleTurnoSelect = (turno: Turno) => {
+    setForm((prev: InspectorFormData) => ({
+      ...prev,
+      turno_id: turno.id,
+      turno_nombre: turno.nombre,
+      turno_horario: `${formatTime(turno.hora_inicio)} - ${formatTime(
+        turno.hora_termino
+      )}`,
+    }));
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (form.turno_id === 0) {
+      alert("Por favor selecciona un turno");
+      return;
+    }
     onSubmit(form);
   };
 
@@ -146,10 +155,10 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
             <UserPlus className="text-blue-700 w-6 h-6" />
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">
-                Nuevo Usuario
+                Nuevo Inspector
               </h2>
               <p className="text-gray-500 text-sm mt-1">
-                Completa el formulario para crear un nuevo usuario del portal
+                Completa el formulario para crear un nuevo inspector municipal
               </p>
             </div>
           </div>
@@ -212,7 +221,7 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                   disabled
                   readOnly
                   className="w-full border rounded-lg px-9 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
-                  placeholder="usuario@sanbernardo.gob.cl"
+                  placeholder="usuario@sanbernardo.cl"
                 />
                 {generatingEmail && (
                   <span className="absolute right-3 top-2.5 text-xs text-blue-500 animate-pulse">
@@ -237,31 +246,54 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Rol</label>
-              <div className="relative">
-                <select
-                  name="rol_id"
-                  value={form.rol_id}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-200"
-                  disabled={loadingRoles}
-                  required
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">
+                Turno <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setTurnoModalOpen(true)}
+                className={`w-full border rounded-lg px-4 py-2.5 text-left flex items-center justify-between transition-all
+                  ${
+                    form.turno_id
+                      ? "border-[#003C96] bg-blue-50 text-gray-900"
+                      : "border-gray-300 bg-white text-gray-500 hover:border-gray-400"
+                  }
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <div>
+                    {form.turno_nombre ? (
+                      <>
+                        <p className="font-medium text-gray-900">
+                          {form.turno_nombre}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {form.turno_horario}
+                        </p>
+                      </>
+                    ) : (
+                      <p>Seleccionar turno</p>
+                    )}
+                  </div>
+                </div>
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {loadingRoles && <option value="">Cargando roles...</option>}
-                  {!loadingRoles && roles.length === 0 && (
-                    <option value="">Sin roles</option>
-                  )}
-                  {!loadingRoles &&
-                    roles.map((rol) => (
-                      <option key={rol.id} value={rol.id}>
-                        {rol.nombre}
-                      </option>
-                    ))}
-                </select>
-              </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">
                 Contraseña
               </label>
@@ -286,11 +318,19 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
               Cancelar
             </ButtonComponent>
             <ButtonComponent accion="agregar" type="submit">
-              Crear Usuario
+              Crear Inspector
             </ButtonComponent>
           </div>
         </form>
       </div>
+
+      {/* Modal de selección de turno */}
+      <TurnoSelectorModal
+        open={turnoModalOpen}
+        onClose={() => setTurnoModalOpen(false)}
+        onSelect={handleTurnoSelect}
+        selectedTurnoId={form.turno_id}
+      />
     </div>
   );
 }
