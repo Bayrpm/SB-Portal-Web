@@ -117,5 +117,4 @@ export async function generateEmailWithSupabase(
 
     // Si no encontramos disponible, devuelve el 2 letras (aunque exista) o lanza error
     throw new Error("No se pudo generar un email único");
-    return email2;
 }
