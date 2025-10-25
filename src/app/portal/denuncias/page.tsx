@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, Edit } from "lucide-react";
+// import Link from "next/link";
 import Link from "next/link";
 import ButtonComponent from "@/app/components/ButtonComponent";
+// import { useRef, useState as useStateReact } from "react";
+import ExportButton from "@/app/components/ExportButton";
 import SelectComponent from "@/app/components/SelectComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import DateRangePicker, { DateRange } from "@/app/components/DateRangePicker";
@@ -11,14 +13,12 @@ import TableComponent from "@/app/components/TableComponent";
 import router from "next/router";
 
 type Denuncia = {
-  Folio: string;
-  Título: string;
-  Categoría: string;
-  Ubicación: string;
-  Contacto: string;
-  Estado: string;
-  Inspector: string;
-  "Fecha Creación": string; // debe contener fecha (ISO o dd/mm/yyyy; opcionalmente con hora)
+  folio: string;
+  nombre: string;
+  categoria: string;
+  prioridad: string;
+  fecha_creacion: string;
+  ubicacion_texto: string;
 };
 
 // ---- Helpers fecha ----
@@ -41,39 +41,40 @@ export default function DenunciasPage() {
   const [filteredDenuncias, setFilteredDenuncias] = useState<Denuncia[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [estadoFilter, setEstadoFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
+  const [prioridadFilter, setPrioridadFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   type Sort = { key: keyof Denuncia | string; dir: "asc" | "desc" };
-  const [sort, setSort] = useState<Sort>({ key: "Folio", dir: "asc" });
-
-  // 📅 Rango de fechas
+  const [sort, setSort] = useState<Sort>({ key: "folio", dir: "asc" });
   const [fecha, setFecha] = useState<DateRange>({
     start: undefined,
     end: undefined,
   });
-
-  // Listas únicas para selects
   const [categorias, setCategorias] = useState<string[]>([]);
-  const [estados, setEstados] = useState<string[]>([]);
+  const [prioridades, setPrioridades] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("/datos_denuncias.json")
+    setLoading(true);
+    fetch("/api/denuncias")
       .then((res) => res.json())
-      .then((data: Denuncia[]) => {
-        setDenuncias(data);
-        setFilteredDenuncias(data);
-
-        const uniqueCategorias = [
-          ...new Set(data.map((d) => d.Categoría)),
-        ] as string[];
-        const uniqueEstados = [
-          ...new Set(data.map((d) => d.Estado)),
-        ] as string[];
-
-        setCategorias(uniqueCategorias);
-        setEstados(uniqueEstados);
+      .then((data) => {
+        setDenuncias(data.denuncias || []);
+        setFilteredDenuncias(data.denuncias || []);
+        setCategorias(
+          Array.from(
+            new Set(
+              (data.denuncias || []).map((d: Denuncia) => String(d.categoria))
+            )
+          )
+        );
+        setPrioridades(
+          Array.from(
+            new Set(
+              (data.denuncias || []).map((d: Denuncia) => String(d.prioridad))
+            )
+          )
+        );
         setLoading(false);
       })
       .catch((error) => {
@@ -83,43 +84,39 @@ export default function DenunciasPage() {
   }, []);
 
   // Filtros (texto, estado, categoría, fecha)
+
   useEffect(() => {
     let result = denuncias;
-
     // Texto
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       result = result.filter(
         (d) =>
-          d.Folio.toLowerCase().includes(q) ||
-          d.Título.toLowerCase().includes(q)
+          d.folio.toLowerCase().includes(q) ||
+          d.nombre.toLowerCase().includes(q)
       );
     }
-
-    // Estado
-    if (estadoFilter) {
-      result = result.filter((d) => d.Estado === estadoFilter);
-    }
-
     // Categoría
     if (categoriaFilter) {
-      result = result.filter((d) => d.Categoría === categoriaFilter);
+      result = result.filter((d) => d.categoria === categoriaFilter);
     }
-
-    // 📅 Rango de fechas (si "Fecha Creación" contiene una fecha)
+    // Prioridad
+    if (prioridadFilter) {
+      result = result.filter((d) => d.prioridad === prioridadFilter);
+    }
+    // 📅 Rango de fechas
     if (fecha.start && fecha.end) {
       const s = fecha.start;
       const e = fecha.end;
       result = result.filter((d) => {
-        const iso = extractISODate(d["Fecha Creación"]);
+        const iso = extractISODate(d.fecha_creacion);
         if (!iso) return false;
         return iso >= s && iso <= e;
       });
     }
-
     setFilteredDenuncias(result);
-    setCurrentPage(1); // reset de página al cambiar filtros
-  }, [searchTerm, estadoFilter, categoriaFilter, fecha, denuncias]);
+    setCurrentPage(1);
+  }, [searchTerm, categoriaFilter, prioridadFilter, fecha, denuncias]);
 
   // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -129,61 +126,12 @@ export default function DenunciasPage() {
     indexOfLastItem
   );
 
-  // Estado de color
-  const getEstadoClass = (estado: string) => {
-    switch (estado.toLowerCase()) {
-      case "pendiente":
-        return "bg-amber-100 text-amber-800 border border-amber-200";
-      case "en curso":
-      case "en proceso":
-        return "bg-blue-100 text-blue-800 border border-blue-200";
-      case "cerrada":
-        return "bg-green-100 text-green-800 border border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border border-gray-200";
-    }
-  };
-
-  // Exportar a CSV
-  const exportToCSV = () => {
-    if (!denuncias || denuncias.length === 0) {
-      alert("No hay datos para exportar.");
-      return;
-    }
-    const headers = Object.keys(denuncias[0]).join(",");
-    const rows = filteredDenuncias
-      .map((d) =>
-        Object.values(d)
-          .map((value) =>
-            typeof value === "string" && value.includes(",")
-              ? `"${value}"`
-              : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const csvContent = [headers, rows].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `denuncias_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (loading) {
     return <div className="p-8 text-center">Cargando denuncias...</div>;
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto w-full">
+    <div className="p-6 w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -192,9 +140,18 @@ export default function DenunciasPage() {
             Gestión de denuncias ciudadanas
           </p>
         </div>
-        <ButtonComponent accion="descargar" autoLoading onConfirm={exportToCSV}>
-          Exportar CSV
-        </ButtonComponent>
+        <ExportButton
+          data={filteredDenuncias}
+          fileName="denuncias"
+          columns={[
+            "folio",
+            "nombre",
+            "categoria",
+            "prioridad",
+            "fecha_creacion",
+            "ubicacion_texto",
+          ]}
+        />
       </div>
 
       {/* Filtros */}
@@ -217,17 +174,17 @@ export default function DenunciasPage() {
 
         <div className="w-60">
           <SelectComponent
-            value={estadoFilter}
+            value={prioridadFilter}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setEstadoFilter(e.target.value)
+              setPrioridadFilter(e.target.value)
             }
-            label="Estado"
+            label="Prioridad"
             size="sm"
           >
-            <option value="">Todos los estados</option>
-            {Array.from(new Set(estados)).map((estado) => (
-              <option key={estado} value={estado}>
-                {estado}
+            <option value="">Todas las prioridades</option>
+            {prioridades.map((prioridad) => (
+              <option key={prioridad} value={prioridad}>
+                {prioridad}
               </option>
             ))}
           </SelectComponent>
@@ -270,86 +227,78 @@ export default function DenunciasPage() {
       <TableComponent
         columns={[
           {
-            key: "Folio",
+            key: "folio",
             header: "Folio",
+            width: "10%",
             sortable: true,
             render: (row) => (
               <Link
-                href={`/portal/denuncias/${row.Folio}`}
+                href={`/portal/denuncias/${row.folio}`}
                 className="font-medium text-blue-600"
               >
-                {row.Folio}
+                {row.folio}
               </Link>
             ),
           },
           {
-            key: "Título",
-            header: "Título",
+            key: "nombre",
+            header: "Nombre Ciudadano",
+            width: "18%",
             sortable: true,
           },
           {
-            key: "Categoría",
+            key: "categoria",
             header: "Categoría",
-            render: (row) => (
-              <div className="flex flex-col">
-                <span>{row.Categoría}</span>
-                <span className="text-xs text-gray-400">Subcategoría</span>
-              </div>
-            ),
+            width: "15%",
+            sortable: true,
           },
           {
-            key: "Ubicación",
+            key: "prioridad",
+            header: "Prioridad",
+            width: "12%",
+            sortable: true,
+          },
+          {
+            key: "fecha_creacion",
+            header: "Fecha Creación",
+            width: "15%",
+            sortable: true,
+            render: (row) => {
+              // Soporta ISO y otros formatos
+              const date = row.fecha_creacion
+                ? new Date(row.fecha_creacion)
+                : null;
+              let formatted = row.fecha_creacion;
+              if (date && !isNaN(date.getTime())) {
+                const dd = String(date.getDate()).padStart(2, "0");
+                const mm = String(date.getMonth() + 1).padStart(2, "0");
+                const yyyy = date.getFullYear();
+                formatted = `${dd}-${mm}-${yyyy}`;
+              }
+              return <span>{formatted}</span>;
+            },
+          },
+          {
+            key: "ubicacion_texto",
             header: "Ubicación",
-          },
-          {
-            key: "Contacto",
-            header: "Contacto",
-          },
-          {
-            key: "Estado",
-            header: "Estado",
-            render: (row) => (
-              <span
-                className={`text-xs py-1 px-2 rounded-full ${getEstadoClass(
-                  row.Estado
-                )}`}
-              >
-                {row.Estado}
-              </span>
-            ),
-          },
-          {
-            key: "Inspector",
-            header: "Inspector",
-          },
-          {
-            key: "Fecha Creación",
-            header: "Fecha",
-          },
-          {
-            key: "Evidencia",
-            header: "Evidencia",
-            align: "center",
-            render: () => (
-              <div className="flex justify-center">
-                <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {Math.floor(Math.random() * 3) + 1}
-                </span>
-              </div>
-            ),
+            width: "20%",
+            sortable: false,
           },
           {
             key: "acciones",
             header: "Acciones",
+            width: "10%",
             align: "center",
-            render: () => (
+            render: (row) => (
               <div className="flex gap-2 justify-center">
-                <button className="p-1 hover:bg-gray-100 rounded">
-                  <Eye size={18} className="text-gray-500" />
-                </button>
-                <button className="p-1 hover:bg-gray-100 rounded">
-                  <Edit size={18} className="text-gray-500" />
-                </button>
+                <Link href={`/portal/denuncias/${row.folio}`}>
+                  <ButtonComponent
+                    accion="ver"
+                    className="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  >
+                    Ver denuncia
+                  </ButtonComponent>
+                </Link>
               </div>
             ),
           },
@@ -364,7 +313,7 @@ export default function DenunciasPage() {
         total={filteredDenuncias.length}
         onPageChange={setCurrentPage}
         onPageSizeChange={setItemsPerPage}
-        onRowClick={(row) => router.push(`/portal/denuncias/${row.Folio}`)}
+        onRowClick={(row) => router.push(`/portal/denuncias/${row.folio}`)}
       />
     </div>
   );
