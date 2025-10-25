@@ -11,6 +11,14 @@ export async function POST(req: NextRequest) {
     return registerStaff(req);
 }
 
+export async function PUT(req: NextRequest) {
+    return updateUser(req);
+}
+
+export async function DELETE(req: NextRequest) {
+    return deleteUser(req);
+}
+
 export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const email = url.searchParams.get("email");
@@ -138,4 +146,128 @@ async function getUserInfo(email: string) {
     const nombre = perfil.nombre ?? "";
     const apellido = perfil.apellido ?? "";
     return { role: usuario.rol_id, name: `${nombre} ${apellido}`.trim() };
+}
+
+async function updateUser(req: NextRequest) {
+    const { id, name, last_name, phone, rol_id, activo } = await req.json();
+
+    if (!id) {
+        return NextResponse.json({ error: "ID de usuario requerido" }, { status: 400 });
+    }
+
+    if (phone && !CHILEAN_PHONE_REGEX.test(phone)) {
+        return NextResponse.json({
+            error: "El número de teléfono debe tener formato chileno: +56 9 XXXX XXXX"
+        }, { status: 400 });
+    }
+
+    try {
+        // Actualizar metadata del usuario si se proporcionan name, last_name o phone
+        if (name !== undefined || last_name !== undefined || phone !== undefined) {
+            const updateData: { user_metadata: { name?: string; last_name?: string; phone?: string } } = {
+                user_metadata: {}
+            };
+
+            if (name !== undefined) updateData.user_metadata.name = name;
+            if (last_name !== undefined) updateData.user_metadata.last_name = last_name;
+            if (phone !== undefined) updateData.user_metadata.phone = phone;
+
+            const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(
+                id,
+                updateData
+            );
+
+            if (metadataError) {
+                console.error("Error actualizando metadata:", metadataError);
+                return NextResponse.json({ error: metadataError.message }, { status: 500 });
+            }
+
+            // Actualizar también en perfiles_ciudadanos
+            const perfilUpdate: { nombre?: string; apellido?: string; telefono?: string } = {};
+            if (name !== undefined) perfilUpdate.nombre = name;
+            if (last_name !== undefined) perfilUpdate.apellido = last_name;
+            if (phone !== undefined) perfilUpdate.telefono = phone;
+
+            const { error: perfilError } = await supabaseAdmin
+                .from("perfiles_ciudadanos")
+                .update(perfilUpdate)
+                .eq("usuario_id", id);
+
+            if (perfilError) {
+                console.error("Error actualizando perfil:", perfilError);
+            }
+        }
+
+        // Actualizar rol_id o activo en usuarios_portal si se proporcionan
+        if (rol_id !== undefined || activo !== undefined) {
+            const portalUpdate: { rol_id?: number; activo?: boolean } = {};
+            if (rol_id !== undefined) portalUpdate.rol_id = rol_id;
+            if (activo !== undefined) portalUpdate.activo = activo;
+
+            const { error: portalError } = await supabaseAdmin
+                .from("usuarios_portal")
+                .update(portalUpdate)
+                .eq("usuario_id", id);
+
+            if (portalError) {
+                console.error("Error actualizando usuarios_portal:", portalError);
+                return NextResponse.json({ error: portalError.message }, { status: 500 });
+            }
+        }
+
+        return NextResponse.json({ success: true, message: "Usuario actualizado correctamente" });
+
+    } catch (error) {
+        console.error("Error actualizando usuario:", error);
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : "Error inesperado"
+        }, { status: 500 });
+    }
+}
+
+async function deleteUser(req: NextRequest) {
+    const { id } = await req.json();
+
+    if (!id) {
+        return NextResponse.json({ error: "ID de usuario requerido" }, { status: 400 });
+    }
+
+    try {
+        // 1. Eliminar de usuarios_portal
+        const { error: portalError } = await supabaseAdmin
+            .from("usuarios_portal")
+            .delete()
+            .eq("usuario_id", id);
+
+        if (portalError) {
+            console.error("Error eliminando de usuarios_portal:", portalError);
+            return NextResponse.json({ error: portalError.message }, { status: 500 });
+        }
+
+        // 2. Eliminar de perfiles_ciudadanos
+        const { error: perfilError } = await supabaseAdmin
+            .from("perfiles_ciudadanos")
+            .delete()
+            .eq("usuario_id", id);
+
+        if (perfilError) {
+            console.error("Error eliminando perfil:", perfilError);
+        }
+
+        // 3. Eliminar usuario de auth
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+        if (authError) {
+            console.error("Error eliminando usuario de auth:", authError);
+            return NextResponse.json({ error: authError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, message: "Usuario eliminado correctamente" });
+
+    } catch (error) {
+        console.error("Error eliminando usuario:", error);
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : "Error inesperado"
+        }, { status: 500 });
+    }
 }

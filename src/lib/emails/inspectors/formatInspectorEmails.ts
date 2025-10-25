@@ -82,9 +82,9 @@ export async function generateEmailWithSupabase(
     nombre: string,
     apellido: string,
     options?: {
-        table?: string;   // default: 'usuarios'
-        column?: string;  // default: 'email'
-        allowNumericFallback?: boolean; // default: true
+        table?: string;
+        column?: string;
+        allowNumericFallback?: boolean;
     }
 ): Promise<string> {
     const table = options?.table;
