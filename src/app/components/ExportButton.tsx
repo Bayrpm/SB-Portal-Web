@@ -113,8 +113,6 @@ export default function ExportButton({
     document.body.removeChild(link);
   };
 
-  // (Eliminada la versión duplicada de exportToExcel)
-
   // Exportar a PDF (tabla profesional)
   const exportToPDF = async () => {
     if (!data || data.length === 0) {
