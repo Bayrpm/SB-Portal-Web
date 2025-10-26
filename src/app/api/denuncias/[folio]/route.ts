@@ -38,12 +38,24 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         estadoNombre = estado?.codigo || '';
     }
 
-    // Devolver la denuncia con el nombre de la categoría y el estado
+    // Buscar el nombre de la prioridad usando prioridad_id
+    let prioridadNombre = '';
+    if (denuncia.prioridad_id) {
+        const { data: prioridad } = await supabase
+            .from('prioridades_denuncia')
+            .select('nombre')
+            .eq('id', denuncia.prioridad_id)
+            .single();
+        prioridadNombre = prioridad?.nombre || '';
+    }
+
+    // Devolver la denuncia con el nombre de la categoría, estado y prioridad
     return NextResponse.json({
         denuncia: {
             ...denuncia,
             categoria: categoriaNombre,
             estado: estadoNombre,
+            prioridad: prioridadNombre,
         },
     });
 }

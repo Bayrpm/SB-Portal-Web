@@ -35,6 +35,13 @@ const extractISODate = (s: string): string | null => {
   return null;
 };
 
+const prioridadColor: Record<string, string> = {
+  Baja: "bg-green-100 text-green-800 border border-green-200", // id 1
+  Media: "bg-yellow-200 text-yellow-900 border border-yellow-300", // id 2
+  Alta: "bg-orange-300 text-orange-900 border border-orange-400", // id 3
+  Urgencia: "bg-red-600 text-white border border-red-700", // id 4
+};
+
 export default function DenunciasPage() {
   const router = useRouter();
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
@@ -264,6 +271,19 @@ export default function DenunciasPage() {
             header: "Prioridad",
             width: "12%",
             sortable: true,
+            render: (row) =>
+              row.prioridad ? (
+                <span
+                  className={`inline-block px-3 py-1 rounded text-xs font-semibold border ${
+                    prioridadColor[row.prioridad] ||
+                    "bg-gray-100 text-gray-700 border border-gray-200"
+                  }`}
+                >
+                  {row.prioridad}
+                </span>
+              ) : (
+                <span className="text-gray-400">Sin prioridad</span>
+              ),
           },
           {
             key: "fecha_creacion",
