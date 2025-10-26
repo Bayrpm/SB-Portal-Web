@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 
-export async function GET(_req: Request, context: { params: { folio: string } }) {
+export async function GET(_req: Request, context: { params: Promise<{ folio: string }> }) {
     const params = await context.params;
     const supabase = await createClient();
     // Obtener la denuncia
