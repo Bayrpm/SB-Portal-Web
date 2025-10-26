@@ -72,7 +72,7 @@ export async function GET() {
             nombre: ciudadanoMap.get(d.ciudadano_id) || "Sin nombre",
             titulo: d.titulo || "",
             categoria: categoriaMap.get(d.categoria_publica_id) || "Sin categoría",
-            prioridad_id: d.prioridad_id || "No asignada",
+            prioridad_id: d.prioridad_id ?? null,
             prioridad: d.prioridad_id ? (prioridadMap.get(d.prioridad_id) || "Sin prioridad") : "No asignada",
             fecha_creacion: d.fecha_creacion,
             ubicacion_texto: d.ubicacion_texto,
