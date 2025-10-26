@@ -2,8 +2,6 @@
 
 import { useRef, useState } from "react";
 import ButtonComponent from "./ButtonComponent";
-// import { createStyledWorkbook } from "@/lib/excel/exportTemplate";
-
 type RowData = Record<string, string | number | boolean | null | undefined>;
 
 interface ExportButtonProps {
@@ -114,8 +112,6 @@ export default function ExportButton({
     link.click();
     document.body.removeChild(link);
   };
-
-  // (Eliminada la versión duplicada de exportToExcel)
 
   // Exportar a PDF (tabla profesional)
   const exportToPDF = async () => {

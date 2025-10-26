@@ -1,4 +1,4 @@
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 
 type RowData = Record<string, string | number | boolean | null | undefined>;
 
