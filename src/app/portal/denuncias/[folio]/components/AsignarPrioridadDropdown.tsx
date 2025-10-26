@@ -80,5 +80,4 @@ export default function AsignarPrioridadDropdown({
       )}
     </div>
   );
-  //
 }
