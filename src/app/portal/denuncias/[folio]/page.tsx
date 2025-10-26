@@ -68,13 +68,6 @@ export default function DenunciaDetallePage({
   if (loading) {
     return <div className="p-8 text-center">Cargando denuncia...</div>;
   }
-  if (!denuncia) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        No se encontró la denuncia
-      </div>
-    );
-  }
 
   return (
     <div className="p-6">
