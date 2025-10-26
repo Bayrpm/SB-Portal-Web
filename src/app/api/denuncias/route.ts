@@ -36,7 +36,10 @@ export async function GET() {
             return NextResponse.json({ error: errorCiudadanos.message }, { status: 500 });
         }
         const ciudadanoMap = new Map(
-            (ciudadanos || []).map((c) => [c.usuario_id, `${c.nombre || ''} ${c.apellido || ''}`.trim()])
+            (ciudadanos || []).map((c) => {
+                const nombreCompleto = `${c.nombre || ''} ${c.apellido || ''}`.trim();
+                return [c.usuario_id, nombreCompleto ? nombreCompleto : "Sin nombre"];
+            })
         );
 
         // Obtener nombres de categorías
