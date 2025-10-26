@@ -14,7 +14,7 @@ export async function GET() {
         ciudadano_id,
         titulo,
         categoria_publica_id,
-        prioridad,
+        prioridad_id,
         fecha_creacion,
         ubicacion_texto
       `);
@@ -23,9 +23,10 @@ export async function GET() {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // Obtener los ids únicos de ciudadanos y categorías
+        // Obtener los ids únicos de ciudadanos, categorías y prioridades
         const ciudadanoIds = Array.from(new Set((data || []).map((d) => d.ciudadano_id)));
         const categoriaIds = Array.from(new Set((data || []).map((d) => d.categoria_publica_id)));
+        const prioridadIds = Array.from(new Set((data || []).map((d) => d.prioridad_id).filter(Boolean)));
 
         // Obtener nombres de ciudadanos
         const { data: ciudadanos, error: errorCiudadanos } = await supabase
@@ -52,13 +53,27 @@ export async function GET() {
         }
         const categoriaMap = new Map((categorias || []).map((c) => [c.id, c.nombre]));
 
+        // Obtener nombres de prioridades
+        let prioridadMap = new Map();
+        if (prioridadIds.length > 0) {
+            const { data: prioridades, error: errorPrioridades } = await supabase
+                .from("prioridades_denuncia")
+                .select("id, nombre")
+                .in("id", prioridadIds);
+            if (errorPrioridades) {
+                return NextResponse.json({ error: errorPrioridades.message }, { status: 500 });
+            }
+            prioridadMap = new Map((prioridades || []).map((p) => [p.id, p.nombre]));
+        }
+
         // Formatear resultado final
         const denuncias = (data || []).map((d) => ({
             folio: d.folio,
             nombre: ciudadanoMap.get(d.ciudadano_id) || "Sin nombre",
             titulo: d.titulo || "",
             categoria: categoriaMap.get(d.categoria_publica_id) || "Sin categoría",
-            prioridad: d.prioridad || "No asignada",
+            prioridad_id: d.prioridad_id || "No asignada",
+            prioridad: d.prioridad_id ? (prioridadMap.get(d.prioridad_id) || "Sin prioridad") : "No asignada",
             fecha_creacion: d.fecha_creacion,
             ubicacion_texto: d.ubicacion_texto,
         }));

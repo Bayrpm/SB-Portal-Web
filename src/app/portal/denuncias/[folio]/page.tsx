@@ -24,9 +24,10 @@ const estadoColor: Record<string, string> = {
 };
 
 const prioridadColor: Record<string, string> = {
-  Alta: "bg-red-100 text-red-700 border border-red-200",
-  Media: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-  Baja: "bg-green-100 text-green-800 border border-green-200",
+  Baja: "bg-green-100 text-green-800 border border-green-200", // id 1
+  Media: "bg-yellow-200 text-yellow-900 border border-yellow-300", // id 2
+  Alta: "bg-orange-300 text-orange-900 border border-orange-400", // id 3
+  Urgencia: "bg-red-600 text-white border border-red-700", // id 4
 };
 
 export default function DenunciaDetallePage({
@@ -112,8 +113,8 @@ export default function DenunciaDetallePage({
             </span>
           </nav>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm rounded-xl overflow-hidden">
+        <div>
+          <table className="min-w-full text-sm rounded-xl">
             <tbody>
               <tr>
                 <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
@@ -208,7 +209,20 @@ export default function DenunciaDetallePage({
                 <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56">
                   Fecha Creación
                 </td>
-                <td className="py-3 px-5">{denuncia.fecha_creacion}</td>
+                <td className="py-3 px-5">
+                  {(() => {
+                    const date = new Date(denuncia.fecha_creacion);
+                    if (isNaN(date.getTime())) return denuncia.fecha_creacion;
+                    return date.toLocaleString("es-CL", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  })()}
+                </td>
               </tr>
             </tbody>
           </table>

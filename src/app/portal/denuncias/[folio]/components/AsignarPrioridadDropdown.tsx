@@ -13,6 +13,9 @@ export default function AsignarPrioridadDropdown({
   onAsignar,
 }: AsignarPrioridadDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [opciones, setOpciones] = useState<{ id: number; nombre: string }[]>(
+    []
+  );
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,13 +28,23 @@ export default function AsignarPrioridadDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  async function asignarPrioridad(prioridad: string) {
+  // Cargar opciones desde la API de prioridades
+  useEffect(() => {
+    fetch("/api/prioridades")
+      .then((res) => res.json())
+      .then((data) => setOpciones(data.prioridades || []));
+  }, []);
+
+  async function asignarPrioridad(
+    prioridadId: number,
+    prioridadNombre: string
+  ) {
     await fetch(`/api/denuncias/${folio}/prioridad`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prioridad }),
+      body: JSON.stringify({ prioridad_id: prioridadId }),
     });
-    onAsignar(prioridad);
+    onAsignar(prioridadNombre);
     setOpen(false);
   }
 
@@ -49,22 +62,23 @@ export default function AsignarPrioridadDropdown({
       </ButtonComponent>
       {open && (
         <ul
-          className="absolute left-0 z-50 mt-0.5 w-36 bg-white border border-gray-200 rounded-lg shadow-2xl py-1 animate-fade-in"
+          className="absolute left-0 mt-0.5 w-36 bg-white border border-gray-200 rounded-lg shadow-2xl py-1 animate-fade-in z-50"
           role="listbox"
         >
-          {["Baja", "Media", "Alta"].map((p) => (
+          {opciones.map((p) => (
             <li
-              key={p}
+              key={p.id}
               role="option"
               aria-selected={false}
               className="px-4 py-2 text-xs text-gray-800 cursor-pointer hover:bg-blue-50 transition-colors"
-              onClick={() => asignarPrioridad(p)}
+              onClick={() => asignarPrioridad(p.id, p.nombre)}
             >
-              {p}
+              {p.nombre}
             </li>
           ))}
         </ul>
       )}
     </div>
   );
+  //
 }
