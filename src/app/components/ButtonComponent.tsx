@@ -11,6 +11,7 @@ import {
   Eye,
   Download,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 
 type Accion =
@@ -24,7 +25,8 @@ type Accion =
   | "inspeccionar"
   | "descargar"
   | "cancelar"
-  | "ver";
+  | "ver"
+  | "volver";
 
 type Size = "sm" | "md" | "lg";
 
@@ -60,6 +62,7 @@ const BRAND = "#0085CA";
 const HEADER = "#0B4F9E";
 
 const classesByAccion: Record<Accion, string> = {
+  volver: `bg-white text-[#004F9E] border border-[#004F9E] hover:bg-blue-50 font-semibold`,
   primario: `bg-[${BRAND}] text-white hover:opacity-95`,
   secundario: "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50",
   fantasma: `bg-transparent text-[${BRAND}] hover:bg-blue-50`,
@@ -77,6 +80,7 @@ const classesByAccion: Record<Accion, string> = {
 };
 
 const iconByAccion: Record<Accion, React.ReactNode> = {
+  volver: <ArrowLeft className="h-4 w-4" />,
   primario: <ArrowRight className="h-4 w-4" />,
   secundario: null,
   fantasma: null,
@@ -98,6 +102,13 @@ const sizeClasses: Record<Size, string> = {
 
 // textos por acción (default)
 const defaultConfirmByAccion: Record<Accion, ConfirmOptions> = {
+  volver: {
+    title: "Volver",
+    text: "¿Deseas volver a la pantalla anterior?",
+    confirmButtonText: "Volver",
+    cancelButtonText: "Cancelar",
+    icon: "question",
+  },
   ver: {
     title: "Ver información",
     text: "Se mostrará la información detallada.",
@@ -179,6 +190,7 @@ const defaultConfirmByAccion: Record<Accion, ConfirmOptions> = {
 
 // colores SweetAlert por acción
 const confirmColorByAccion: Record<Accion, string> = {
+  volver: HEADER,
   ver: BRAND,
   eliminar: "#DC2626",
   actualizar: HEADER,

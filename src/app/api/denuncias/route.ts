@@ -12,6 +12,7 @@ export async function GET() {
             .select(`
         folio,
         ciudadano_id,
+        titulo,
         categoria_publica_id,
         prioridad,
         fecha_creacion,
@@ -52,6 +53,7 @@ export async function GET() {
         const denuncias = (data || []).map((d) => ({
             folio: d.folio,
             nombre: ciudadanoMap.get(d.ciudadano_id) || "Sin nombre",
+            titulo: d.titulo || "",
             categoria: categoriaMap.get(d.categoria_publica_id) || "Sin categoría",
             prioridad: d.prioridad || "No asignada",
             fecha_creacion: d.fecha_creacion,

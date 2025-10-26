@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 // import Link from "next/link";
 import Link from "next/link";
 import ButtonComponent from "@/app/components/ButtonComponent";
@@ -10,11 +11,11 @@ import SelectComponent from "@/app/components/SelectComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import DateRangePicker, { DateRange } from "@/app/components/DateRangePicker";
 import TableComponent from "@/app/components/TableComponent";
-import router from "next/router";
 
 type Denuncia = {
   folio: string;
   nombre: string;
+  titulo: string;
   categoria: string;
   prioridad: string;
   fecha_creacion: string;
@@ -37,6 +38,7 @@ const extractISODate = (s: string): string | null => {
 };
 
 export default function DenunciasPage() {
+  const router = useRouter();
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
   const [filteredDenuncias, setFilteredDenuncias] = useState<Denuncia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,8 +245,15 @@ export default function DenunciasPage() {
           {
             key: "nombre",
             header: "Nombre Ciudadano",
+            width: "15%",
+            sortable: true,
+          },
+          {
+            key: "titulo",
+            header: "Título",
             width: "18%",
             sortable: true,
+            render: (row) => <span>{row.titulo || ""}</span>,
           },
           {
             key: "categoria",
