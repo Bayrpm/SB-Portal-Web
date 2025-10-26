@@ -11,6 +11,7 @@ import {
   Eye,
   Download,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 
 type Accion =
@@ -23,7 +24,9 @@ type Accion =
   | "eliminar"
   | "inspeccionar"
   | "descargar"
-  | "cancelar";
+  | "cancelar"
+  | "ver"
+  | "volver";
 
 type Size = "sm" | "md" | "lg";
 
@@ -59,6 +62,7 @@ const BRAND = "#0085CA";
 const HEADER = "#0B4F9E";
 
 const classesByAccion: Record<Accion, string> = {
+  volver: `bg-white text-[#004F9E] border border-[#004F9E] hover:bg-blue-50 font-semibold`,
   primario: `bg-[${BRAND}] text-white hover:opacity-95`,
   secundario: "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50",
   fantasma: `bg-transparent text-[${BRAND}] hover:bg-blue-50`,
@@ -72,9 +76,11 @@ const classesByAccion: Record<Accion, string> = {
     "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100",
   cancelar:
     "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200",
+  ver: "bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200",
 };
 
 const iconByAccion: Record<Accion, React.ReactNode> = {
+  volver: <ArrowLeft className="h-4 w-4" />,
   primario: <ArrowRight className="h-4 w-4" />,
   secundario: null,
   fantasma: null,
@@ -85,6 +91,7 @@ const iconByAccion: Record<Accion, React.ReactNode> = {
   inspeccionar: <Eye className="h-4 w-4" />,
   descargar: <Download className="h-4 w-4" />,
   cancelar: null,
+  ver: <Eye className="h-4 w-4" />,
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -95,6 +102,20 @@ const sizeClasses: Record<Size, string> = {
 
 // textos por acción (default)
 const defaultConfirmByAccion: Record<Accion, ConfirmOptions> = {
+  volver: {
+    title: "Volver",
+    text: "¿Deseas volver a la pantalla anterior?",
+    confirmButtonText: "Volver",
+    cancelButtonText: "Cancelar",
+    icon: "question",
+  },
+  ver: {
+    title: "Ver información",
+    text: "Se mostrará la información detallada.",
+    confirmButtonText: "Ver",
+    cancelButtonText: "Cancelar",
+    icon: "info",
+  },
   agregar: {
     title: "¿Agregar registro?",
     text: "Se creará un nuevo elemento con los datos ingresados.",
@@ -169,6 +190,8 @@ const defaultConfirmByAccion: Record<Accion, ConfirmOptions> = {
 
 // colores SweetAlert por acción
 const confirmColorByAccion: Record<Accion, string> = {
+  volver: HEADER,
+  ver: BRAND,
   eliminar: "#DC2626",
   actualizar: HEADER,
   agregar: BRAND,
