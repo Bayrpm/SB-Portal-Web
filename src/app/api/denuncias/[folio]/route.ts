@@ -32,10 +32,10 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
     if (denuncia.estado_id) {
         const { data: estado } = await supabase
             .from('estados_denuncia')
-            .select('codigo')
+            .select('nombre')
             .eq('id', denuncia.estado_id)
             .single();
-        estadoNombre = estado?.codigo || '';
+        estadoNombre = estado?.nombre || '';
     }
 
     // Buscar el nombre de la prioridad usando prioridad_id
