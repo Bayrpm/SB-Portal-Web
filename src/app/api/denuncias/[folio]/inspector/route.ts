@@ -1,27 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET() {
-    try {
-        const supabase = await createClient();
-        const { data, error } = await supabase
-            .from("prioridades_denuncia")
-            .select("id, nombre, orden")
-            .order("orden", { ascending: true });
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ prioridades: data });
-    } catch (error) {
-        return NextResponse.json({ error: error instanceof Error ? error.message : "Error inesperado" }, { status: 500 });
-    }
-}
-
 export async function POST(request: Request, context: { params: Promise<{ folio: string }> }) {
     try {
-        const { prioridad_id } = await request.json();
-        if (!prioridad_id) {
-            return NextResponse.json({ error: "prioridad_id es requerido" }, { status: 400 });
+        const { inspector_id } = await request.json();
+        if (!inspector_id) {
+            return NextResponse.json({ error: "inspector_id es requerido" }, { status: 400 });
         }
         const { folio } = await context.params;
         if (!folio) {
@@ -30,7 +14,7 @@ export async function POST(request: Request, context: { params: Promise<{ folio:
         const supabase = await createClient();
         const { error } = await supabase
             .from("denuncias")
-            .update({ prioridad_id })
+            .update({ inspector_id })
             .eq("folio", folio);
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

@@ -109,6 +109,7 @@ Este documento proporciona información esencial para trabajar eficientemente co
 1. **API y BFF**:
 
    - Usar `/api` para crear nuevos endpoints
+   - Las carpetas dentro de `/api` siempre deben estar en inglés (por ejemplo: `/api/inspectors`, `/api/categories`, `/api/priorities`).
    - Validar siempre autenticación y autorización
    - Para operaciones con el rol de servicio, usar `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -126,6 +127,22 @@ Este documento proporciona información esencial para trabajar eficientemente co
    1. Primero crear/actualizar endpoints en `/api`
    2. Implementar componentes de UI en la sección correspondiente
    3. Conectar ambos usando UserContext cuando sea necesario
+
+## Notas para Next.js 15+ y React 19
+
+### Acceso a params en Componentes Cliente
+
+- En Next.js 15+ los parámetros de ruta (`params`) en componentes cliente son una promesa y deben ser accedidos usando `React.use(params)`.
+- Ejemplo correcto:
+
+  ```tsx
+  export default function MiComponente({ params }: { params: any }) {
+    const { folio } = React.use(params);
+    // ...
+  }
+  ```
+
+- No accedas directamente a `params.folio`, ya que esto generará un warning y en futuras versiones será un error.
 
 ## Dependencias Principales
 

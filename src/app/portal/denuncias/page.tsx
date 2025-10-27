@@ -58,8 +58,12 @@ export default function DenunciasPage() {
     start: undefined,
     end: undefined,
   });
-  const [categorias, setCategorias] = useState<string[]>([]);
-  const [prioridades, setPrioridades] = useState<string[]>([]);
+  const [categorias, setCategorias] = useState<
+    { id: number; nombre: string }[]
+  >([]);
+  const [prioridades, setPrioridades] = useState<
+    { id: number; nombre: string; orden: number }[]
+  >([]);
 
   useEffect(() => {
     setLoading(true);
@@ -68,20 +72,6 @@ export default function DenunciasPage() {
       .then((data) => {
         setDenuncias(data.denuncias || []);
         setFilteredDenuncias(data.denuncias || []);
-        setCategorias(
-          Array.from(
-            new Set(
-              (data.denuncias || []).map((d: Denuncia) => String(d.categoria))
-            )
-          )
-        );
-        setPrioridades(
-          Array.from(
-            new Set(
-              (data.denuncias || []).map((d: Denuncia) => String(d.prioridad))
-            )
-          )
-        );
         setLoading(false);
       })
       .catch((error) => {
@@ -90,28 +80,49 @@ export default function DenunciasPage() {
       });
   }, []);
 
-  // Filtros (texto, estado, categoría, fecha)
+  // Nuevo: cargar categorías desde el endpoint dinámico
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        setCategorias(data.categorias || []);
+      })
+      .catch(() => setCategorias([]));
+  }, []);
 
+  // Nuevo: cargar prioridades desde el endpoint dinámico
+  useEffect(() => {
+    fetch("/api/denuncias/demo/prioridad")
+      .then((res) => res.json())
+      .then((data) => {
+        setPrioridades(data.prioridades || []);
+      })
+      .catch(() => setPrioridades([]));
+  }, []);
+
+  // Filtros (texto, prioridad, categoría, fecha) y ordenamiento
   useEffect(() => {
     let result = denuncias;
-    // Texto
+    // Filtro de texto (folio, nombre, título, ubicación)
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       result = result.filter(
         (d) =>
           d.folio.toLowerCase().includes(q) ||
-          d.nombre.toLowerCase().includes(q)
+          d.nombre.toLowerCase().includes(q) ||
+          d.titulo.toLowerCase().includes(q) ||
+          (d.ubicacion_texto || "").toLowerCase().includes(q)
       );
     }
-    // Categoría
-    if (categoriaFilter) {
-      result = result.filter((d) => d.categoria === categoriaFilter);
-    }
-    // Prioridad
+    // Filtro de prioridad
     if (prioridadFilter) {
       result = result.filter((d) => d.prioridad === prioridadFilter);
     }
-    // 📅 Rango de fechas
+    // Filtro de categoría
+    if (categoriaFilter) {
+      result = result.filter((d) => d.categoria === categoriaFilter);
+    }
+    // Filtro de rango de fechas
     if (fecha.start && fecha.end) {
       const s = fecha.start;
       const e = fecha.end;
@@ -121,9 +132,29 @@ export default function DenunciasPage() {
         return iso >= s && iso <= e;
       });
     }
+    // Ordenamiento
+    if (sort.key === "folio") {
+      result = [...result].sort((a, b) => {
+        if (sort.dir === "asc") {
+          return a.folio.localeCompare(b.folio);
+        } else {
+          return b.folio.localeCompare(a.folio);
+        }
+      });
+    } else if (sort.key === "fecha_creacion") {
+      result = [...result].sort((a, b) => {
+        const dateA = new Date(a.fecha_creacion).getTime();
+        const dateB = new Date(b.fecha_creacion).getTime();
+        if (sort.dir === "asc") {
+          return dateA - dateB;
+        } else {
+          return dateB - dateA;
+        }
+      });
+    }
     setFilteredDenuncias(result);
     setCurrentPage(1);
-  }, [searchTerm, categoriaFilter, prioridadFilter, fecha, denuncias]);
+  }, [searchTerm, prioridadFilter, categoriaFilter, fecha, denuncias, sort]);
 
   // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -189,9 +220,9 @@ export default function DenunciasPage() {
             size="sm"
           >
             <option value="">Todas las prioridades</option>
-            {prioridades.map((prioridad) => (
-              <option key={prioridad} value={prioridad}>
-                {prioridad}
+            {prioridades.map((p) => (
+              <option key={p.id} value={p.nombre}>
+                {p.nombre}
               </option>
             ))}
           </SelectComponent>
@@ -207,9 +238,9 @@ export default function DenunciasPage() {
             size="sm"
           >
             <option value="">Todas las categorías</option>
-            {Array.from(new Set(categorias)).map((categoria) => (
-              <option key={categoria} value={categoria}>
-                {categoria}
+            {categorias.map((c) => (
+              <option key={c.id} value={c.nombre}>
+                {c.nombre}
               </option>
             ))}
           </SelectComponent>
@@ -291,18 +322,18 @@ export default function DenunciasPage() {
             width: "15%",
             sortable: true,
             render: (row) => {
-              // Soporta ISO y otros formatos
               const date = row.fecha_creacion
                 ? new Date(row.fecha_creacion)
                 : null;
-              let formatted = row.fecha_creacion;
               if (date && !isNaN(date.getTime())) {
                 const dd = String(date.getDate()).padStart(2, "0");
                 const mm = String(date.getMonth() + 1).padStart(2, "0");
                 const yyyy = date.getFullYear();
-                formatted = `${dd}-${mm}-${yyyy}`;
+                const hh = String(date.getHours()).padStart(2, "0");
+                const min = String(date.getMinutes()).padStart(2, "0");
+                return <span>{`${dd}-${mm}-${yyyy} ${hh}:${min}`}</span>;
               }
-              return <span>{formatted}</span>;
+              return <span>{row.fecha_creacion}</span>;
             },
           },
           {

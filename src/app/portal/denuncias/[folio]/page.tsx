@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import { useRouter } from "next/navigation";
 import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
+import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
+import { Pencil } from "lucide-react";
 
 interface DenunciaDetalle {
   folio: string;
@@ -36,19 +38,22 @@ export default function DenunciaDetallePage({
   params: { folio: string };
 }) {
   const router = useRouter();
+  const { folio } = params;
   const [denuncia, setDenuncia] = useState<DenunciaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editandoPrioridad, setEditandoPrioridad] = useState(false);
+  const [editandoInspector, setEditandoInspector] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/denuncias/${params.folio}`)
+    fetch(`/api/denuncias/${folio}`)
       .then((res) => res.json())
       .then((data) => {
         setDenuncia(data.denuncia);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [params.folio]);
+  }, [folio]);
 
   if (!denuncia && !loading) {
     // Show friendly 404 message if denuncia not found
@@ -89,11 +94,6 @@ export default function DenunciaDetallePage({
             {denuncia.folio}
           </h1>
           <p className="text-gray-500 text-sm">Detalle de la denuncia</p>
-        </div>
-        <div className="ml-auto">
-          <button className="bg-[#004F9E] text-white px-5 py-2 rounded-full font-medium shadow hover:bg-blue-900 transition flex items-center gap-2">
-            <span className="inline-block">⚡</span> Asignar Inspector
-          </button>
         </div>
       </div>
       <div className="bg-white rounded-xl shadow p-6 mt-2">
@@ -168,16 +168,40 @@ export default function DenunciaDetallePage({
                   Inspector Asignado
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
-                  {denuncia.inspector_asignado ? (
-                    denuncia.inspector_asignado
+                  {denuncia.inspector_asignado && !editandoInspector ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block px-3 py-1 rounded text-xs font-semibold border bg-blue-50 text-blue-900 border-blue-200">
+                        {denuncia.inspector_asignado}
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-1 bg-blue-100 hover:bg-blue-200 text-blue-700 p-1 rounded-full focus:outline-none border border-blue-200 shadow-sm transition"
+                        onClick={() => setEditandoInspector(true)}
+                        title="Editar inspector"
+                        aria-label="Editar inspector"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </span>
                   ) : (
-                    <ButtonComponent
-                      accion="fantasma"
-                      size="sm"
-                      className="!px-2 !py-1 text-xs"
-                    >
-                      Asignar un inspector
-                    </ButtonComponent>
+                    <span className="flex items-center gap-2">
+                      <AsignarInspectorDropdown
+                        folio={denuncia.folio}
+                        onAsignar={(nombre: string) => {
+                          setDenuncia((d) =>
+                            d ? { ...d, inspector_asignado: nombre } : d
+                          );
+                          setEditandoInspector(false);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="ml-2 text-gray-500 hover:text-gray-700 text-xs underline"
+                        onClick={() => setEditandoInspector(false)}
+                      >
+                        Cancelar
+                      </button>
+                    </span>
                   )}
                 </td>
               </tr>
@@ -186,22 +210,43 @@ export default function DenunciaDetallePage({
                   Prioridad
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
-                  {denuncia.prioridad ? (
-                    <span
-                      className={`inline-block px-3 py-1 rounded text-xs font-semibold border ${
-                        prioridadColor[denuncia.prioridad] ||
-                        "bg-gray-100 text-gray-700 border border-gray-200"
-                      }`}
-                    >
-                      {denuncia.prioridad}
+                  {denuncia.prioridad && !editandoPrioridad ? (
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={`inline-block px-3 py-1 rounded text-xs font-semibold border ${
+                          prioridadColor[denuncia.prioridad] ||
+                          "bg-gray-100 text-gray-700 border border-gray-200"
+                        }`}
+                      >
+                        {denuncia.prioridad}
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-1 bg-blue-100 hover:bg-blue-200 text-blue-700 p-1 rounded-full focus:outline-none border border-blue-200 shadow-sm transition"
+                        onClick={() => setEditandoPrioridad(true)}
+                        title="Editar prioridad"
+                        aria-label="Editar prioridad"
+                      >
+                        <Pencil size={16} />
+                      </button>
                     </span>
                   ) : (
-                    <AsignarPrioridadDropdown
-                      folio={denuncia.folio}
-                      onAsignar={(p: string) =>
-                        setDenuncia((d) => (d ? { ...d, prioridad: p } : d))
-                      }
-                    />
+                    <span className="flex items-center gap-2">
+                      <AsignarPrioridadDropdown
+                        folio={denuncia.folio}
+                        onAsignar={(p: string) => {
+                          setDenuncia((d) => (d ? { ...d, prioridad: p } : d));
+                          setEditandoPrioridad(false);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="ml-2 text-gray-500 hover:text-gray-700 text-xs underline"
+                        onClick={() => setEditandoPrioridad(false)}
+                      >
+                        Cancelar
+                      </button>
+                    </span>
                   )}
                 </td>
               </tr>
