@@ -64,7 +64,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         prioridadNombre = prioridad?.nombre || '';
     }
 
-    // Devolver la denuncia con el nombre de la categoría, estado, prioridad, ciudadano y teléfono
+    // Devolver la denuncia con el nombre de la categoría, estado, prioridad y datos del ciudadano
     return NextResponse.json({
         denuncia: {
             ...denuncia,
