@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { formatFullName } from '@/lib/utils/formatName';
 
 
 export async function GET(_req: Request, context: { params: Promise<{ folio: string }> }) {
@@ -26,7 +27,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
             .eq('usuario_id', denuncia.ciudadano_id)
             .single();
         if (ciudadano) {
-            ciudadanoNombre = `${ciudadano.nombre || ''} ${ciudadano.apellido || ''}`.trim();
+            ciudadanoNombre = formatFullName(ciudadano.nombre, ciudadano.apellido);
             ciudadanoTelefono = ciudadano.telefono || '';
         }
     }
