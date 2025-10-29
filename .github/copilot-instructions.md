@@ -154,7 +154,9 @@ Este documento proporciona información esencial para trabajar eficientemente co
 
 ## Testing
 
-Actualmente el proyecto no tiene infraestructura de testing configurada. Si se necesita agregar tests:
+**Estado actual**: El proyecto no tiene infraestructura de testing configurada actualmente. No hay carpetas de tests ni configuración de testing frameworks.
+
+**Recomendaciones para implementación futura**:
 - Considera usar Jest + React Testing Library para pruebas unitarias e integración
 - Para pruebas E2E, Playwright es una buena opción (ya compatible con Next.js 15)
 - Los tests deben colocarse en una carpeta `__tests__` junto al código que prueban o en una carpeta `/tests` en la raíz
@@ -230,7 +232,7 @@ El proyecto usa ESLint con la configuración de Next.js:
 **Solución**: Ejecutar `npm install` para instalar dependencias
 
 ### Error: Variables de entorno no definidas
-**Solución**: Crear archivo `.env.local` en la raíz con las variables necesarias (solicitar valores en Teams)
+**Solución**: Crear archivo `.env.local` en la raíz con las variables necesarias. Contactar a los mantenedores del proyecto o consultar la documentación interna para obtener los valores correctos.
 
 ### Error: Puerto 3000 ocupado
 **Solución**: Detener otros procesos en el puerto o cambiar el puerto con `PORT=3001 npm run dev`
