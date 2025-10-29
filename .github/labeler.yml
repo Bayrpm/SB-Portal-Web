@@ -1,0 +1,155 @@
+# Configuration for the GitHub Labeler action
+# This file defines which labels are automatically applied to pull requests
+# based on the files that are changed.
+
+# Documentation changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.md', 'docs/**/*']
+
+# Web development (general web changes)
+web:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/app/**/*'
+      - 'src/lib/**/*'
+      - 'src/context/**/*'
+      - '**/*.tsx'
+      - '**/*.jsx'
+      - '**/*.css'
+
+# API changes (backend/BFF)
+api:
+  - changed-files:
+    - any-glob-to-any-file: ['src/app/api/**/*']
+
+# Component changes
+components:
+  - changed-files:
+    - any-glob-to-any-file: ['src/app/components/**/*', 'src/app/portal/**/components/**/*']
+
+# Dashboard changes
+dashboard:
+  - changed-files:
+    - any-glob-to-any-file: ['src/app/portal/dashboard/**/*']
+
+# Denuncias (complaints) module
+denuncias:
+  - changed-files:
+    - any-glob-to-any-file: ['src/app/portal/denuncias/**/*', 'src/app/api/denuncias/**/*']
+
+# Usuarios (users) module
+usuarios:
+  - changed-files:
+    - any-glob-to-any-file: ['src/app/portal/usuarios/**/*', 'src/app/api/users/**/*']
+
+# Inspector module
+inspector:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/app/portal/catalogos/inspectores/**/*'
+      - 'src/app/api/inspectors/**/*'
+      - 'src/app/portal/derivaciones/**/*'
+
+# Admin module
+admin:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/app/portal/catalogos/**/*'
+      - 'src/app/api/roles/**/*'
+      - 'src/app/api/employees/**/*'
+
+# Design changes (styles, CSS, UI)
+design:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.css'
+      - '**/globals.css'
+      - 'tailwind.config.js'
+      - 'postcss.config.mjs'
+
+# Configuration changes
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.config.*'
+      - '*.json'
+      - '.env*'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+      - '.github/**/*'
+      - 'tsconfig.json'
+      - 'eslint.config.mjs'
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['package.json', 'package-lock.json']
+
+# GitHub workflows
+workflows:
+  - changed-files:
+    - any-glob-to-any-file: ['.github/workflows/**/*']
+
+# Tests (if present)
+testing:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.test.*'
+      - '**/*.spec.*'
+      - '**/test/**/*'
+      - '**/tests/**/*'
+      - '**/__tests__/**/*'
+
+# Bug fixes (based on branch name or PR title - requires manual labeling or PR title detection)
+# Note: File-based labeling cannot detect bugs automatically
+# Consider using PR title patterns with additional GitHub Actions
+
+# Security changes
+security:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/lib/security/**/*'
+      - '.github/workflows/eslint.yml'
+
+# Database/Supabase changes
+database:
+  - changed-files:
+    - any-glob-to-any-file: ['src/lib/supabase/**/*']
+
+# Email related changes
+email:
+  - changed-files:
+    - any-glob-to-any-file: ['src/lib/emails/**/*']
+
+# Excel export functionality
+excel:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/lib/excel/**/*'
+      - 'src/app/api/export-excel/**/*'
+
+# =============================================================================
+# LABELS THAT REQUIRE MANUAL APPLICATION
+# =============================================================================
+# The following labels from labels.json cannot be automatically applied
+# based on file paths and must be manually added:
+#
+# - bug: Apply manually when fixing bugs
+# - enhancement: Apply manually for improvements to existing features
+# - feature: Apply manually for new features
+# - help wanted: Apply manually when help is needed
+# - question: Apply manually for questions or discussions
+# - in progress: Apply manually to track work in progress
+# - ready for review: Apply manually when PR is ready for review
+# - needs testing: Apply manually when testing is required
+# - blocked: Apply manually when PR is blocked
+# - wontfix: Apply manually for issues that won't be fixed
+# - duplicate: Apply manually for duplicate PRs/issues
+# - móvil: Apply manually for mobile app related changes (different repository)
+# - ciudadano: Apply manually for citizen-facing features
+# - municipio: Apply manually for municipality-specific features
+#
+# These labels are contextual and depend on the nature of the change,
+# not just the files modified.
+
