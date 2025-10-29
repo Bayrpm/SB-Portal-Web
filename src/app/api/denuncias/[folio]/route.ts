@@ -5,10 +5,17 @@ import { NextResponse } from 'next/server';
 export async function GET(_req: Request, context: { params: Promise<{ folio: string }> }) {
     const params = await context.params;
     const supabase = await createClient();
-    // Obtener la denuncia
+    
+    // Obtener la denuncia con todos los datos relacionados en una sola consulta usando joins
     const { data: denuncia, error } = await supabase
         .from('denuncias')
-        .select('*')
+        .select(`
+            *,
+            perfiles_ciudadanos!denuncias_ciudadano_id_fkey(nombre, apellido, telefono),
+            categorias_publicas!denuncias_categoria_publica_id_fkey(nombre),
+            estados_denuncia!denuncias_estado_id_fkey(nombre),
+            prioridades_denuncia!denuncias_prioridad_id_fkey(nombre)
+        `)
         .eq('folio', params.folio)
         .single();
 
@@ -16,58 +23,25 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
     }
 
-    // Buscar información del ciudadano usando ciudadano_id
-    let ciudadanoNombre = '';
-    let ciudadanoTelefono = '';
-    if (denuncia.ciudadano_id) {
-        const { data: ciudadano } = await supabase
-            .from('perfiles_ciudadanos')
-            .select('nombre, apellido, telefono')
-            .eq('usuario_id', denuncia.ciudadano_id)
-            .single();
-        if (ciudadano) {
-            ciudadanoNombre = `${ciudadano.nombre || ''} ${ciudadano.apellido || ''}`.trim();
-            ciudadanoTelefono = ciudadano.telefono || '';
-        }
-    }
+    // Extraer y formatear los datos relacionados
+    const ciudadano = denuncia.perfiles_ciudadanos;
+    const ciudadanoNombre = ciudadano 
+        ? `${ciudadano.nombre || ''} ${ciudadano.apellido || ''}`.trim() 
+        : '';
+    const ciudadanoTelefono = ciudadano?.telefono || '';
+    
+    const categoriaNombre = denuncia.categorias_publicas?.nombre || '';
+    const estadoNombre = denuncia.estados_denuncia?.nombre || '';
+    const prioridadNombre = denuncia.prioridades_denuncia?.nombre || '';
 
-    // Buscar la categoría usando categoria_publica_id
-    let categoriaNombre = '';
-    if (denuncia.categoria_publica_id) {
-        const { data: categoria } = await supabase
-            .from('categorias_publicas')
-            .select('nombre')
-            .eq('id', denuncia.categoria_publica_id)
-            .single();
-        categoriaNombre = categoria?.nombre || '';
-    }
+    // Devolver la denuncia con los datos relacionados formateados
+    // Omitir las propiedades de relaciones anidadas de la respuesta
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { perfiles_ciudadanos, categorias_publicas, estados_denuncia, prioridades_denuncia, ...denunciaData } = denuncia;
 
-    // Buscar el estado usando estado_id
-    let estadoNombre = '';
-    if (denuncia.estado_id) {
-        const { data: estado } = await supabase
-            .from('estados_denuncia')
-            .select('nombre')
-            .eq('id', denuncia.estado_id)
-            .single();
-        estadoNombre = estado?.nombre || '';
-    }
-
-    // Buscar el nombre de la prioridad usando prioridad_id
-    let prioridadNombre = '';
-    if (denuncia.prioridad_id) {
-        const { data: prioridad } = await supabase
-            .from('prioridades_denuncia')
-            .select('nombre')
-            .eq('id', denuncia.prioridad_id)
-            .single();
-        prioridadNombre = prioridad?.nombre || '';
-    }
-
-    // Devolver la denuncia con el nombre de la categoría, estado, prioridad y datos del ciudadano
     return NextResponse.json({
         denuncia: {
-            ...denuncia,
+            ...denunciaData,
             categoria: categoriaNombre,
             estado: estadoNombre,
             prioridad: prioridadNombre,
