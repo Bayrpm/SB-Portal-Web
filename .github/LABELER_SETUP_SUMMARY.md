@@ -71,34 +71,59 @@ gh label list  # Ver etiquetas existentes
 ### 3. Configuraciones Adicionales Opcionales
 
 #### A. Auto-assign Reviewers
-Crear `.github/auto_assign.yml` para asignar revisores automáticamente:
+Usar CODEOWNERS o un workflow adicional para asignar revisores automáticamente.
 
+**Opción 1: Archivo CODEOWNERS** (recomendado)
+```
+# .github/CODEOWNERS
+# Archivos API
+/src/app/api/** @usuario1 @usuario2
+
+# Componentes
+/src/app/components/** @usuario-frontend
+```
+
+**Opción 2: Workflow con auto-assign action**
 ```yaml
-# Número de revisores a asignar
-numberOfReviewers: 2
-
-# Lista de revisores
-reviewers:
-  - usuario1
-  - usuario2
+# .github/workflows/auto-assign.yml
+name: Auto Assign
+on:
+  pull_request:
+    types: [opened, reopened]
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: kentaro-m/auto-assign-action@v1.2.5
+        with:
+          configuration-path: '.github/auto-assign-config.yml'
 ```
 
 #### B. PR Size Labeler
-Agregar etiquetas basadas en el tamaño del PR (opcional):
+Agregar etiquetas basadas en el tamaño del PR usando un workflow adicional:
 
 ```yaml
-# En labeler.yml
-size/XS:
-  - changed-files:
-    - any-glob-to-any-file: ['*']
-      count:
-        lte: 10
-
-size/S:
-  - changed-files:
-    - any-glob-to-any-file: ['*']
-      count:
-        range: [11, 50]
+# .github/workflows/size-label.yml
+name: PR Size Label
+on:
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  size-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/XS'
+          xs_max_size: '10'
+          s_label: 'size/S'
+          s_max_size: '100'
+          m_label: 'size/M'
+          m_max_size: '500'
+          l_label: 'size/L'
+          l_max_size: '1000'
+          xl_label: 'size/XL'
 ```
 
 #### C. Branch Name Labeler
@@ -114,12 +139,31 @@ on:
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
-      - name: Add label based on branch
+      - name: Add feature label
         if: startsWith(github.head_ref, 'feature/')
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "feature"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['feature']
+            })
+      - name: Add bugfix label
+        if: startsWith(github.head_ref, 'fix/') || startsWith(github.head_ref, 'bugfix/')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bug']
+            })
 ```
 
 #### D. Issue Templates con Labels
@@ -171,9 +215,10 @@ Una vez en producción, puedes:
 
 ## 🔒 Consideraciones de Seguridad
 
-- ✅ El workflow usa `pull_request` en lugar de `pull_request_target` para mayor seguridad
-- ✅ Solo tiene permisos de lectura/escritura mínimos necesarios
+- ✅ El workflow usa `pull_request` que es seguro para la mayoría de casos
+- ✅ Solo tiene permisos de lectura/escritura mínimos necesarios (contents: read, pull-requests: write)
 - ✅ No ejecuta código arbitrario del PR
+- ℹ️ Si necesitas trabajar con forks externos, considera `pull_request_target` con precauciones adicionales
 
 ## 📝 Mantenimiento
 
