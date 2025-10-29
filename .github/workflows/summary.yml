@@ -1,11 +1,15 @@
-name: Summarize new issues
+name: Summarize new issues and pull requests
 
 on:
   issues:
     types: [opened]
+  pull_request:
+    types: [opened]
+    branches: [ "main", "develop" ]
 
 jobs:
-  summary:
+  summary-issue:
+    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -16,19 +20,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run AI inference
+      - name: Run AI inference for issue
         id: inference
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            Summarize the following GitHub issue in one paragraph:
-            Title: ${{ github.event.issue.title }}
-            Body: ${{ github.event.issue.body }}
+            Resume el siguiente issue de GitHub en un párrafo, en español:
+            Título: ${{ github.event.issue.title }}
+            Contenido: ${{ github.event.issue.body }}
 
       - name: Comment with AI summary
         run: |
-          gh issue comment $ISSUE_NUMBER --body '${{ steps.inference.outputs.response }}'
+          gh issue comment $ISSUE_NUMBER --body "## 🤖 Resumen Automático
+
+          ${{ steps.inference.outputs.response }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          RESPONSE: ${{ steps.inference.outputs.response }}
+
+  summary-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      models: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run AI inference for PR
+        id: inference
+        uses: actions/ai-inference@v1
+        with:
+          prompt: |
+            Resume el siguiente Pull Request de GitHub en un párrafo, en español:
+            Título: ${{ github.event.pull_request.title }}
+            Descripción: ${{ github.event.pull_request.body }}
+
+      - name: Comment with AI summary
+        run: |
+          gh pr comment $PR_NUMBER --body "## 🤖 Resumen Automático
+
+          ${{ steps.inference.outputs.response }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

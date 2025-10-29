@@ -7,21 +7,40 @@ name: Mark stale issues and pull requests
 
 on:
   schedule:
-  - cron: '19 9 * * *'
+    - cron: '19 9 * * *'
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
 
 jobs:
   stale:
-
     runs-on: ubuntu-latest
     permissions:
       issues: write
       pull-requests: write
 
     steps:
-    - uses: actions/stale@v5
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale pull request message'
-        stale-issue-label: 'no-issue-activity'
-        stale-pr-label: 'no-pr-activity'
+      - uses: actions/stale@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-message: |
+            Este issue ha estado inactivo durante 30 días y será marcado como obsoleto. 
+            Si aún es relevante, por favor comenta para mantenerlo activo.
+            De lo contrario, será cerrado automáticamente en 7 días.
+          stale-pr-message: |
+            Este Pull Request ha estado inactivo durante 30 días y será marcado como obsoleto.
+            Si aún está en desarrollo o necesita revisión, por favor comenta o actualiza el PR.
+            De lo contrario, será cerrado automáticamente en 7 días.
+          close-issue-message: |
+            Este issue ha sido cerrado automáticamente debido a la inactividad.
+            Si necesitas reactivarlo, puedes reabrirlo y comentar con más detalles.
+          close-pr-message: |
+            Este Pull Request ha sido cerrado automáticamente debido a la inactividad.
+            Si aún es necesario, puedes reabrirlo y actualizarlo.
+          stale-issue-label: 'no-issue-activity'
+          stale-pr-label: 'no-pr-activity'
+          exempt-issue-labels: 'pinned,security,in progress'
+          exempt-pr-labels: 'pinned,security,in progress,ready for review'
+          operations-per-run: 30
