@@ -17,6 +17,8 @@ interface DenunciaDetalle {
   inspector_asignado: string;
   prioridad: string;
   fecha_creacion: string;
+  ciudadano_nombre: string;
+  ciudadano_telefono: string;
 }
 
 const estadoColor: Record<string, string> = {
@@ -122,6 +124,22 @@ export default function DenunciaDetallePage({
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
                   {denuncia.titulo}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
+                  Nombre Ciudadano
+                </td>
+                <td className="py-3 px-5 border-b border-gray-100">
+                  {denuncia.ciudadano_nombre || "Sin nombre"}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
+                  Teléfono
+                </td>
+                <td className="py-3 px-5 border-b border-gray-100">
+                  {denuncia.ciudadano_telefono || "Sin teléfono"}
                 </td>
               </tr>
               <tr>

@@ -16,6 +16,21 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
     }
 
+    // Buscar información del ciudadano usando ciudadano_id
+    let ciudadanoNombre = '';
+    let ciudadanoTelefono = '';
+    if (denuncia.ciudadano_id) {
+        const { data: ciudadano } = await supabase
+            .from('perfiles_ciudadanos')
+            .select('nombre, apellido, telefono')
+            .eq('usuario_id', denuncia.ciudadano_id)
+            .single();
+        if (ciudadano) {
+            ciudadanoNombre = `${ciudadano.nombre || ''} ${ciudadano.apellido || ''}`.trim();
+            ciudadanoTelefono = ciudadano.telefono || '';
+        }
+    }
+
     // Buscar la categoría usando categoria_publica_id
     let categoriaNombre = '';
     if (denuncia.categoria_publica_id) {
@@ -49,13 +64,15 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         prioridadNombre = prioridad?.nombre || '';
     }
 
-    // Devolver la denuncia con el nombre de la categoría, estado y prioridad
+    // Devolver la denuncia con el nombre de la categoría, estado, prioridad y datos del ciudadano
     return NextResponse.json({
         denuncia: {
             ...denuncia,
             categoria: categoriaNombre,
             estado: estadoNombre,
             prioridad: prioridadNombre,
+            ciudadano_nombre: ciudadanoNombre,
+            ciudadano_telefono: ciudadanoTelefono,
         },
     });
 }
