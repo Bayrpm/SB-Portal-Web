@@ -18,6 +18,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import MiddlewareAuthChecker from "@/app/components/MiddlewareAuthChecker";
 
 export default function PortalLayout({
   children,
@@ -50,14 +51,53 @@ export default function PortalLayout({
     }
   };
 
-  const navItems = [
-    { href: "/portal/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/portal/denuncias", icon: FileText, label: "Denuncias" },
-    { href: "/portal/derivaciones", icon: Share2, label: "Derivaciones" },
-    { href: "/portal/mapa", icon: MapPin, label: "Mapa" },
-    { href: "/portal/usuarios", icon: Users, label: "Usuarios" },
-    { href: "/portal/auditoria", icon: ShieldCheck, label: "Auditoría" },
+  // Definir items de navegación con roles permitidos
+  const allNavItems = [
+    {
+      href: "/portal/dashboard",
+      icon: Home,
+      label: "Dashboard",
+      allowedRoles: [1], // Solo admin
+    },
+    {
+      href: "/portal/denuncias",
+      icon: FileText,
+      label: "Denuncias",
+      allowedRoles: [1, 2], // Admin y operador
+    },
+    {
+      href: "/portal/derivaciones",
+      icon: Share2,
+      label: "Derivaciones",
+      allowedRoles: [1, 2], // Admin y operador
+    },
+    {
+      href: "/portal/mapa",
+      icon: MapPin,
+      label: "Mapa",
+      allowedRoles: [1, 2], // Admin y operador
+    },
+    {
+      href: "/portal/usuarios",
+      icon: Users,
+      label: "Usuarios",
+      allowedRoles: [1], // Solo admin
+    },
+    {
+      href: "/portal/auditoria",
+      icon: ShieldCheck,
+      label: "Auditoría",
+      allowedRoles: [1], // Solo admin
+    },
   ];
+
+  // Filtrar items de navegación según el rol del usuario
+  const navItems = allNavItems.filter((item) =>
+    role ? item.allowedRoles.includes(role) : false
+  );
+
+  // Determinar si se debe mostrar el menú de catálogos (solo para admin)
+  const showCatalogMenu = role === 1;
 
   return (
     <div className="min-h-screen bg-gray-200">
@@ -101,43 +141,45 @@ export default function PortalLayout({
                 );
               })}
 
-              {/* Dropdown Catálogos */}
-              <div className="relative">
-                <button
-                  onClick={() => setCatalogOpen(!catalogOpen)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                    pathname.startsWith("/portal/catalogos")
-                      ? "bg-white/20 text-white font-medium"
-                      : "text-white/90 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <Settings size={18} />
-                  <span className="text-sm">Catálogos</span>
-                  <ChevronDown
-                    size={16}
-                    className={`transition-transform ${
-                      catalogOpen ? "rotate-180" : ""
+              {/* Dropdown Catálogos - Solo para admin */}
+              {showCatalogMenu && (
+                <div className="relative">
+                  <button
+                    onClick={() => setCatalogOpen(!catalogOpen)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                      pathname.startsWith("/portal/catalogos")
+                        ? "bg-white/20 text-white font-medium"
+                        : "text-white/90 hover:bg-white/10 hover:text-white"
                     }`}
-                  />
-                </button>
+                  >
+                    <Settings size={18} />
+                    <span className="text-sm">Catálogos</span>
+                    <ChevronDown
+                      size={16}
+                      className={`transition-transform ${
+                        catalogOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                {catalogOpen && (
-                  <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50">
-                    <Link
-                      href="/portal/catalogos/inspectores"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Inspectores
-                    </Link>
-                    <Link
-                      href="/portal/catalogos/estado"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Categorías
-                    </Link>
-                  </div>
-                )}
-              </div>
+                  {catalogOpen && (
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50">
+                      <Link
+                        href="/portal/catalogos/inspectores"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Inspectores
+                      </Link>
+                      <Link
+                        href="/portal/catalogos/estado"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Categorías
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </nav>
           </div>
 
@@ -168,6 +210,7 @@ export default function PortalLayout({
       {/* Contenido Principal */}
       <main className="pt-20 min-h-screen">
         <div className="w-full">
+          <MiddlewareAuthChecker />
           {children}
           <SpeedInsights />
         </div>

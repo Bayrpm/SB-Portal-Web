@@ -16,13 +16,22 @@ export default function Login() {
   const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [showDemoSelector, setShowDemoSelector] = useState(false);
   const { setRole, setName } = useUser();
 
   useEffect(() => {
     const expireAt = localStorage.getItem("sessionExpireAt");
     if (expireAt && Date.now() < Number(expireAt)) {
       setCheckingSession(true);
-      router.push("/portal/dashboard");
+      const storedRole = localStorage.getItem("userRole");
+      const role = storedRole ? parseInt(storedRole) : null;
+
+      // Redirección basada en rol almacenado
+      if (role === 1) {
+        router.push("/portal/dashboard");
+      } else {
+        router.push("/portal/denuncias");
+      }
     } else {
       setCheckingSession(false);
     }
@@ -69,7 +78,80 @@ export default function Login() {
 
       const expireAt = Date.now() + 12 * 60 * 60 * 1000;
       localStorage.setItem("sessionExpireAt", String(expireAt));
-      router.push("/portal/dashboard");
+
+      // Redirección basada en rol: Admin → Dashboard, Operador → Denuncias
+      if (userInfo.role === 1) {
+        router.push("/portal/dashboard");
+      } else {
+        router.push("/portal/denuncias");
+      }
+    } catch (error) {
+      console.error("Error durante el inicio de sesión:", error);
+      setErrorMsg("Error de conexión. Intenta nuevamente.");
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (role: "admin" | "operador") => {
+    const credentials = {
+      admin: {
+        email: "ademo@sanbernardo.gob.cl",
+        password: "demo",
+      },
+      operador: {
+        email: "odemo@sanbernardo.gob.cl",
+        password: "demo",
+      },
+    };
+
+    const { email: demoEmail, password: demoPassword } = credentials[role];
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setShowDemoSelector(false);
+    setErrorMsg("");
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append("email", demoEmail);
+    formData.append("password", demoPassword);
+
+    try {
+      const loginResponse = await fetch("/api/users/login", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await loginResponse.json();
+
+      if (result && result.error) {
+        setErrorMsg(result.error);
+        setLoading(false);
+        return;
+      }
+
+      const userInfoResponse = await fetch(
+        `/api/users?email=${encodeURIComponent(demoEmail)}`
+      );
+      const userInfo = await userInfoResponse.json();
+
+      if (userInfo.error) {
+        setErrorMsg(userInfo.error);
+        setLoading(false);
+        return;
+      }
+
+      setRole(userInfo.role);
+      setName(userInfo.name ?? null);
+
+      const expireAt = Date.now() + 12 * 60 * 60 * 1000;
+      localStorage.setItem("sessionExpireAt", String(expireAt));
+
+      // Redirección basada en rol: Admin → Dashboard, Operador → Denuncias
+      if (userInfo.role === 1) {
+        router.push("/portal/dashboard");
+      } else {
+        router.push("/portal/denuncias");
+      }
     } catch (error) {
       console.error("Error durante el inicio de sesión:", error);
       setErrorMsg("Error de conexión. Intenta nuevamente.");
@@ -267,6 +349,53 @@ export default function Login() {
                 >
                   Iniciar sesión
                 </button>
+
+                {/* Botón Demo */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoSelector(!showDemoSelector)}
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-amber-500/50"
+                  >
+                    🎭 Modo Demo
+                  </button>
+
+                  {/* Selector de rol demo */}
+                  {showDemoSelector && (
+                    <div className="absolute top-full mt-2 left-0 right-0 bg-white border-2 border-amber-200 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDemoLogin("admin")}
+                        className="w-full px-4 py-3 text-left hover:bg-amber-50 transition-colors flex items-center gap-3"
+                      >
+                        <span className="text-2xl">👨‍💼</span>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            Administrador
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Acceso completo al sistema
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDemoLogin("operador")}
+                        className="w-full px-4 py-3 text-left hover:bg-amber-50 transition-colors flex items-center gap-3"
+                      >
+                        <span className="text-2xl">👨‍💻</span>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            Operador
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Acceso limitado al sistema
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </form>
 
               {/* Footer */}
