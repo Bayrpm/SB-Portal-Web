@@ -58,28 +58,32 @@ export default function DenunciaDetallePage({
   useEffect(() => {
     setLoading(true);
 
-    // Cargar denuncia
-    fetch(`/api/denuncias/${folio}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setDenuncia(data.denuncia);
-        setInspectorAsignadoId(data.denuncia.inspector_id || null);
-      })
-      .catch(() => setLoading(false));
+    // Cargar denuncia y asignaciones en paralelo
+    Promise.all([
+      fetch(`/api/denuncias/${folio}`).then((res) => res.json()),
+      fetch(`/api/denuncias/${folio}/asignaciones`).then((res) => res.json()),
+    ])
+      .then(([denunciaData, asignacionesData]) => {
+        // Setear datos de la denuncia
+        setDenuncia(denunciaData.denuncia);
 
-    // Cargar asignaciones (inspector + acompañantes)
-    fetch(`/api/denuncias/${folio}/asignaciones`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.inspector_principal) {
-          setInspectorAsignadoId(data.inspector_principal.id);
+        // Setear inspector y acompañantes desde asignaciones
+        if (asignacionesData.inspector_principal) {
+          setInspectorAsignadoId(asignacionesData.inspector_principal.id);
         }
-        if (data.acompanantes && data.acompanantes.length > 0) {
-          setAcompanantes(data.acompanantes);
+        if (
+          asignacionesData.acompanantes &&
+          asignacionesData.acompanantes.length > 0
+        ) {
+          setAcompanantes(asignacionesData.acompanantes);
         }
+
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("Error al cargar denuncia:", error);
+        setLoading(false);
+      });
   }, [folio]);
 
   if (!denuncia && !loading) {

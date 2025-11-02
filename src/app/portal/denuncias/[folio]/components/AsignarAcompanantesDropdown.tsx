@@ -66,16 +66,18 @@ export default function AsignarAcompanantesDropdown({
   }
 
   async function asignarAcompanantes() {
-    // Guardar en la BD con el inspector principal y los acompañantes
+    // Guardar solo acompañantes, no reenviar inspector principal
     if (!inspectorPrincipalId) return;
 
     const acompanantesIds = seleccionados.map((a) => a.id);
+    if (acompanantesIds.length === 0) return;
+
     await fetch(`/api/denuncias/${folio}/inspector`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        inspector_id: inspectorPrincipalId,
         acompanantes_ids: acompanantesIds,
+        // No enviar inspector_id
       }),
     });
 

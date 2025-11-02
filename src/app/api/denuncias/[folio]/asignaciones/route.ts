@@ -24,108 +24,103 @@ export async function GET(
             .eq("folio", folio)
             .single();
 
-        console.log("Asignación desde vista:", asignacion, asignacionError);
+        console.log("=== DEBUG ASIGNACIONES ===");
+        console.log("Folio buscado:", folio);
+        console.log("Datos de la vista:", asignacion);
+        console.log("Error:", asignacionError);
 
-        // Si no hay datos en la vista, buscar directamente en denuncias
+        // Si hay error o no existe la denuncia, devolver vacío
         if (asignacionError || !asignacion) {
-            // Intentar obtener directamente de la tabla denuncias
-            const { data: denuncia } = await supabase
-                .from("denuncias")
-                .select("id, inspector_id")
-                .eq("folio", folio)
-                .single();
-
-            if (!denuncia || !denuncia.inspector_id) {
-                return NextResponse.json({
-                    inspector_principal: null,
-                    acompanantes: [],
-                });
-            }
-
-            // Obtener información del inspector
-            const { data: inspector } = await supabase
-                .from("inspectores")
-                .select("id, nombre, apellido")
-                .eq("id", denuncia.inspector_id)
-                .single();
-
-            if (!inspector) {
-                return NextResponse.json({
-                    inspector_principal: null,
-                    acompanantes: [],
-                });
-            }
-
-            // Obtener acompañantes de la tabla asignaciones_inspector
-            const { data: asignaciones } = await supabase
-                .from("asignaciones_inspector")
-                .select("inspector_id")
-                .eq("denuncia_id", denuncia.id)
-                .neq("inspector_id", denuncia.inspector_id);
-
-            const acompanantes = [];
-            if (asignaciones && asignaciones.length > 0) {
-                const acompanantesIds = asignaciones.map((a) => a.inspector_id);
-                const { data: inspectoresAcompanantes } = await supabase
-                    .from("inspectores")
-                    .select("id, nombre, apellido")
-                    .in("id", acompanantesIds);
-
-                if (inspectoresAcompanantes) {
-                    acompanantes.push(
-                        ...inspectoresAcompanantes.map((insp) => ({
-                            id: insp.id,
-                            nombre: formatFullName(insp.nombre, insp.apellido),
-                        }))
-                    );
-                }
-            }
-
+            console.log("No se encontraron asignaciones");
             return NextResponse.json({
-                inspector_principal: {
-                    id: inspector.id,
-                    nombre: formatFullName(inspector.nombre, inspector.apellido),
-                },
-                acompanantes: acompanantes,
+                inspector_principal: null,
+                acompanantes: [],
             });
         }
+
+        console.log("Inspector principal ID:", asignacion.inspector_principal_id);
+        console.log("Acompañantes IDs:", asignacion.acompanantes_ids);
 
         // Obtener información del inspector principal si existe
         let inspectorPrincipal = null;
         if (asignacion.inspector_principal_id) {
-            const { data: inspector } = await supabase
+            console.log("Buscando inspector con ID:", asignacion.inspector_principal_id);
+
+            // Obtener el usuario_id del inspector
+            const { data: inspector, error: inspectorError } = await supabase
                 .from("inspectores")
-                .select("id, nombre, apellido")
+                .select("id, usuario_id")
                 .eq("id", asignacion.inspector_principal_id)
                 .single();
 
-            if (inspector) {
-                inspectorPrincipal = {
-                    id: inspector.id,
-                    nombre: formatFullName(inspector.nombre, inspector.apellido),
-                };
+            console.log("Inspector encontrado:", inspector);
+            console.log("Error al buscar inspector:", inspectorError);
+
+            if (inspector && inspector.usuario_id) {
+                // Obtener nombre y apellido desde perfiles_ciudadanos
+                const { data: perfil } = await supabase
+                    .from("perfiles_ciudadanos")
+                    .select("nombre, apellido")
+                    .eq("usuario_id", inspector.usuario_id)
+                    .single();
+
+                if (perfil) {
+                    inspectorPrincipal = {
+                        id: inspector.id,
+                        nombre: formatFullName(perfil.nombre, perfil.apellido),
+                    };
+                }
             }
         }
 
         // Obtener información de los acompañantes si existen
-        const acompanantes = [];
+        const acompanantes: { id: number; nombre: string }[] = [];
         if (
             asignacion.acompanantes_ids &&
             Array.isArray(asignacion.acompanantes_ids) &&
             asignacion.acompanantes_ids.length > 0
         ) {
-            const { data: inspectoresAcompanantes } = await supabase
-                .from("inspectores")
-                .select("id, nombre, apellido")
-                .in("id", asignacion.acompanantes_ids);
+            // Filtrar nulls y valores falsy
+            const acompanantesIds = asignacion.acompanantes_ids.filter(
+                (id: number | null) => id !== null
+            );
 
-            if (inspectoresAcompanantes) {
-                acompanantes.push(
-                    ...inspectoresAcompanantes.map((inspector) => ({
-                        id: inspector.id,
-                        nombre: formatFullName(inspector.nombre, inspector.apellido),
-                    }))
-                );
+            if (acompanantesIds.length > 0) {
+                // Obtener inspectores acompañantes con sus usuario_id
+                const { data: inspectoresAcompanantes } = await supabase
+                    .from("inspectores")
+                    .select("id, usuario_id")
+                    .in("id", acompanantesIds);
+
+                if (inspectoresAcompanantes && inspectoresAcompanantes.length > 0) {
+                    // Obtener los usuario_id para buscar perfiles
+                    const usuariosIds = inspectoresAcompanantes
+                        .map((i) => i.usuario_id)
+                        .filter((id) => id !== null);
+
+                    if (usuariosIds.length > 0) {
+                        // Obtener perfiles de ciudadanos
+                        const { data: perfiles } = await supabase
+                            .from("perfiles_ciudadanos")
+                            .select("usuario_id, nombre, apellido")
+                            .in("usuario_id", usuariosIds);
+
+                        if (perfiles && perfiles.length > 0) {
+                            // Mapear inspectores con sus perfiles
+                            inspectoresAcompanantes.forEach((inspector) => {
+                                const perfil = perfiles.find(
+                                    (p) => p.usuario_id === inspector.usuario_id
+                                );
+                                if (perfil) {
+                                    acompanantes.push({
+                                        id: inspector.id,
+                                        nombre: formatFullName(perfil.nombre, perfil.apellido),
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
             }
         }
 

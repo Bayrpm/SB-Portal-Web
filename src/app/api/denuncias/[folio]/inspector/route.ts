@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+
 export async function POST(request: Request, context: { params: Promise<{ folio: string }> }) {
     try {
         const { inspector_id, acompanantes_ids } = await request.json();
-        if (!inspector_id) {
-            return NextResponse.json({ error: "inspector_id es requerido" }, { status: 400 });
-        }
         const { folio } = await context.params;
         if (!folio) {
             return NextResponse.json({ error: "Folio es requerido" }, { status: 400 });
+        }
+
+        if (!inspector_id && (!acompanantes_ids || acompanantes_ids.length === 0)) {
+            return NextResponse.json({ error: "Debes enviar inspector_id o acompanantes_ids" }, { status: 400 });
         }
 
         const supabase = await createClient();
@@ -31,53 +33,62 @@ export async function POST(request: Request, context: { params: Promise<{ folio:
             return NextResponse.json({ error: "Denuncia no encontrada" }, { status: 404 });
         }
 
-        // 1. Actualizar el inspector_id en la tabla denuncias
-        const { error: updateError } = await supabase
-            .from("denuncias")
-            .update({ inspector_id: inspector_id })
-            .eq("folio", folio);
+        // Si viene inspector_id, actualizar la denuncia y eliminar asignaciones previas
+        if (inspector_id) {
+            // Actualizar el inspector principal en la tabla denuncias
+            const { error: updateError } = await supabase
+                .from("denuncias")
+                .update({ inspector_id: inspector_id })
+                .eq("folio", folio);
+            if (updateError) {
+                return NextResponse.json({ error: updateError.message }, { status: 500 });
+            }
 
-        if (updateError) {
-            return NextResponse.json({ error: updateError.message }, { status: 500 });
+            // Eliminar todas las asignaciones activas previas
+            const { error: deleteError } = await supabase
+                .from("asignaciones_inspector")
+                .delete()
+                .eq("denuncia_id", denuncia.id)
+                .is("fecha_termino", null);
+            if (deleteError) {
+                console.error("Error al eliminar asignaciones anteriores:", deleteError);
+            }
         }
 
-        // 2. Eliminar asignaciones anteriores de esta denuncia
-        const { error: deleteError } = await supabase
-            .from("asignaciones_inspector")
-            .delete()
-            .eq("denuncia_id", denuncia.id);
+        // Fecha actual para la derivación
+        const fechaDerivacion = new Date().toISOString();
+        const asignaciones = [];
 
-        if (deleteError) {
-            console.error("Error al eliminar asignaciones anteriores:", deleteError);
-        }
-
-        // 3. Crear registro de asignación para el inspector principal
-        const asignaciones = [
-            {
+        // Si viene inspector_id y no es solo acompañantes, crear asignación principal
+        if (inspector_id) {
+            asignaciones.push({
                 denuncia_id: denuncia.id,
                 inspector_id: inspector_id,
                 asignado_por: user.id,
-            }
-        ];
+                fecha_derivacion: fechaDerivacion,
+            });
+        }
 
-        // 4. Agregar registros para cada acompañante
+        // Si vienen acompañantes, crear asignaciones solo para ellos
         if (acompanantes_ids && Array.isArray(acompanantes_ids) && acompanantes_ids.length > 0) {
             acompanantes_ids.forEach((acompanante_id: string) => {
                 asignaciones.push({
                     denuncia_id: denuncia.id,
                     inspector_id: acompanante_id,
                     asignado_por: user.id,
+                    fecha_derivacion: fechaDerivacion,
                 });
             });
         }
 
-        // 5. Insertar todas las asignaciones
-        const { error: insertError } = await supabase
-            .from("asignaciones_inspector")
-            .insert(asignaciones);
-
-        if (insertError) {
-            return NextResponse.json({ error: insertError.message }, { status: 500 });
+        // Insertar solo si hay asignaciones
+        if (asignaciones.length > 0) {
+            const { error: insertError } = await supabase
+                .from("asignaciones_inspector")
+                .insert(asignaciones);
+            if (insertError) {
+                return NextResponse.json({ error: insertError.message }, { status: 500 });
+            }
         }
 
         return NextResponse.json({ success: true });

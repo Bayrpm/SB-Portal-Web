@@ -68,13 +68,24 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
     // Buscar el nombre del inspector usando inspector_id
     let inspectorNombre = '';
     if (denuncia.inspector_id) {
+        // Obtener el usuario_id del inspector
         const { data: inspector } = await supabase
             .from('inspectores')
-            .select('nombre, apellido')
+            .select('usuario_id')
             .eq('id', denuncia.inspector_id)
             .single();
-        if (inspector) {
-            inspectorNombre = formatFullName(inspector.nombre, inspector.apellido);
+
+        if (inspector && inspector.usuario_id) {
+            // Obtener nombre y apellido desde perfiles_ciudadanos
+            const { data: perfil } = await supabase
+                .from('perfiles_ciudadanos')
+                .select('nombre, apellido')
+                .eq('usuario_id', inspector.usuario_id)
+                .single();
+
+            if (perfil) {
+                inspectorNombre = formatFullName(perfil.nombre, perfil.apellido);
+            }
         }
     }
 
