@@ -24,37 +24,23 @@ export async function GET(
             .eq("folio", folio)
             .single();
 
-        console.log("=== DEBUG ASIGNACIONES ===");
-        console.log("Folio buscado:", folio);
-        console.log("Datos de la vista:", asignacion);
-        console.log("Error:", asignacionError);
-
         // Si hay error o no existe la denuncia, devolver vacío
         if (asignacionError || !asignacion) {
-            console.log("No se encontraron asignaciones");
             return NextResponse.json({
                 inspector_principal: null,
                 acompanantes: [],
             });
         }
 
-        console.log("Inspector principal ID:", asignacion.inspector_principal_id);
-        console.log("Acompañantes IDs:", asignacion.acompanantes_ids);
-
         // Obtener información del inspector principal si existe
         let inspectorPrincipal = null;
         if (asignacion.inspector_principal_id) {
-            console.log("Buscando inspector con ID:", asignacion.inspector_principal_id);
-
             // Obtener el usuario_id del inspector
-            const { data: inspector, error: inspectorError } = await supabase
+            const { data: inspector } = await supabase
                 .from("inspectores")
                 .select("id, usuario_id")
                 .eq("id", asignacion.inspector_principal_id)
                 .single();
-
-            console.log("Inspector encontrado:", inspector);
-            console.log("Error al buscar inspector:", inspectorError);
 
             if (inspector && inspector.usuario_id) {
                 // Obtener nombre y apellido desde perfiles_ciudadanos
