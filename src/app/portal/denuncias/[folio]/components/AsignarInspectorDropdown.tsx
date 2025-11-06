@@ -5,12 +5,14 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 
 interface AsignarInspectorDropdownProps {
   folio: string;
-  onAsignar: (inspector: string) => void;
+  onAsignar: (inspectorNombre: string, inspectorId: string) => void;
+  acompanantesActuales?: { id: string; nombre: string }[];
 }
 
 export default function AsignarInspectorDropdown({
   folio,
   onAsignar,
+  acompanantesActuales = [],
 }: AsignarInspectorDropdownProps) {
   const [open, setOpen] = useState(false);
   const [opciones, setOpciones] = useState<{ id: string; nombre: string }[]>(
@@ -39,12 +41,17 @@ export default function AsignarInspectorDropdown({
     inspectorId: string,
     inspectorNombre: string
   ) {
+    // Guardar en la BD con acompañantes actuales
+    const acompanantesIds = acompanantesActuales.map((a) => a.id);
     await fetch(`/api/denuncias/${folio}/inspector`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inspector_id: inspectorId }),
+      body: JSON.stringify({
+        inspector_id: inspectorId,
+        acompanantes_ids: acompanantesIds,
+      }),
     });
-    onAsignar(inspectorNombre);
+    onAsignar(inspectorNombre, inspectorId);
     setOpen(false);
   }
 

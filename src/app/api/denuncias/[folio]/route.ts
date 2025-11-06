@@ -65,6 +65,30 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         prioridadNombre = prioridad?.nombre || '';
     }
 
+    // Buscar el nombre del inspector usando inspector_id
+    let inspectorNombre = '';
+    if (denuncia.inspector_id) {
+        // Obtener el usuario_id del inspector
+        const { data: inspector } = await supabase
+            .from('inspectores')
+            .select('usuario_id')
+            .eq('id', denuncia.inspector_id)
+            .single();
+
+        if (inspector && inspector.usuario_id) {
+            // Obtener nombre y apellido desde perfiles_ciudadanos
+            const { data: perfil } = await supabase
+                .from('perfiles_ciudadanos')
+                .select('nombre, apellido')
+                .eq('usuario_id', inspector.usuario_id)
+                .single();
+
+            if (perfil) {
+                inspectorNombre = formatFullName(perfil.nombre, perfil.apellido);
+            }
+        }
+    }
+
     // Devolver la denuncia con el nombre de la categoría, estado, prioridad y datos del ciudadano
     return NextResponse.json({
         denuncia: {
@@ -72,6 +96,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
             categoria: categoriaNombre,
             estado: estadoNombre,
             prioridad: prioridadNombre,
+            inspector_asignado: inspectorNombre,
             ciudadano_nombre: ciudadanoNombre,
             ciudadano_telefono: ciudadanoTelefono,
         },

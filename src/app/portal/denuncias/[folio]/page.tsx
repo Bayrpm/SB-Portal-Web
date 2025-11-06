@@ -5,6 +5,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import { useRouter } from "next/navigation";
 import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
 import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
+import AsignarAcompanantesDropdown from "./components/AsignarAcompanantesDropdown";
 import { Pencil } from "lucide-react";
 
 interface DenunciaDetalle {
@@ -15,6 +16,7 @@ interface DenunciaDetalle {
   estado: string;
   ubicacion_texto: string;
   inspector_asignado: string;
+  inspector_id: string | null;
   prioridad: string;
   fecha_creacion: string;
   ciudadano_nombre: string;
@@ -45,16 +47,43 @@ export default function DenunciaDetallePage({
   const [loading, setLoading] = useState(true);
   const [editandoPrioridad, setEditandoPrioridad] = useState(false);
   const [editandoInspector, setEditandoInspector] = useState(false);
+  const [inspectorAsignadoId, setInspectorAsignadoId] = useState<string | null>(
+    null
+  );
+  const [acompanantes, setAcompanantes] = useState<
+    { id: string; nombre: string }[]
+  >([]);
+  const [editandoAcompanantes, setEditandoAcompanantes] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/denuncias/${folio}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setDenuncia(data.denuncia);
+
+    // Cargar denuncia y asignaciones en paralelo
+    Promise.all([
+      fetch(`/api/denuncias/${folio}`).then((res) => res.json()),
+      fetch(`/api/denuncias/${folio}/asignaciones`).then((res) => res.json()),
+    ])
+      .then(([denunciaData, asignacionesData]) => {
+        // Setear datos de la denuncia
+        setDenuncia(denunciaData.denuncia);
+
+        // Setear inspector y acompañantes desde asignaciones
+        if (asignacionesData.inspector_principal) {
+          setInspectorAsignadoId(asignacionesData.inspector_principal.id);
+        }
+        if (
+          asignacionesData.acompanantes &&
+          asignacionesData.acompanantes.length > 0
+        ) {
+          setAcompanantes(asignacionesData.acompanantes);
+        }
+
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("Error al cargar denuncia:", error);
+        setLoading(false);
+      });
   }, [folio]);
 
   if (!denuncia && !loading) {
@@ -173,22 +202,41 @@ export default function DenunciaDetallePage({
                   </span>
                 </td>
               </tr>
+              {/* Columna para asignar inspector */}
               <tr>
                 <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
-                  Ubicación
+                  Inspector asignado
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
-                  {denuncia.ubicacion_texto}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
-                  Inspector Asignado
-                </td>
-                <td className="py-3 px-5 border-b border-gray-100">
-                  {denuncia.inspector_asignado && !editandoInspector ? (
+                  {editandoInspector ? (
                     <span className="flex items-center gap-2">
-                      <span className="inline-block px-3 py-1 rounded text-xs font-semibold border bg-blue-50 text-blue-900 border-blue-200">
+                      <AsignarInspectorDropdown
+                        folio={denuncia.folio}
+                        acompanantesActuales={acompanantes}
+                        onAsignar={(
+                          inspectorNombre: string,
+                          inspectorId: string
+                        ) => {
+                          setDenuncia((d) =>
+                            d
+                              ? { ...d, inspector_asignado: inspectorNombre }
+                              : d
+                          );
+                          setInspectorAsignadoId(inspectorId);
+                          setEditandoInspector(false);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="ml-2 text-gray-500 hover:text-gray-700 text-xs underline"
+                        onClick={() => setEditandoInspector(false)}
+                      >
+                        Cancelar
+                      </button>
+                    </span>
+                  ) : denuncia.inspector_asignado ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200">
                         {denuncia.inspector_asignado}
                       </span>
                       <button
@@ -203,22 +251,104 @@ export default function DenunciaDetallePage({
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <AsignarInspectorDropdown
-                        folio={denuncia.folio}
-                        onAsignar={(nombre: string) => {
-                          setDenuncia((d) =>
-                            d ? { ...d, inspector_asignado: nombre } : d
-                          );
-                          setEditandoInspector(false);
-                        }}
-                      />
+                      <span className="text-xs text-gray-400 ml-1">
+                        Sin inspector asignado
+                      </span>
                       <button
                         type="button"
-                        className="ml-2 text-gray-500 hover:text-gray-700 text-xs underline"
-                        onClick={() => setEditandoInspector(false)}
+                        className="ml-1 bg-blue-100 hover:bg-blue-200 text-blue-700 p-1 rounded-full focus:outline-none border border-blue-200 shadow-sm transition"
+                        onClick={() => setEditandoInspector(true)}
+                        title="Asignar inspector"
+                        aria-label="Asignar inspector"
                       >
-                        Cancelar
+                        <Pencil size={16} />
                       </button>
+                    </span>
+                  )}
+                </td>
+              </tr>
+
+              {/* Columna para asignar acompañantes */}
+              <tr>
+                <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
+                  Acompañantes
+                </td>
+                <td className="py-3 px-5 border-b border-gray-100">
+                  {denuncia.inspector_asignado ? (
+                    editandoAcompanantes ? (
+                      <>
+                        <AsignarAcompanantesDropdown
+                          folio={denuncia.folio}
+                          inspectorPrincipalId={inspectorAsignadoId}
+                          onAsignar={(lista) => {
+                            setAcompanantes(lista);
+                            setEditandoAcompanantes(false);
+                          }}
+                        />
+                        {acompanantes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            <span className="text-xs text-gray-500 mr-2">
+                              Acompañantes seleccionados:
+                            </span>
+                            {acompanantes.map((a) => (
+                              <span
+                                key={a.id}
+                                className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200"
+                              >
+                                {a.nombre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="ml-2 text-gray-500 hover:text-gray-700 text-xs underline mt-2"
+                          onClick={() => setEditandoAcompanantes(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </>
+                    ) : acompanantes.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap gap-1">
+                          {acompanantes.map((a) => (
+                            <span
+                              key={a.id}
+                              className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200"
+                            >
+                              {a.nombre}
+                            </span>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="ml-1 bg-blue-100 hover:bg-blue-200 text-blue-700 p-1 rounded-full focus:outline-none border border-blue-200 shadow-sm transition"
+                          onClick={() => setEditandoAcompanantes(true)}
+                          title="Editar acompañantes"
+                          aria-label="Editar acompañantes"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 ml-1">
+                          Sin acompañantes
+                        </span>
+                        <button
+                          type="button"
+                          className="ml-1 bg-blue-100 hover:bg-blue-200 text-blue-700 p-1 rounded-full focus:outline-none border border-blue-200 shadow-sm transition"
+                          onClick={() => setEditandoAcompanantes(true)}
+                          title="Asignar acompañantes"
+                          aria-label="Asignar acompañantes"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <span className="text-xs text-gray-400 ml-1">
+                      Primero asigne un inspector
                     </span>
                   )}
                 </td>
