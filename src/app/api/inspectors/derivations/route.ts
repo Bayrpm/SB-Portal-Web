@@ -26,7 +26,7 @@ export async function GET() {
             (perfiles || []).map((p) => [p.usuario_id, `${p.nombre || ''} ${p.apellido || ''}`.trim()])
         );
         const resultado = (inspectores || []).map((i) => ({
-            id: i.id,
+            id: String(i.id),
             nombre: perfilMap.get(i.usuario_id) || "Sin nombre"
         }));
         return NextResponse.json({ inspectores: resultado });
