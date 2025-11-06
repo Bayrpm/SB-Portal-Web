@@ -31,7 +31,6 @@ export async function GET(
 
         // Si hay error o no existe la denuncia, devolver vacío
         if (asignacionError || !asignacion) {
-            console.log("No se encontraron asignaciones");
             return NextResponse.json({
                 inspector_principal: null,
                 acompanantes: [],
