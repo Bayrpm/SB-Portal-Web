@@ -65,7 +65,7 @@ export async function GET(
 
                 if (perfil) {
                     inspectorPrincipal = {
-                        id: inspector.id,
+                        id: String(inspector.id),
                         nombre: formatFullName(perfil.nombre, perfil.apellido),
                     };
                 }
@@ -73,7 +73,7 @@ export async function GET(
         }
 
         // Obtener información de los acompañantes si existen
-        const acompanantes: { id: number; nombre: string }[] = [];
+        const acompanantes: { id: string; nombre: string }[] = [];
         if (
             asignacion.acompanantes_ids &&
             Array.isArray(asignacion.acompanantes_ids) &&
@@ -112,7 +112,7 @@ export async function GET(
                                 );
                                 if (perfil) {
                                     acompanantes.push({
-                                        id: inspector.id,
+                                        id: String(inspector.id),
                                         nombre: formatFullName(perfil.nombre, perfil.apellido),
                                     });
                                 }
