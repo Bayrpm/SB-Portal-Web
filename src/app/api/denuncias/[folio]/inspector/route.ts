@@ -70,6 +70,17 @@ export async function POST(request: Request, context: { params: Promise<{ folio:
         }
 
         // Si vienen acompañantes, crear asignaciones solo para ellos
+        if (!inspector_id && acompanantes_ids && Array.isArray(acompanantes_ids) && acompanantes_ids.length > 0) {
+            // Eliminar todas las asignaciones activas previas (solo acompañantes)
+            const { error: deleteCompanionError } = await supabase
+                .from("asignaciones_inspector")
+                .delete()
+                .eq("denuncia_id", denuncia.id)
+                .is("fecha_termino", null);
+            if (deleteCompanionError) {
+                console.error("Error al eliminar asignaciones anteriores de acompañantes:", deleteCompanionError);
+            }
+        }
         if (acompanantes_ids && Array.isArray(acompanantes_ids) && acompanantes_ids.length > 0) {
             acompanantes_ids.forEach((acompanante_id: string) => {
                 asignaciones.push({
