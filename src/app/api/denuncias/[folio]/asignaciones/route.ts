@@ -36,7 +36,7 @@ export async function GET(
         let inspectorPrincipal = null;
         if (asignacion.inspector_principal_id) {
             // Obtener el usuario_id del inspector
-            const { data: inspector, error: inspectorError } = await supabase
+            const { data: inspector } = await supabase
                 .from("inspectores")
                 .select("id, usuario_id")
                 .eq("id", asignacion.inspector_principal_id)
