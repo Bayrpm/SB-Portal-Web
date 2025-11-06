@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
+import Swal from "sweetalert2";
 
 interface Inspector {
   id: string;
@@ -36,9 +37,25 @@ export default function AsignarAcompanantesDropdown({
 
   // Cargar opciones desde la API de inspectores
   useEffect(() => {
-    fetch("/api/inspectors/derivations")
-      .then((res) => res.json())
-      .then((data) => setOpciones(data.inspectores || []));
+    const cargarInspectores = async () => {
+      try {
+        const res = await fetch("/api/inspectors/derivations");
+        if (!res.ok) {
+          throw new Error(`Error al cargar inspectores: ${res.status}`);
+        }
+        const data = await res.json();
+        setOpciones(data.inspectores || []);
+      } catch (error) {
+        console.error("Error cargando inspectores:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los inspectores disponibles",
+          confirmButtonColor: "#003C96",
+        });
+      }
+    };
+    cargarInspectores();
   }, []);
 
   // Filtrar para no mostrar el inspector principal
@@ -72,17 +89,40 @@ export default function AsignarAcompanantesDropdown({
     const acompanantesIds = seleccionados.map((a) => a.id);
     if (acompanantesIds.length === 0) return;
 
-    await fetch(`/api/denuncias/${folio}/inspector`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        acompanantes_ids: acompanantesIds,
-        // No enviar inspector_id
-      }),
-    });
+    try {
+      const res = await fetch(`/api/denuncias/${folio}/inspector`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acompanantes_ids: acompanantesIds,
+          // No enviar inspector_id
+        }),
+      });
 
-    onAsignar(seleccionados);
-    setOpen(false);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Error en la solicitud: ${res.status}`);
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "Éxito",
+        text: "Acompañantes asignados correctamente",
+        confirmButtonColor: "#003C96",
+        timer: 2000,
+      });
+
+      onAsignar(seleccionados);
+      setOpen(false);
+    } catch (error) {
+      console.error("Error asignando acompañantes:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error instanceof Error ? error.message : "No se pudieron asignar los acompañantes",
+        confirmButtonColor: "#003C96",
+      });
+    }
   }
 
   return (

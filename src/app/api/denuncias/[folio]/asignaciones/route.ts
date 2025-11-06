@@ -24,11 +24,6 @@ export async function GET(
             .eq("folio", folio)
             .single();
 
-        console.log("=== DEBUG ASIGNACIONES ===");
-        console.log("Folio buscado:", folio);
-        console.log("Datos de la vista:", asignacion);
-        console.log("Error:", asignacionError);
-
         // Si hay error o no existe la denuncia, devolver vacío
         if (asignacionError || !asignacion) {
             return NextResponse.json({
@@ -37,23 +32,15 @@ export async function GET(
             });
         }
 
-        console.log("Inspector principal ID:", asignacion.inspector_principal_id);
-        console.log("Acompañantes IDs:", asignacion.acompanantes_ids);
-
         // Obtener información del inspector principal si existe
         let inspectorPrincipal = null;
         if (asignacion.inspector_principal_id) {
-            console.log("Buscando inspector con ID:", asignacion.inspector_principal_id);
-
             // Obtener el usuario_id del inspector
-            const { data: inspector, error: inspectorError } = await supabase
+            const { data: inspector } = await supabase
                 .from("inspectores")
                 .select("id, usuario_id")
                 .eq("id", asignacion.inspector_principal_id)
                 .single();
-
-            console.log("Inspector encontrado:", inspector);
-            console.log("Error al buscar inspector:", inspectorError);
 
             if (inspector && inspector.usuario_id) {
                 // Obtener nombre y apellido desde perfiles_ciudadanos
@@ -65,7 +52,7 @@ export async function GET(
 
                 if (perfil) {
                     inspectorPrincipal = {
-                        id: inspector.id,
+                        id: String(inspector.id),
                         nombre: formatFullName(perfil.nombre, perfil.apellido),
                     };
                 }
@@ -73,7 +60,7 @@ export async function GET(
         }
 
         // Obtener información de los acompañantes si existen
-        const acompanantes: { id: number; nombre: string }[] = [];
+        const acompanantes: { id: string; nombre: string }[] = [];
         if (
             asignacion.acompanantes_ids &&
             Array.isArray(asignacion.acompanantes_ids) &&
@@ -112,7 +99,7 @@ export async function GET(
                                 );
                                 if (perfil) {
                                     acompanantes.push({
-                                        id: inspector.id,
+                                        id: String(inspector.id),
                                         nombre: formatFullName(perfil.nombre, perfil.apellido),
                                     });
                                 }
