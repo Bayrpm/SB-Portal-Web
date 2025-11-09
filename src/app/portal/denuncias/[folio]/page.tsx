@@ -205,7 +205,14 @@ export default function DenunciaDetallePage({
               {/* Columna para asignar inspector */}
               <tr>
                 <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
-                  Inspector asignado
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-900">
+                      Inspector Principal
+                    </span>
+                    <span className="text-xs text-gray-500 mt-0.5">
+                      Responsable del caso
+                    </span>
+                  </div>
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
                   {editandoInspector ? (
@@ -271,7 +278,14 @@ export default function DenunciaDetallePage({
               {/* Columna para asignar acompañantes */}
               <tr>
                 <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
-                  Acompañantes
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-900">
+                      Inspectores Acompañantes
+                    </span>
+                    <span className="text-xs text-gray-500 mt-0.5">
+                      Equipo de apoyo (múltiples)
+                    </span>
+                  </div>
                 </td>
                 <td className="py-3 px-5 border-b border-gray-100">
                   {denuncia.inspector_asignado ? (
