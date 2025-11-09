@@ -267,6 +267,54 @@ export default function Login() {
                 >
                   Iniciar sesión
                 </button>
+                {/* Botón demo */}
+                <button
+                  type="button"
+                  className="w-full mt-3 bg-gray-100 text-[#003C96] py-3 px-4 rounded-lg font-semibold shadow hover:bg-gray-200 transition-all border border-gray-300"
+                  onClick={async () => {
+                    setEmail("mprueba@sanbernardo.gob.cl");
+                    setPassword("prueba1234");
+                    setErrorMsg("");
+                    setLoading(true);
+                    // Simular submit demo
+                    const formData = new FormData();
+                    formData.append("email", "mprueba@sanbernardo.gob.cl");
+                    formData.append("password", "prueba1234");
+                    try {
+                      const loginResponse = await fetch("/api/users/login", {
+                        method: "POST",
+                        body: formData,
+                      });
+                      const result = await loginResponse.json();
+                      if (result && result.error) {
+                        setErrorMsg(result.error);
+                        setLoading(false);
+                        return;
+                      }
+                      const userInfoResponse = await fetch(
+                        `/api/users?email=${encodeURIComponent(
+                          "mprueba@sanbernardo.gob.cl"
+                        )}`
+                      );
+                      const userInfo = await userInfoResponse.json();
+                      if (userInfo.error) {
+                        setErrorMsg(userInfo.error);
+                        setLoading(false);
+                        return;
+                      }
+                      setRole(userInfo.role);
+                      setName(userInfo.name ?? null);
+                      const expireAt = Date.now() + 12 * 60 * 60 * 1000;
+                      localStorage.setItem("sessionExpireAt", String(expireAt));
+                      router.push("/portal/dashboard");
+                    } catch (error) {
+                      setErrorMsg("Error de conexión. Intenta nuevamente.");
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Iniciar como demo
+                </button>
               </form>
 
               {/* Footer */}
