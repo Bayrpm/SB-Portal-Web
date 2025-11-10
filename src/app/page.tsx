@@ -308,6 +308,10 @@ export default function Login() {
                       localStorage.setItem("sessionExpireAt", String(expireAt));
                       router.push("/portal/dashboard");
                     } catch (error) {
+                      console.error(
+                        "Error durante el inicio de sesión demo:",
+                        error
+                      );
                       setErrorMsg("Error de conexión. Intenta nuevamente.");
                       setLoading(false);
                     }
