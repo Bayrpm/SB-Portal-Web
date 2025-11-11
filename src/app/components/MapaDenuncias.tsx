@@ -8,7 +8,6 @@ import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix para los iconos de Leaflet en Next.js
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -18,19 +17,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Polígono aproximado del contorno de San Bernardo
-const SAN_BERNARDO_BOUNDS: [number, number][] = [
-  [-33.545, -70.765],
-  [-33.55, -70.685],
-  [-33.58, -70.65],
-  [-33.62, -70.66],
-  [-33.635, -70.72],
-  [-33.62, -70.76],
-  [-33.58, -70.765],
-  [-33.545, -70.765],
+const SAN_BERNARDO_CENTER: [number, number] = [-33.592, -70.704];
+
+const SAN_BERNARDO_MAX_BOUNDS: [[number, number], [number, number]] = [
+  [-33.7, -70.8],
+  [-33.52, -70.6],
 ];
 
-// Importar Leaflet dinámicamente para evitar problemas de SSR
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false, loading: () => <Loader text="Cargando mapa..." /> }
@@ -46,12 +39,11 @@ const Marker = dynamic(
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
 });
-const Polygon = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Polygon),
+const GeoJSON = dynamic(
+  () => import("react-leaflet").then((mod) => mod.GeoJSON),
   { ssr: false }
 );
 
-// Componente auxiliar para capturar la instancia del mapa
 function MapController({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
   const map = useMap();
 
@@ -62,6 +54,89 @@ function MapController({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
   }, [map, onMapReady]);
 
   return null;
+}
+
+function CuadrantesLayer({
+  visible,
+  onBoundsCalculated,
+}: {
+  visible: boolean;
+  onBoundsCalculated?: (bounds: L.LatLngBounds | null) => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [geojsonData, setGeojsonData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!visible) {
+      setGeojsonData(null);
+      if (onBoundsCalculated) {
+        onBoundsCalculated(null);
+      }
+      return;
+    }
+
+    setLoading(true);
+
+    fetch("/api/cuadrantes")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setGeojsonData(data);
+
+        if (data.features && data.features.length > 0 && onBoundsCalculated) {
+          const bounds = L.geoJSON(data).getBounds();
+          onBoundsCalculated(bounds);
+        }
+      })
+      .catch((error) => console.error("Error cargando cuadrantes:", error))
+      .finally(() => setLoading(false));
+  }, [visible, onBoundsCalculated]);
+
+  if (!visible || !geojsonData || loading) return null;
+
+  return (
+    <>
+      <GeoJSON
+        data={geojsonData}
+        style={(feature) => ({
+          color: feature?.properties?.color || "#003C96",
+          weight: 2.5,
+          opacity: 0.9,
+          fillColor: feature?.properties?.color || "#003C96",
+          fillOpacity: 0.25,
+        })}
+        onEachFeature={(feature, layer) => {
+          if (feature.properties) {
+            const { cuadrante, COMUNA, REGION } = feature.properties;
+            layer.bindPopup(`
+            <div class="text-sm">
+              <h3 class="font-bold text-lg mb-2">Cuadrante ${
+                cuadrante || "N/A"
+              }</h3>
+              ${COMUNA ? `<p><strong>Comuna:</strong> ${COMUNA}</p>` : ""}
+              ${REGION ? `<p><strong>Región:</strong> ${REGION}</p>` : ""}
+            </div>
+          `);
+          }
+        }}
+      />
+      <GeoJSON
+        data={geojsonData}
+        style={() => ({
+          color: "#003C96",
+          weight: 4,
+          opacity: 1,
+          fillOpacity: 0,
+        })}
+        interactive={false}
+      />
+    </>
+  );
 }
 
 interface Denuncia {
@@ -93,63 +168,38 @@ export default function MapaDenuncias({
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedDenuncia, setSelectedDenuncia] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const [mostrarCuadrantes, setMostrarCuadrantes] = useState(true);
 
-  // Coordenadas del centro de San Bernardo
-  const center: [number, number] = [-33.5922, -70.7041];
+  const center: [number, number] = SAN_BERNARDO_CENTER;
 
-  // Función para navegar a una denuncia
+  const handleBoundsCalculated = (bounds: L.LatLngBounds | null) => {
+    if (bounds && mapInstance) {
+      mapInstance.setMaxBounds(bounds.pad(0.1));
+    }
+  };
+
   const flyToDenuncia = (denuncia: Denuncia) => {
     if (mapInstance) {
       mapInstance.flyTo([denuncia.lat, denuncia.lng], 17, {
         duration: 1.5,
       });
       setSelectedDenuncia(denuncia.folio);
-
-      // Quitar selección después de 3 segundos
-      setTimeout(() => {
-        setSelectedDenuncia(null);
-      }, 3000);
+      setTimeout(() => setSelectedDenuncia(null), 3000);
     }
   };
 
   useEffect(() => {
     setIsClient(true);
-    console.log("🗺️ Componente de mapa montado");
 
-    // Cargar coordenadas de denuncias
     fetch("/api/denuncias/coordenadas")
-      .then((res) => {
-        console.log("📡 Respuesta del servidor:", res.status);
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
-        console.log(`📍 ${data.total} denuncias con coordenadas cargadas`);
-        console.log("🔍 Datos completos recibidos:", data);
-
-        // Verificar que tengan lat, lng y color
-        if (data.coordenadas && data.coordenadas.length > 0) {
-          const sample = data.coordenadas[0];
-          console.log("📋 Ejemplo de denuncia:", sample);
-          console.log("  ✓ Lat:", sample.lat, "Lng:", sample.lng);
-          console.log("  ✓ Color:", sample.color);
-          console.log("  ✓ Prioridad:", sample.prioridad);
-
-          // Verificar que todas las denuncias tengan coordenadas válidas
-          const validas = data.coordenadas.filter(
-            (d: Denuncia) => d.lat && d.lng && d.lat !== 0 && d.lng !== 0
-          );
-          console.log(
-            `✅ ${validas.length} de ${data.coordenadas.length} denuncias tienen coordenadas válidas`
-          );
-        }
-
         setDenuncias(data.coordenadas || []);
       })
       .catch((error) => {
-        console.error("❌ Error cargando coordenadas:", error);
+        console.error("Error cargando coordenadas:", error);
       })
       .finally(() => {
-        console.log("🏁 Finalizó carga de denuncias");
         setLoading(false);
       });
   }, []);
@@ -219,83 +269,95 @@ export default function MapaDenuncias({
         zoom={13}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
         scrollWheelZoom={true}
-        whenReady={() => {
-          console.log("✅ Mapa de Leaflet listo");
-        }}
+        maxBounds={SAN_BERNARDO_MAX_BOUNDS}
+        maxBoundsViscosity={1.0}
+        minZoom={12}
       >
         <MapController onMapReady={setMapInstance} />
+        <CuadrantesLayer
+          visible={mostrarCuadrantes}
+          onBoundsCalculated={handleBoundsCalculated}
+        />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          eventHandlers={{
-            load: () => console.log("✅ Tiles cargados"),
-            tileerror: (error) =>
-              console.error("❌ Error cargando tiles:", error),
-          }}
         />
 
-        {/* Contorno de San Bernardo */}
-        <Polygon
-          positions={SAN_BERNARDO_BOUNDS}
-          pathOptions={{
-            color: "#003C96",
-            weight: 3,
-            fillColor: "#003C96",
-            fillOpacity: 0.05,
-          }}
-        />
-
-        {/* Marcadores de denuncias */}
         {!loading &&
           denuncias.length > 0 &&
-          denuncias.map((denuncia, index) => {
-            console.log(
-              `🎯 [${index + 1}/${denuncias.length}] Renderizando marcador: ${
-                denuncia.folio
-              } en [${denuncia.lat}, ${denuncia.lng}] con color ${
-                denuncia.color
-              }`
-            );
-            return (
-              <Marker
-                key={denuncia.folio}
-                position={[denuncia.lat, denuncia.lng]}
-                icon={createCustomIcon(denuncia.color)}
-              >
-                <Popup>
-                  <div className="min-w-[200px]">
-                    <h3 className="font-bold text-lg mb-2">
-                      Folio: {denuncia.folio}
-                    </h3>
-                    <div className="space-y-1 text-sm">
-                      <p>
-                        <strong>Categoría:</strong> {denuncia.categoria}
-                      </p>
-                      <p>
-                        <strong>Prioridad:</strong>{" "}
-                        <span
-                          className="px-2 py-1 rounded text-white text-xs"
-                          style={{ backgroundColor: denuncia.color }}
-                        >
-                          {denuncia.prioridad}
-                        </span>
-                      </p>
-                      <p>
-                        <strong>Estado:</strong> {denuncia.estado}
-                      </p>
-                      <p>
-                        <strong>Ubicación:</strong> {denuncia.ubicacion}
-                      </p>
-                      <p className="text-gray-500 text-xs mt-2">
-                        {new Date(denuncia.fecha).toLocaleDateString()}
-                      </p>
-                    </div>
+          denuncias.map((denuncia) => (
+            <Marker
+              key={denuncia.folio}
+              position={[denuncia.lat, denuncia.lng]}
+              icon={createCustomIcon(denuncia.color)}
+            >
+              <Popup>
+                <div className="min-w-[200px]">
+                  <h3 className="font-bold text-lg mb-2">
+                    Folio: {denuncia.folio}
+                  </h3>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <strong>Categoría:</strong> {denuncia.categoria}
+                    </p>
+                    <p>
+                      <strong>Prioridad:</strong>{" "}
+                      <span
+                        className="px-2 py-1 rounded text-white text-xs"
+                        style={{ backgroundColor: denuncia.color }}
+                      >
+                        {denuncia.prioridad}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Estado:</strong> {denuncia.estado}
+                    </p>
+                    <p>
+                      <strong>Ubicación:</strong> {denuncia.ubicacion}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-2">
+                      {new Date(denuncia.fecha).toLocaleDateString()}
+                    </p>
                   </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
+
+      {/* Control de capa de cuadrantes */}
+      <div className="absolute bottom-6 left-6 z-[1000]">
+        <button
+          onClick={() => setMostrarCuadrantes(!mostrarCuadrantes)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg border transition-all ${
+            mostrarCuadrantes
+              ? "bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          }`}
+          title={
+            mostrarCuadrantes
+              ? "Ocultar cuadrantes"
+              : "Mostrar cuadrantes de San Bernardo"
+          }
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+            />
+          </svg>
+          <span className="text-sm font-medium">
+            {mostrarCuadrantes ? "Cuadrantes activos" : "Mostrar cuadrantes"}
+          </span>
+        </button>
+      </div>
 
       {/* Panel lateral con listado de denuncias */}
       <div

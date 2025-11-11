@@ -3,6 +3,74 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+/**
+ * Normaliza y valida coordenadas desde React Native Maps / Expo Location
+ * para Chile continental, específicamente San Bernardo.
+ */
+function normalizarCoordenadas(
+    coords_x: number,
+    coords_y: number
+): { lat: number; lng: number } | null {
+    if (!coords_x || !coords_y || coords_x === 0 || coords_y === 0) {
+        return null;
+    }
+
+    const CHILE_LAT_MIN = -56;
+    const CHILE_LAT_MAX = -17;
+    const CHILE_LNG_MIN = -76;
+    const CHILE_LNG_MAX = -66;
+
+    let lat = coords_y;
+    let lng = coords_x;
+
+    if (
+        coords_x >= CHILE_LAT_MIN &&
+        coords_x <= CHILE_LAT_MAX &&
+        coords_y >= CHILE_LNG_MIN &&
+        coords_y <= CHILE_LNG_MAX
+    ) {
+        lat = coords_x;
+        lng = coords_y;
+    }
+
+    if (lat > 0 && lat <= 90) {
+        lat = -lat;
+    }
+    if (lng > 0 && lng <= 180) {
+        lng = -lng;
+    }
+
+    if (
+        lat < CHILE_LAT_MIN ||
+        lat > CHILE_LAT_MAX ||
+        lng < CHILE_LNG_MIN ||
+        lng > CHILE_LNG_MAX
+    ) {
+        return null;
+    }
+
+    const SAN_BERNARDO_LAT_MIN = -33.7;
+    const SAN_BERNARDO_LAT_MAX = -33.54;
+    const SAN_BERNARDO_LNG_MIN = -70.78;
+    const SAN_BERNARDO_LNG_MAX = -70.64;
+
+    const estaDentroSanBernardo =
+        lat >= SAN_BERNARDO_LAT_MIN &&
+        lat <= SAN_BERNARDO_LAT_MAX &&
+        lng >= SAN_BERNARDO_LNG_MIN &&
+        lng <= SAN_BERNARDO_LNG_MAX;
+
+    if (!estaDentroSanBernardo) {
+        console.warn(
+            `Coordenada fuera de San Bernardo pero dentro de Chile: lat=${lat.toFixed(
+                4
+            )}, lng=${lng.toFixed(4)}`
+        );
+    }
+
+    return { lat, lng };
+}
+
 export async function GET() {
     try {
         const supabase = await createClient();
@@ -38,52 +106,72 @@ export async function GET() {
         const estadoIds = Array.from(new Set(denuncias?.map((d) => d.estado_id).filter(Boolean) || []));
         const categoriaIds = Array.from(new Set(denuncias?.map((d) => d.categoria_publica_id).filter(Boolean) || []));
 
-        // Mapa de colores por prioridad (asignados manualmente)
         const coloresPrioridad: Record<string, string> = {
-            "Baja": "#10b981",      // Verde
-            "Media": "#f59e0b",     // Amarillo/Naranja
-            "Alta": "#ef4444",      // Rojo
-            "Urgencia": "#7c3aed",  // Morado
+            Baja: "#10b981",
+            Media: "#f59e0b",
+            Alta: "#ef4444",
+            Urgencia: "#7c3aed",
         };
 
-        // Consultar tablas relacionadas
         const [prioridadesRes, estadosRes, categoriasRes] = await Promise.all([
-            supabase.from("prioridades_denuncia").select("id, nombre").in("id", prioridadIds),
-            supabase.from("estados_denuncia").select("id, nombre").in("id", estadoIds),
-            supabase.from("categorias_publicas").select("id, nombre").in("id", categoriaIds),
+            supabase
+                .from("prioridades_denuncia")
+                .select("id, nombre")
+                .in("id", prioridadIds),
+            supabase
+                .from("estados_denuncia")
+                .select("id, nombre")
+                .in("id", estadoIds),
+            supabase
+                .from("categorias_publicas")
+                .select("id, nombre")
+                .in("id", categoriaIds),
         ]);
 
-        // Crear mapas para búsqueda rápida (asignando color según nombre de prioridad)
         const prioridadMap = new Map(
             prioridadesRes.data?.map((p) => [
                 p.id,
                 {
                     nombre: p.nombre,
-                    color: coloresPrioridad[p.nombre] || "#808080"
-                }
+                    color: coloresPrioridad[p.nombre] || "#808080",
+                },
             ]) || []
         );
-        const estadoMap = new Map(estadosRes.data?.map((e) => [e.id, e.nombre]) || []);
-        const categoriaMap = new Map(categoriasRes.data?.map((c) => [c.id, c.nombre]) || []);
+        const estadoMap = new Map(
+            estadosRes.data?.map((e) => [e.id, e.nombre]) || []
+        );
+        const categoriaMap = new Map(
+            categoriasRes.data?.map((c) => [c.id, c.nombre]) || []
+        );
 
-        // Formatear datos para el mapa
-        const coordenadas = denuncias?.map((denuncia) => {
-            const prioridad = prioridadMap.get(denuncia.prioridad_id);
+        const coordenadas =
+            denuncias
+                ?.map((denuncia) => {
+                    const prioridad = prioridadMap.get(denuncia.prioridad_id);
 
-            return {
-                folio: denuncia.folio,
-                lat: parseFloat(denuncia.coords_y || "0"),
-                lng: parseFloat(denuncia.coords_x || "0"),
-                ubicacion: denuncia.ubicacion_texto || "Sin ubicación",
-                prioridad: prioridad?.nombre || "Sin prioridad",
-                color: prioridad?.color || "#808080", // Color por defecto gris
-                estado: estadoMap.get(denuncia.estado_id) || "Sin estado",
-                categoria: categoriaMap.get(denuncia.categoria_publica_id) || "Sin categoría",
-                fecha: denuncia.fecha_creacion,
-            };
-        }) || [];
+                    const coords = normalizarCoordenadas(
+                        parseFloat(denuncia.coords_x || "0"),
+                        parseFloat(denuncia.coords_y || "0")
+                    );
 
-        console.log(`✅ ${coordenadas.length} denuncias con coordenadas encontradas`);
+                    if (!coords) {
+                        return null;
+                    }
+
+                    return {
+                        folio: denuncia.folio,
+                        lat: coords.lat,
+                        lng: coords.lng,
+                        ubicacion: denuncia.ubicacion_texto || "Sin ubicación",
+                        prioridad: prioridad?.nombre || "Sin prioridad",
+                        color: prioridad?.color || "#808080",
+                        estado: estadoMap.get(denuncia.estado_id) || "Sin estado",
+                        categoria:
+                            categoriaMap.get(denuncia.categoria_publica_id) || "Sin categoría",
+                        fecha: denuncia.fecha_creacion,
+                    };
+                })
+                .filter((coord) => coord !== null) || [];
 
         return NextResponse.json({
             coordenadas,

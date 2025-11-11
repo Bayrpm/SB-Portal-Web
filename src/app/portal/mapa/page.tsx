@@ -1,7 +1,7 @@
 "use client";
 
 import MapaDenuncias from "@/app/components/MapaDenuncias";
-import { MapPin, Filter, Download, Info } from "lucide-react";
+import { MapPin, Filter, Download } from "lucide-react";
 
 export default function MapaPage() {
   return (
@@ -72,24 +72,6 @@ export default function MapaPage() {
       {/* Map Container */}
       <div className="relative" style={{ height: "calc(100vh - 260px)" }}>
         <MapaDenuncias height="100%" />
-
-        {/* Info Card */}
-        <div className="absolute bottom-6 left-6 bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-xs z-[1000]">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Info className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                Información del Mapa
-              </h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Haz clic en los marcadores para ver detalles de cada denuncia.
-                Usa los controles para navegar y hacer zoom.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
