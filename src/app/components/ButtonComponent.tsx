@@ -58,17 +58,19 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   onConfirm?: () => void | Promise<void>; // si existe y se confirma, se ejecuta este; si no, onClick
 };
 
-const BRAND = "#0085CA";
-const HEADER = "#0B4F9E";
+const BRAND = "#0085CA"; // Usar literal en clases Tailwind
+const HEADER = "#0B4F9E"; // Usar literal en clases Tailwind
 
+// Usar clases Tailwind estáticas para que se generen en build
 const classesByAccion: Record<Accion, string> = {
-  volver: `bg-white text-[#004F9E] border border-[#004F9E] hover:bg-blue-50 font-semibold`,
-  primario: `bg-[${BRAND}] text-white hover:opacity-95`,
+  volver:
+    "bg-white text-[#004F9E] border border-[#004F9E] hover:bg-blue-50 font-semibold",
+  primario: "bg-[#0085CA] text-white hover:opacity-95",
   secundario: "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50",
-  fantasma: `bg-transparent text-[${BRAND}] hover:bg-blue-50`,
-  agregar: `bg-[${BRAND}] text-white hover:opacity-95`,
-  editar: `bg-blue-50 text-[${HEADER}] border border-blue-200 hover:bg-blue-100`,
-  actualizar: `bg-[${HEADER}] text-white hover:opacity-95`,
+  fantasma: "bg-transparent text-[#0085CA] hover:bg-blue-50",
+  agregar: "bg-[#0085CA] text-white hover:opacity-95",
+  editar: "bg-blue-50 text-[#0B4F9E] border border-blue-200 hover:bg-blue-100",
+  actualizar: "bg-[#0B4F9E] text-white hover:opacity-95",
   eliminar: "bg-red-600 text-white hover:bg-red-700",
   inspeccionar:
     "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100",
@@ -290,6 +292,8 @@ export default function ButtonComponent({
     }
   };
 
+  const accionClasses = classesByAccion[accion] || classesByAccion["primario"];
+
   return (
     <button
       type="button"
@@ -300,10 +304,10 @@ export default function ButtonComponent({
         "inline-flex items-center justify-center gap-2 rounded-lg",
         "transition-all duration-150 select-none",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-        `focus-visible:ring-[${BRAND}]`,
+        "focus-visible:ring-[#0085CA]",
         "disabled:opacity-60 disabled:cursor-not-allowed",
         sizeClasses[size],
-        classesByAccion[accion],
+        accionClasses,
         block && "w-full",
         className
       )}

@@ -2,7 +2,7 @@
 
 export default function Loader({ text = "Cargando..." }: { text?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#003C96]/95 via-[#0085CA]/90 to-[#00A7CE]/85 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-[#003C96]/95 via-[#0085CA]/90 to-[#00A7CE]/85 backdrop-blur-sm">
       <div className="flex flex-col items-center">
         {/* Logo animado */}
         <div className="relative mb-6">

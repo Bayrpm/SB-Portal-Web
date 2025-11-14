@@ -130,10 +130,16 @@ export default function PortalLayout({
                       Inspectores
                     </Link>
                     <Link
-                      href="/portal/catalogos/estado"
+                      href="/portal/catalogos/categorias"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Categorías
+                    </Link>
+                    <Link
+                      href="/portal/catalogos/moviles"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Moviles
                     </Link>
                   </div>
                 )}

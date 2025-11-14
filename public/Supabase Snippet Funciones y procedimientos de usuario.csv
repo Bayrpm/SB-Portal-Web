@@ -1,0 +1,270 @@
+schema,owner,name,kind,args,returns,language,security_definer,volatility,definition_preview
+public,postgres,check_recent_report_by_category,function,"p_ciudadano_id uuid, p_categoria_publica_id integer",boolean,sql,false,s,"CREATE OR REPLACE FUNCTION public.check_recent_report_by_category(p_ciudadano_id uuid, p_categoria_publica_id integer)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.denuncias
+    WHE"
+public,postgres,fn_audit_log,function,,trigger,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_audit_log()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_actor uuid := null;
+  v_email text := null;
+  v_fila_id text := null;
+begin
+ "
+public,postgres,fn_comentario_reaccionar,function,"p_comentario_id integer, p_tipo text",comentario_reacciones,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.fn_comentario_reaccionar(p_comentario_id integer, p_tipo text)
+ RETURNS comentario_reacciones
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v public.comentario_reacciones;
+  v_tipo text := upper(p_tipo);
+be"
+public,postgres,fn_delete_comentario_denuncia,function,p_comentario_id integer,record,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_delete_comentario_denuncia(p_comentario_id integer)
+ RETURNS TABLE(id integer, denuncia_id integer, usuario_id text, contenido text, created_at timestamp with time zone, parent_id integer)
+ LANGUAGE plpg"
+public,postgres,fn_denuncia_reaccionar,function,"p_denuncia_id uuid, p_tipo text",denuncia_reacciones,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.fn_denuncia_reaccionar(p_denuncia_id uuid, p_tipo text)
+ RETURNS denuncia_reacciones
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v public.denuncia_reacciones;
+  v_tipo text := upper(p_tipo);
+begin
+  if v"
+public,postgres,fn_enqueue_denuncia_status,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.fn_enqueue_denuncia_status()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v_inspector_user uuid;
+  v_exists boolean;
+begin
+  if tg_op = 'UPDATE' and NEW.estado_id is distinct from OLD.est"
+public,postgres,fn_evento_id,function,p_codigo text,integer,sql,false,s,"CREATE OR REPLACE FUNCTION public.fn_evento_id(p_codigo text)
+ RETURNS integer
+ LANGUAGE sql
+ STABLE
+AS $function$
+  select id
+  from public.evento_turno_tipo
+  where upper(codigo) = upper(p_codigo)
+  limit 1
+$function$
+"
+public,postgres,fn_generar_folio,function,,text,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.fn_generar_folio()
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  n bigint;
+  hoy text := to_char(now() at time zone 'America/Santiago', 'YYYYMMDD');
+beg"
+public,postgres,fn_movil_cerrar_uso,function,"p_uso_id bigint, p_kilometraje_fin numeric, p_observacion text, p_actor_user_id uuid, p_fin_ts timestamp with time zone",movil_usos,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_movil_cerrar_uso(p_uso_id bigint, p_kilometraje_fin numeric, p_observacion text DEFAULT NULL::text, p_actor_user_id uuid DEFAULT NULL::uuid, p_fin_ts timestamp with time zone DEFAULT NULL::timestamp with"
+public,postgres,fn_movil_iniciar_uso,function,"p_movil_id bigint, p_inspector_id integer, p_kilometraje_inicio numeric, p_turno_id bigint, p_observacion text, p_actor_user_id uuid, p_inicio_ts timestamp with time zone",movil_usos,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_movil_iniciar_uso(p_movil_id bigint, p_inspector_id integer, p_kilometraje_inicio numeric, p_turno_id bigint DEFAULT NULL::bigint, p_observacion text DEFAULT NULL::text, p_actor_user_id uuid DEFAULT NULL"
+public,postgres,fn_turno_registrar_evento,function,"p_turno_id bigint, p_evento_codigo text, p_observacion text, p_actor_user_id uuid, p_ts timestamp with time zone",eventos_turno,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_turno_registrar_evento(p_turno_id bigint, p_evento_codigo text, p_observacion text DEFAULT NULL::text, p_actor_user_id uuid DEFAULT NULL::uuid, p_ts timestamp with time zone DEFAULT NULL::timestamp with "
+public,postgres,fn_turnos_autocierre,function,"p_hora_limite time without time zone, p_max_batch integer",integer,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_turnos_autocierre(p_hora_limite time without time zone DEFAULT '23:59:00'::time without time zone, p_max_batch integer DEFAULT 500)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path T"
+public,postgres,fn_update_comentario_denuncia,function,"p_comentario_id integer, p_contenido text",record,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.fn_update_comentario_denuncia(p_comentario_id integer, p_contenido text)
+ RETURNS TABLE(id integer, denuncia_id integer, usuario_id text, contenido text, created_at timestamp with time zone, parent_id integ"
+public,postgres,get_auth_user_uuid,function,,uuid,sql,true,s,"CREATE OR REPLACE FUNCTION public.get_auth_user_uuid()
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+AS $function$
+  SELECT (auth.uid())::uuid;
+$function$
+"
+public,postgres,get_denuncia_publica_detalle,function,p_id uuid,record,sql,true,v,"CREATE OR REPLACE FUNCTION public.get_denuncia_publica_detalle(p_id uuid)
+ RETURNS TABLE(id uuid, folio text, titulo text, descripcion text, coords_x double precision, coords_y double precision, categoria_publica_id integer, fecha_creacion "
+public,postgres,get_denuncias_publicas_recientes,function,,record,sql,true,v,"CREATE OR REPLACE FUNCTION public.get_denuncias_publicas_recientes()
+ RETURNS TABLE(id uuid, folio text, titulo text, descripcion text, coords_x double precision, coords_y double precision, categoria_publica_id integer, fecha_creacion times"
+public,postgres,get_recent_reports_by_category,function,"p_ciudadano_id uuid, p_categoria_publica_id integer",record,sql,true,v,"CREATE OR REPLACE FUNCTION public.get_recent_reports_by_category(p_ciudadano_id uuid, p_categoria_publica_id integer)
+ RETURNS TABLE(id uuid, coords_x double precision, coords_y double precision, fecha_creacion timestamp with time zone)
+ LA"
+public,postgres,handle_new_auth_user,function,,trigger,plpgsql,true,v,"CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  -- Insertamos o actualizamos (idempotente) usando ON CONFLICT
+  INSERT INTO public.perfiles_ciudadanos ("
+public,postgres,increment_attempts,function,p_queue_id bigint,void,sql,false,v,"CREATE OR REPLACE FUNCTION public.increment_attempts(p_queue_id bigint)
+ RETURNS void
+ LANGUAGE sql
+AS $function$
+  update public.push_status_queue
+     set attempts = coalesce(attempts,0) + 1
+   where id = p_queue_id;
+$function$
+"
+public,postgres,is_admin,function,uid uuid,boolean,sql,false,s,"CREATE OR REPLACE FUNCTION public.is_admin(uid uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1
+    from public.usuarios_portal up
+    join public.roles_po"
+public,postgres,is_portal_user,function,uid uuid,boolean,sql,false,s,"CREATE OR REPLACE FUNCTION public.is_portal_user(uid uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1 from public.usuarios_portal up where up.usuario_id = ui"
+public,postgres,trg_asignaciones_after_insert,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_asignaciones_after_insert()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  nombre_inspector TEXT;
+  rol TEXT := 'acompañante';
+BEGIN
+  -- Determinar si es principal (el inspector_id coi"
+public,postgres,trg_comentarios_den_set_usuario,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_comentarios_den_set_usuario()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.usuario_id is null then
+    new.usuario_id := auth.uid();
+  end if;
+  return new;
+end$function$
+"
+public,postgres,trg_denuncia_clasif_unica_vigente,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_denuncia_clasif_unica_vigente()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.vigente then
+    update public.denuncia_clasificaciones
+       set vigente = false
+     where denunci"
+public,postgres,trg_denuncias_after_insert,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_denuncias_after_insert()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  insert into denuncia_historial (denuncia_id, evento, detalle, actor_usuario_id"
+public,postgres,trg_denuncias_after_update,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_denuncias_after_update()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  evento text;
+  detalle jsonb := '{}'::jsonb;
+begin
+  if new.estado_id is "
+public,postgres,trg_denuncias_before_insert,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_denuncias_before_insert()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$declare
+  id_pendiente int;
+begin
+  if new.folio is null then
+    new.folio := fn_ge"
+public,postgres,trg_eventos_turno_apply,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_eventos_turno_apply()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v_codigo text;
+  v_turno record;
+  v_inicio_pausa timestamptz;
+  v_id_pausa_ini int;
+  v_id_pausa_fin int;
+  v_id_"
+public,postgres,trg_evidencias_set_created_by,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_evidencias_set_created_by()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if new.created_by is null then
+    new.created_by := (select auth.uid());"
+public,postgres,trg_kilometraje_validar_y_sumar,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_kilometraje_validar_y_sumar()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  v_min numeric(12,1);
+  v_max numeric(12,1);
+  v_uso record;
+  v_km  numeric(10,1);
+begin
+  if (new.tipo = "
+public,postgres,trg_prevent_parent_change,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_prevent_parent_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    -- Permite que parent_id sea NULL inicialmente; impide cambiarlo después
+    IF NEW.parent_i"
+public,postgres,trg_touch_updated_at,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_touch_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  new.updated_at := now();
+  return new;
+end$function$
+"
+public,postgres,trg_touch_updated_at_comentario_reac,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_touch_updated_at_comentario_reac()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  new.updated_at := now();
+  return new;
+end$function$
+"
+public,postgres,trg_usos_no_solapados,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_usos_no_solapados()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if (new.fin_ts is null) then
+    if exists (
+      select 1 from public.movil_usos u
+      where u.movil_id = new.movil_"
+public,postgres,trg_usos_set_estado_movil,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_usos_set_estado_movil()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if (tg_op = 'INSERT') then
+    update public.moviles set estado = 'ASIGNADO' where id = new.movil_id;
+  elsif (tg_op "
+public,postgres,trg_validate_parent_comment,function,,trigger,plpgsql,false,v,"CREATE OR REPLACE FUNCTION public.trg_validate_parent_comment()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  -- Si no hay parent, OK
+  IF NEW.parent_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Verificar que exista el "

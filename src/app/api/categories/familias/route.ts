@@ -7,13 +7,13 @@ export async function GET() {
     try {
         const supabase = await createClient();
         const { data, error } = await supabase
-            .from("categorias_publicas")
+            .from("cat_familias")
             .select("*")
-            .order("orden", { ascending: true });
+            .order("nombre", { ascending: true });
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
-        return NextResponse.json({ categorias: data });
+        return NextResponse.json({ familias: data });
     } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "Error inesperado" }, { status: 500 });
     }
@@ -24,15 +24,15 @@ export async function POST(request: Request) {
         const supabase = await createClient();
         const body = await request.json();
 
-        const { nombre, descripcion, orden, activo } = body;
+        const { nombre, activo } = body;
 
         if (!nombre) {
             return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
         }
 
         const { data, error } = await supabase
-            .from("categorias_publicas")
-            .insert({ nombre, descripcion, orden: orden || 0, activo: activo ?? true })
+            .from("cat_familias")
+            .insert({ nombre, activo: activo ?? true })
             .select()
             .single();
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ categoria: data }, { status: 201 });
+        return NextResponse.json({ familia: data }, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "Error inesperado" }, { status: 500 });
     }
@@ -51,15 +51,15 @@ export async function PUT(request: Request) {
         const supabase = await createClient();
         const body = await request.json();
 
-        const { id, nombre, descripcion, orden, activo } = body;
+        const { id, nombre, activo } = body;
 
         if (!id) {
             return NextResponse.json({ error: "El ID es requerido" }, { status: 400 });
         }
 
         const { data, error } = await supabase
-            .from("categorias_publicas")
-            .update({ nombre, descripcion, orden, activo })
+            .from("cat_familias")
+            .update({ nombre, activo })
             .eq("id", id)
             .select()
             .single();
@@ -68,7 +68,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ categoria: data });
+        return NextResponse.json({ familia: data });
     } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : "Error inesperado" }, { status: 500 });
     }

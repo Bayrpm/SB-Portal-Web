@@ -83,8 +83,7 @@ export default function DashboardSidebar({
       ).sort();
       setExpandedCategories(new Set(allCategories));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]); // Solo depende de name, no de categories
+  }, [name, charts]); // Ahora depende de name y charts
 
   // Guardar categorías expandidas
   const toggleCategory = (category: string) => {
