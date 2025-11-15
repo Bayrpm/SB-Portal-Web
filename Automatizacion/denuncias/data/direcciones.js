@@ -1,0 +1,32 @@
+export const DIRECCIONES = {
+  avenidas: [
+    "Av. Portales",
+    "Av. Eyzaguirre",
+    "Av. Colón",
+    "Av. O'Higgins",
+    "Av. José Miguel Carrera",
+    "Av. Nos",
+    "Av. Maipú",
+    "Av. Padre Hurtado",
+    "Av. Los Morros",
+    "Av. Diego Portales",
+  ],
+  calles: [
+    "Calle San Martín",
+    "Calle Freire",
+    "Calle Bulnes",
+    "Calle Errázuriz",
+    "Calle Covadonga",
+    "Calle Central",
+    "Calle Walker Martínez",
+    "Calle Ramón Freire",
+    "Calle Los Robles",
+  ],
+  pasajes: [
+    "Pasaje Los Aromos",
+    "Pasaje El Parque",
+    "Pasaje San Francisco",
+    "Pasaje Las Flores",
+    "Pasaje Los Olmos",
+  ],
+};
