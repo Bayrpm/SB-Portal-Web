@@ -1,0 +1,23 @@
+{
+  "name": "generador-ciudadanos",
+  "version": "1.0.0",
+  "description": "Script para generar ciudadanos de prueba en la base de datos",
+  "type": "module",
+  "main": "generarCiudadanos.js",
+  "scripts": {
+    "generar": "node generarCiudadanos.js"
+  },
+  "keywords": [
+    "supabase",
+    "faker",
+    "seed",
+    "ciudadanos"
+  ],
+  "author": "Portal San Bernardo",
+  "license": "MIT",
+  "dependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1"
+  }
+}
