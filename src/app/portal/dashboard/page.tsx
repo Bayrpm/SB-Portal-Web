@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@/context/UserContext";
 import Loader from "@/app/components/Loader";
 import KPICard from "@/app/components/dashboard/KPICard";
 import FilterBar from "@/app/components/dashboard/FilterBar";
@@ -58,7 +57,7 @@ interface TabConfig {
 }
 
 // Interfaces para los datos
-interface DashboardData {
+interface RawDashboardData {
   resumen: {
     total_denuncias: number;
     denuncias_asignadas: number;
@@ -68,6 +67,8 @@ interface DashboardData {
   denuncias_por_mes: {
     mes: string;
     total: number;
+    asignadas?: number;
+    sin_asignar?: number;
   }[];
   top_categorias: {
     categoria: string;
@@ -116,21 +117,26 @@ interface DashboardData {
     cantidad: number;
   }[];
   sla: {
-    cumplimiento: number;
-    total: number;
-    en_tiempo: number;
-    fuera_tiempo: number;
+    cumplimiento?: number;
+    total?: number;
+    en_tiempo?: number;
+    fuera_tiempo?: number;
+    cumplidas?: number;
+    vencidas?: number;
+    porcentaje_cumplimiento?: number;
   };
   tiempo_promedio_estado: {
     estado: string;
     horas_promedio: number;
   }[];
   embudo_conversion: {
-    etapa: string;
+    etapa?: string;
+    estado?: string;
     cantidad: number;
   }[];
   tendencia_tiempo_respuesta: {
-    fecha: string;
+    fecha?: string;
+    mes?: string;
     horas: number;
   }[];
   top_ubicaciones: {
@@ -175,8 +181,9 @@ interface DashboardData {
   };
 }
 
+type DashboardData = RawDashboardData;
+
 export default function DashboardPage() {
-  const { name } = useUser();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("resumen");
@@ -204,6 +211,196 @@ export default function DashboardPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const raw_data = data || ({} as DashboardData);
+
+  // Funciones de transformación de datos
+  const transformTendenciaTemporalData = (
+    data: DashboardData["denuncias_por_mes"]
+  ) => {
+    return data.map((item) => ({
+      mes: item.mes,
+      total: item.total,
+      asignadas: item.asignadas ?? 0,
+      sin_asignar: item.sin_asignar ?? 0,
+    }));
+  };
+
+  const transformCategoriaData = (data: typeof raw_data.top_categorias) => {
+    return data.map((item) => ({
+      nombre: item.categoria,
+      cantidad: item.total,
+    }));
+  };
+
+  const transformEstadoData = (
+    data: typeof raw_data.por_estado
+  ): Record<string, number> => {
+    const result: Record<string, number> = {};
+    data.forEach((item) => {
+      result[item.estado] = item.cantidad;
+    });
+    return result;
+  };
+
+  const transformPrioridadData = (
+    data: typeof raw_data.por_prioridad
+  ): Record<string, number> => {
+    const result: Record<string, number> = {};
+    data.forEach((item) => {
+      result[item.prioridad] = item.cantidad;
+    });
+    return result;
+  };
+
+  const transformCategoriasPrioridadData = (
+    data: typeof raw_data.categorias_prioridad
+  ): Record<string, Record<string, number>> => {
+    const result: Record<string, Record<string, number>> = {};
+    data.forEach((item) => {
+      result[item.categoria] = {
+        baja: item.baja,
+        media: item.media,
+        alta: item.alta,
+      };
+    });
+    return result;
+  };
+
+  const transformCrecimientoData = (
+    data: typeof raw_data.crecimiento_mensual
+  ) => {
+    return data.map((item) => ({
+      mes: item.mes,
+      crecimiento: item.tasa,
+    }));
+  };
+
+  const transformHeatMapData = (
+    data: typeof raw_data.heat_map_dia_hora
+  ): Record<string, Record<number, number>> => {
+    const result: Record<string, Record<number, number>> = {};
+    data.forEach((item) => {
+      const diaStr = `Día ${item.dia}`;
+      if (!result[diaStr]) {
+        result[diaStr] = {};
+      }
+      result[diaStr][item.hora] = item.cantidad;
+    });
+    return result;
+  };
+
+  const transformSLAData = (sla: DashboardData["sla"]) => {
+    return {
+      cumplidas: sla.cumplidas ?? sla.en_tiempo ?? 0,
+      vencidas: sla.vencidas ?? sla.fuera_tiempo ?? 0,
+      porcentaje_cumplimiento:
+        sla.porcentaje_cumplimiento ?? sla.cumplimiento ?? 0,
+    };
+  };
+
+  const transformEmbudoData = (data: typeof raw_data.embudo_conversion) => {
+    return data.map((item) => ({
+      estado: item.estado ?? item.etapa ?? "Desconocido",
+      cantidad: item.cantidad,
+    }));
+  };
+
+  const transformTiempoPorEstadoData = (
+    data: typeof raw_data.tiempo_promedio_estado
+  ) => {
+    return data.map((item) => ({
+      estado: item.estado,
+      horas: item.horas_promedio,
+    }));
+  };
+
+  const transformTendenciaTiempoRespuestaData = (
+    data: typeof raw_data.tendencia_tiempo_respuesta
+  ) => {
+    return data.map((item) => ({
+      mes: item.mes ?? item.fecha ?? "",
+      horas: item.horas,
+    }));
+  };
+
+  const transformCategoriasAsignacionData = (
+    data: typeof raw_data.categorias_asignacion
+  ): Record<string, { asignadas: number; sin_asignar: number }> => {
+    const result: Record<string, { asignadas: number; sin_asignar: number }> =
+      {};
+    data.forEach((item) => {
+      result[item.categoria] = {
+        asignadas: item.asignadas,
+        sin_asignar: item.sin_asignar,
+      };
+    });
+    return result;
+  };
+
+  const transformDistribucionTurnoData = (
+    data: typeof raw_data.distribucion_turno
+  ): Record<string, number> => {
+    const result: Record<string, number> = {};
+    data.forEach((item) => {
+      result[item.turno] = item.cantidad;
+    });
+    return result;
+  };
+
+  const transformCargaInspectorData = (
+    data: typeof raw_data.carga_inspectores
+  ) => {
+    return data.map((item) => ({
+      nombre: item.inspector,
+      cantidad: item.asignadas + item.en_proceso + item.resueltas,
+      turno: "N/A",
+    }));
+  };
+
+  const transformEficienciaData = (
+    data: typeof raw_data.eficiencia_inspectores
+  ) => {
+    return data.map((item) => ({
+      nombre: item.inspector,
+      cantidad: item.total_gestionadas,
+      tiempoPromedio: item.tiempo_promedio_horas,
+    }));
+  };
+
+  const transformInspectoresActivosData = (
+    data: typeof raw_data.inspectores_activos
+  ) => {
+    return data.map((item) => ({
+      nombre: item.inspector,
+      cantidad: item.denuncias_gestionadas,
+      tiempoPromedio: 0,
+    }));
+  };
+
+  const transformComparativaAnualData = (
+    data: DashboardData["comparativa_anual"]
+  ) => {
+    return data.map((item) => ({
+      mes: item.mes,
+      actual: item.anio_actual,
+      anterior: item.anio_anterior,
+    }));
+  };
+
+  const transformEstadosEvolucionData = (
+    data: DashboardData["estados_evolucion"]
+  ) => {
+    return data.map((item) => ({
+      mes: item.fecha,
+      estados: {
+        pendiente: item.pendiente,
+        en_atencion: item.en_atencion,
+        resuelta: item.resuelta,
+        cerrada: item.cerrada,
+      },
+    }));
+  };
 
   if (loading) {
     return <Loader text="Cargando dashboard completo..." />;
@@ -277,7 +474,7 @@ export default function DashboardPage() {
             title="Total de Denuncias"
             value={data.resumen.total_denuncias.toLocaleString()}
             icon={BarChart3}
-            trend={totalTrend}
+            trend={{ value: totalTrend, isPositive: totalTrend >= 0 }}
             description="Últimos 30 días"
             color="blue"
           />
@@ -285,7 +482,7 @@ export default function DashboardPage() {
             title="Denuncias Asignadas"
             value={data.resumen.denuncias_asignadas.toLocaleString()}
             icon={CheckCircle2}
-            trend={tasaAsignacion}
+            trend={{ value: tasaAsignacion, isPositive: tasaAsignacion >= 50 }}
             description={`${tasaAsignacion.toFixed(1)}% del total`}
             color="green"
           />
@@ -312,12 +509,12 @@ export default function DashboardPage() {
           <FilterBar
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
-            customStartDate={customStartDate}
-            customEndDate={customEndDate}
-            onCustomStartDateChange={setCustomStartDate}
-            onCustomEndDateChange={setCustomEndDate}
-            showComparison={showComparison}
-            onShowComparisonChange={setShowComparison}
+            customDateFrom={customStartDate}
+            customDateTo={customEndDate}
+            onCustomDateFromChange={setCustomStartDate}
+            onCustomDateToChange={setCustomEndDate}
+            compareWithPrevious={showComparison}
+            onCompareChange={setShowComparison}
           />
         </div>
 
@@ -328,36 +525,46 @@ export default function DashboardPage() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Tendencia Temporal (6 meses)">
-                  <TendenciaTemporalChart data={data.denuncias_por_mes} />
+                  <TendenciaTemporalChart
+                    data={transformTendenciaTemporalData(
+                      raw_data.denuncias_por_mes
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Top 5 Categorías">
                   <CategoriaChart
-                    data={data.top_categorias}
+                    data={transformCategoriaData(raw_data.top_categorias)}
                     title="Top 5 Categorías Más Reportadas"
                   />
                 </ChartContainer>
 
                 <ChartContainer title="Distribución por Estado">
-                  <EstadoDistribucionChart data={data.por_estado} />
+                  <EstadoDistribucionChart
+                    data={transformEstadoData(raw_data.por_estado)}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Patrón Día/Hora">
-                  <HeatMapDiaHoraChart data={data.heat_map_dia_hora} />
+                  <HeatMapDiaHoraChart
+                    data={transformHeatMapData(raw_data.heat_map_dia_hora)}
+                  />
                 </ChartContainer>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <ChartContainer title="Salud del Sistema">
-                  <SaludSistemaGauge data={data.salud_sistema} />
+                  <SaludSistemaGauge data={raw_data.salud_sistema} />
                 </ChartContainer>
 
                 <ChartContainer title="Cumplimiento SLA">
-                  <SLAGaugeChart data={data.sla} />
+                  <SLAGaugeChart data={transformSLAData(raw_data.sla)} />
                 </ChartContainer>
 
                 <ChartContainer title="Embudo de Conversión">
-                  <EmbudoConversionChart data={data.embudo_conversion} />
+                  <EmbudoConversionChart
+                    data={transformEmbudoData(raw_data.embudo_conversion)}
+                  />
                 </ChartContainer>
               </div>
             </>
@@ -369,36 +576,52 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Top 5 Categorías">
                   <CategoriaChart
-                    data={data.top_categorias}
+                    data={transformCategoriaData(raw_data.top_categorias)}
                     title="Top 5 Categorías Más Reportadas"
                   />
                 </ChartContainer>
 
                 <ChartContainer title="Denuncias por Prioridad">
-                  <PrioridadChart data={data.por_prioridad} />
+                  <PrioridadChart
+                    data={transformPrioridadData(raw_data.por_prioridad)}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Categorías vs Prioridad">
-                  <CategoriaPrioridadChart data={data.categorias_prioridad} />
+                  <CategoriaPrioridadChart
+                    data={transformCategoriasPrioridadData(
+                      raw_data.categorias_prioridad
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Tasa de Crecimiento">
-                  <CrecimientoMensualChart data={data.crecimiento_mensual} />
+                  <CrecimientoMensualChart
+                    data={transformCrecimientoData(
+                      raw_data.crecimiento_mensual
+                    )}
+                  />
                 </ChartContainer>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Asignadas vs Sin Asignar">
-                  <CategoriasAsignadasChart data={data.categorias_asignacion} />
+                  <CategoriasAsignadasChart
+                    data={transformCategoriasAsignacionData(
+                      raw_data.categorias_asignacion
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Tasa de Resolución por Categoría">
-                  <TasaResolucionChart data={data.tasa_resolucion_categoria} />
+                  <TasaResolucionChart
+                    data={raw_data.tasa_resolucion_categoria}
+                  />
                 </ChartContainer>
               </div>
 
               <ChartContainer title="Palabras Más Frecuentes">
-                <WordCloudChart data={data.word_cloud} />
+                <WordCloudChart data={raw_data.word_cloud} />
               </ChartContainer>
             </>
           )}
@@ -408,32 +631,52 @@ export default function DashboardPage() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Carga de Trabajo">
-                  <CargaInspectorChart data={data.carga_inspectores} />
+                  <CargaInspectorChart
+                    data={transformCargaInspectorData(
+                      raw_data.carga_inspectores
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Eficiencia de Inspectores">
                   <EficienciaInspectorChart
-                    data={data.eficiencia_inspectores}
+                    data={transformEficienciaData(
+                      raw_data.eficiencia_inspectores
+                    )}
                   />
                 </ChartContainer>
 
                 <ChartContainer title="Top 10 Más Activos">
-                  <InspectoresActivosChart data={data.inspectores_activos} />
+                  <InspectoresActivosChart
+                    data={transformInspectoresActivosData(
+                      raw_data.inspectores_activos
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Distribución por Turno">
-                  <DistribucionTurnoChart data={data.distribucion_turno} />
+                  <DistribucionTurnoChart
+                    data={transformDistribucionTurnoData(
+                      raw_data.distribucion_turno
+                    )}
+                  />
                 </ChartContainer>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Tiempo por Estado">
-                  <TiempoPorEstadoChart data={data.tiempo_promedio_estado} />
+                  <TiempoPorEstadoChart
+                    data={transformTiempoPorEstadoData(
+                      raw_data.tiempo_promedio_estado
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Tendencia Tiempo Respuesta">
                   <TendenciaTiempoRespuestaChart
-                    data={data.tendencia_tiempo_respuesta}
+                    data={transformTendenciaTiempoRespuestaData(
+                      raw_data.tendencia_tiempo_respuesta
+                    )}
                   />
                 </ChartContainer>
               </div>
@@ -444,11 +687,13 @@ export default function DashboardPage() {
           {activeTab === "ubicaciones" && (
             <>
               <ChartContainer title="Top 10 Ubicaciones con Más Denuncias">
-                <TopUbicacionesChart data={data.top_ubicaciones} />
+                <TopUbicacionesChart data={raw_data.top_ubicaciones} />
               </ChartContainer>
 
               <ChartContainer title="Patrón de Reporte por Día y Hora">
-                <HeatMapDiaHoraChart data={data.heat_map_dia_hora} />
+                <HeatMapDiaHoraChart
+                  data={transformHeatMapData(raw_data.heat_map_dia_hora)}
+                />
               </ChartContainer>
             </>
           )}
@@ -458,33 +703,51 @@ export default function DashboardPage() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Tendencia Temporal (6 meses)">
-                  <TendenciaTemporalChart data={data.denuncias_por_mes} />
+                  <TendenciaTemporalChart
+                    data={transformTendenciaTemporalData(
+                      raw_data.denuncias_por_mes
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Comparativa Año Actual vs Anterior">
-                  <ComparativaAnualChart data={data.comparativa_anual} />
+                  <ComparativaAnualChart
+                    data={transformComparativaAnualData(
+                      raw_data.comparativa_anual
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Proyección de Denuncias">
                   <ProyeccionDenunciasChart
-                    data={data.proyeccion_denuncias}
+                    data={raw_data.proyeccion_denuncias}
                     historicCount={6}
                   />
                 </ChartContainer>
 
                 <ChartContainer title="Evolución de Estados">
-                  <EstadosEvolucionChart data={data.estados_evolucion} />
+                  <EstadosEvolucionChart
+                    data={transformEstadosEvolucionData(
+                      raw_data.estados_evolucion
+                    )}
+                  />
                 </ChartContainer>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ChartContainer title="Tasa de Crecimiento Mensual">
-                  <CrecimientoMensualChart data={data.crecimiento_mensual} />
+                  <CrecimientoMensualChart
+                    data={transformCrecimientoData(
+                      raw_data.crecimiento_mensual
+                    )}
+                  />
                 </ChartContainer>
 
                 <ChartContainer title="Tendencia Tiempo Respuesta">
                   <TendenciaTiempoRespuestaChart
-                    data={data.tendencia_tiempo_respuesta}
+                    data={transformTendenciaTiempoRespuestaData(
+                      raw_data.tendencia_tiempo_respuesta
+                    )}
                   />
                 </ChartContainer>
               </div>

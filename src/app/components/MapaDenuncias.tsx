@@ -6,16 +6,6 @@ import Loader from "./Loader";
 import { ChevronRight, ChevronLeft, MapPin } from "lucide-react";
 import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 const SAN_BERNARDO_CENTER: [number, number] = [-33.592, -70.704];
 
@@ -44,7 +34,13 @@ const GeoJSON = dynamic(
   { ssr: false }
 );
 
-function MapController({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
+import type { Map as LeafletMap } from "leaflet";
+
+function MapController({
+  onMapReady,
+}: {
+  onMapReady: (map: LeafletMap) => void;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -61,7 +57,7 @@ function CuadrantesLayer({
   onBoundsCalculated,
 }: {
   visible: boolean;
-  onBoundsCalculated?: (bounds: L.LatLngBounds | null) => void;
+  onBoundsCalculated?: (bounds: import("leaflet").LatLngBounds | null) => void;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [geojsonData, setGeojsonData] = useState<any>(null);
@@ -89,8 +85,12 @@ function CuadrantesLayer({
         setGeojsonData(data);
 
         if (data.features && data.features.length > 0 && onBoundsCalculated) {
-          const bounds = L.geoJSON(data).getBounds();
-          onBoundsCalculated(bounds);
+          // Importar dinámicamente leaflet para calcular bounds
+          import("leaflet").then((leaflet) => {
+            const L = leaflet.default;
+            const bounds = L.geoJSON(data).getBounds();
+            onBoundsCalculated(bounds);
+          });
         }
       })
       .catch((error) => console.error("Error cargando cuadrantes:", error))
@@ -167,12 +167,15 @@ export default function MapaDenuncias({
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const [selectedDenuncia, setSelectedDenuncia] = useState<string | null>(null);
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
   const [mostrarCuadrantes, setMostrarCuadrantes] = useState(true);
+  const [L, setL] = useState<typeof import("leaflet") | null>(null);
 
   const center: [number, number] = SAN_BERNARDO_CENTER;
 
-  const handleBoundsCalculated = (bounds: L.LatLngBounds | null) => {
+  const handleBoundsCalculated = (
+    bounds: import("leaflet").LatLngBounds | null
+  ) => {
     if (bounds && mapInstance) {
       mapInstance.setMaxBounds(bounds.pad(0.1));
     }
@@ -188,24 +191,9 @@ export default function MapaDenuncias({
     }
   };
 
-  useEffect(() => {
-    setIsClient(true);
-
-    fetch("/api/denuncias/coordenadas")
-      .then((res) => res.json())
-      .then((data) => {
-        setDenuncias(data.coordenadas || []);
-      })
-      .catch((error) => {
-        console.error("Error cargando coordenadas:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
-
   // Crear icono personalizado según prioridad
   const createCustomIcon = (color: string) => {
+    if (!L) return null;
     return L.divIcon({
       className: "custom-marker",
       html: `
@@ -235,6 +223,39 @@ export default function MapaDenuncias({
       popupAnchor: [0, -24],
     });
   };
+
+  useEffect(() => {
+    setIsClient(true);
+
+    // Importar Leaflet dinámicamente en el cliente
+    import("leaflet").then((leaflet) => {
+      const leafletLib = leaflet.default;
+      setL(leafletLib);
+
+      // Configurar iconos de Leaflet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (leafletLib.Icon.Default.prototype as any)._getIconUrl;
+      leafletLib.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+    });
+
+    fetch("/api/denuncias/coordenadas")
+      .then((res) => res.json())
+      .then((data) => {
+        setDenuncias(data.coordenadas || []);
+      })
+      .catch((error) => {
+        console.error("Error cargando coordenadas:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   if (!isClient) {
     return (
@@ -289,7 +310,7 @@ export default function MapaDenuncias({
             <Marker
               key={denuncia.folio}
               position={[denuncia.lat, denuncia.lng]}
-              icon={createCustomIcon(denuncia.color)}
+              icon={createCustomIcon(denuncia.color) ?? undefined}
             >
               <Popup>
                 <div className="min-w-[200px]">
