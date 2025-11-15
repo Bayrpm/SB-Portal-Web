@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Loader from "@/app/components/Loader";
+import { useDashboardData } from "@/context/DashboardContext";
+import ChartWrapper from "@/app/components/ChartWrapper";
 import KPICard from "@/app/components/dashboard/KPICard";
 import FilterBar from "@/app/components/dashboard/FilterBar";
-import ChartContainer from "@/app/components/dashboard/ChartContainer";
 import {
   BarChart3,
   CheckCircle2,
@@ -102,6 +102,7 @@ interface RawDashboardData {
     asignadas: number;
     en_proceso: number;
     resueltas: number;
+    turno?: string;
   }[];
   eficiencia_inspectores: {
     inspector: string;
@@ -111,6 +112,7 @@ interface RawDashboardData {
   inspectores_activos: {
     inspector: string;
     denuncias_gestionadas: number;
+    tiempo_promedio_horas?: number;
   }[];
   distribucion_turno: {
     turno: string;
@@ -184,13 +186,15 @@ interface RawDashboardData {
 type DashboardData = RawDashboardData;
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, fetchDashboardData } = useDashboardData();
   const [activeTab, setActiveTab] = useState<TabType>("resumen");
   const [dateRange, setDateRange] = useState("last30days");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showComparison, setShowComparison] = useState(false);
+
+  // Estado para controlar qué gráficos se han cargado
+  const [loadedCharts, setLoadedCharts] = useState<Set<string>>(new Set());
 
   // Configuración de tabs
   const tabs: TabConfig[] = [
@@ -202,17 +206,96 @@ export default function DashboardPage() {
   ];
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((res) => res.json())
-      .then(setData)
-      .catch((error) => {
-        console.error("Error al cargar dashboard:", error);
-        setData(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    // Cargar datos del dashboard con filtros
+    const params = new URLSearchParams();
 
-  const raw_data = data || ({} as DashboardData);
+    // Agregar filtro de período
+    if (dateRange === "custom" && customStartDate && customEndDate) {
+      params.append("startDate", customStartDate);
+      params.append("endDate", customEndDate);
+    } else if (dateRange !== "all") {
+      params.append("period", dateRange);
+    }
+
+    // Llamar a la API con parámetros
+    const queryString = params.toString();
+    fetchDashboardData(queryString ? `?${queryString}` : "");
+  }, [dateRange, customStartDate, customEndDate, fetchDashboardData]);
+
+  // Simular carga progresiva de gráficos
+  useEffect(() => {
+    if (!data) return;
+
+    // Limpiar gráficos cargados para mostrar loaders nuevamente
+    setLoadedCharts(new Set());
+
+    // Marcar progresivamente los gráficos como cargados con un pequeño delay
+    const chartNames = [
+      "tendencia-temporal",
+      "top-categorias",
+      "estado-distribucion",
+      "patron-dia-hora",
+      "salud-sistema",
+      "sla",
+      "embudo",
+      "prioridad",
+      "categoria-prioridad",
+      "crecimiento",
+      "categorias-asignadas",
+      "tasa-resolucion",
+      "word-cloud",
+      "carga-inspector",
+      "eficiencia-inspector",
+      "inspectores-activos",
+      "distribucion-turno",
+      "tiempo-estado",
+      "tendencia-tiempo",
+      "top-ubicaciones",
+      "patron-ubicaciones",
+      "comparativa-anual",
+      "proyeccion",
+      "estados-evolucion",
+      "crecimiento-mensual",
+    ];
+
+    chartNames.forEach((chartName, index) => {
+      setTimeout(() => {
+        setLoadedCharts((prev) => new Set(prev).add(chartName));
+      }, index * 100); // 100ms entre cada gráfico
+    });
+  }, [data]);
+
+  const raw_data: DashboardData = data || {
+    resumen: {
+      total_denuncias: 0,
+      denuncias_asignadas: 0,
+      denuncias_sin_asignar: 0,
+      tiempo_promedio_asignacion_horas: 0,
+    },
+    denuncias_por_mes: [],
+    top_categorias: [],
+    por_estado: [],
+    por_prioridad: [],
+    categorias_prioridad: [],
+    crecimiento_mensual: [],
+    heat_map_dia_hora: [],
+    carga_inspectores: [],
+    eficiencia_inspectores: [],
+    inspectores_activos: [],
+    distribucion_turno: [],
+    sla: {},
+    tiempo_promedio_estado: [],
+    embudo_conversion: [],
+    tendencia_tiempo_respuesta: [],
+    top_ubicaciones: [],
+    categorias_asignacion: [],
+    estados_evolucion: [],
+    tasa_resolucion_categoria: [],
+    comparativa_anual: [],
+    proyeccion_denuncias: [],
+    word_cloud: [],
+    salud_sistema: { score: 0, sla: 0, asignacion: 0, resolucion: 0 },
+  };
 
   // Funciones de transformación de datos
   const transformTendenciaTemporalData = (
@@ -280,8 +363,27 @@ export default function DashboardPage() {
     data: typeof raw_data.heat_map_dia_hora
   ): Record<string, Record<number, number>> => {
     const result: Record<string, Record<number, number>> = {};
+    const diasSemanaMap = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+    ];
+
+    // Inicializar todos los días con todas las horas en 0
+    diasSemanaMap.forEach((dia) => {
+      result[dia] = {};
+      for (let h = 0; h < 24; h++) {
+        result[dia][h] = 0;
+      }
+    });
+
+    // Llenar con los datos reales
     data.forEach((item) => {
-      const diaStr = `Día ${item.dia}`;
+      const diaStr = diasSemanaMap[item.dia] || `Día ${item.dia}`;
       if (!result[diaStr]) {
         result[diaStr] = {};
       }
@@ -354,7 +456,7 @@ export default function DashboardPage() {
     return data.map((item) => ({
       nombre: item.inspector,
       cantidad: item.asignadas + item.en_proceso + item.resueltas,
-      turno: "N/A",
+      turno: item.turno || "Sin turno",
     }));
   };
 
@@ -374,7 +476,7 @@ export default function DashboardPage() {
     return data.map((item) => ({
       nombre: item.inspector,
       cantidad: item.denuncias_gestionadas,
-      tiempoPromedio: 0,
+      tiempoPromedio: item.tiempo_promedio_horas || 0,
     }));
   };
 
@@ -402,31 +504,25 @@ export default function DashboardPage() {
     }));
   };
 
-  if (loading) {
-    return <Loader text="Cargando dashboard completo..." />;
-  }
-
-  if (!data) {
-    return (
-      <div className="w-full py-8 px-4">
-        <div className="text-center text-red-600">
-          Error al cargar los datos del dashboard
-        </div>
-      </div>
-    );
-  }
-
+  // Usar datos en caché o valores vacíos por defecto
   // Calcular tendencias para KPIs
   const totalTrend =
-    data.denuncias_por_mes.length >= 2
-      ? ((data.denuncias_por_mes[data.denuncias_por_mes.length - 1].total -
-          data.denuncias_por_mes[data.denuncias_por_mes.length - 2].total) /
-          data.denuncias_por_mes[data.denuncias_por_mes.length - 2].total) *
+    raw_data.denuncias_por_mes.length >= 2
+      ? ((raw_data.denuncias_por_mes[raw_data.denuncias_por_mes.length - 1]
+          .total -
+          raw_data.denuncias_por_mes[raw_data.denuncias_por_mes.length - 2]
+            .total) /
+          raw_data.denuncias_por_mes[raw_data.denuncias_por_mes.length - 2]
+            .total) *
         100
       : 0;
 
   const tasaAsignacion =
-    (data.resumen.denuncias_asignadas / data.resumen.total_denuncias) * 100;
+    raw_data.resumen.denuncias_asignadas && raw_data.resumen.total_denuncias
+      ? (raw_data.resumen.denuncias_asignadas /
+          raw_data.resumen.total_denuncias) *
+        100
+      : 0;
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
@@ -472,7 +568,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <KPICard
             title="Total de Denuncias"
-            value={data.resumen.total_denuncias.toLocaleString()}
+            value={raw_data.resumen.total_denuncias.toLocaleString()}
             icon={BarChart3}
             trend={{ value: totalTrend, isPositive: totalTrend >= 0 }}
             description="Últimos 30 días"
@@ -480,7 +576,7 @@ export default function DashboardPage() {
           />
           <KPICard
             title="Denuncias Asignadas"
-            value={data.resumen.denuncias_asignadas.toLocaleString()}
+            value={raw_data.resumen.denuncias_asignadas.toLocaleString()}
             icon={CheckCircle2}
             trend={{ value: tasaAsignacion, isPositive: tasaAsignacion >= 50 }}
             description={`${tasaAsignacion.toFixed(1)}% del total`}
@@ -488,14 +584,14 @@ export default function DashboardPage() {
           />
           <KPICard
             title="Sin Asignar"
-            value={data.resumen.denuncias_sin_asignar.toLocaleString()}
+            value={raw_data.resumen.denuncias_sin_asignar.toLocaleString()}
             icon={Target}
             description="Requieren atención"
             color="orange"
           />
           <KPICard
             title="Tiempo Promedio"
-            value={`${data.resumen.tiempo_promedio_asignacion_horas.toFixed(
+            value={`${raw_data.resumen.tiempo_promedio_asignacion_horas.toFixed(
               1
             )}h`}
             icon={Clock}
@@ -524,48 +620,69 @@ export default function DashboardPage() {
           {activeTab === "resumen" && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Tendencia Temporal (6 meses)">
+                <ChartWrapper
+                  title="Tendencia Temporal (6 meses)"
+                  loading={!loadedCharts.has("tendencia-temporal")}
+                >
                   <TendenciaTemporalChart
                     data={transformTendenciaTemporalData(
                       raw_data.denuncias_por_mes
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Top 5 Categorías">
+                <ChartWrapper
+                  title="Top 5 Categorías"
+                  loading={!loadedCharts.has("top-categorias")}
+                >
                   <CategoriaChart
                     data={transformCategoriaData(raw_data.top_categorias)}
                     title="Top 5 Categorías Más Reportadas"
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Distribución por Estado">
+                <ChartWrapper
+                  title="Distribución por Estado"
+                  loading={!loadedCharts.has("estado-distribucion")}
+                >
                   <EstadoDistribucionChart
                     data={transformEstadoData(raw_data.por_estado)}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Patrón Día/Hora">
+                <ChartWrapper
+                  title="Patrón Día/Hora"
+                  loading={!loadedCharts.has("patron-dia-hora")}
+                >
                   <HeatMapDiaHoraChart
                     data={transformHeatMapData(raw_data.heat_map_dia_hora)}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <ChartContainer title="Salud del Sistema">
+                <ChartWrapper
+                  title="Salud del Sistema"
+                  loading={!loadedCharts.has("salud-sistema")}
+                >
                   <SaludSistemaGauge data={raw_data.salud_sistema} />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Cumplimiento SLA">
+                <ChartWrapper
+                  title="Cumplimiento SLA"
+                  loading={!loadedCharts.has("sla")}
+                >
                   <SLAGaugeChart data={transformSLAData(raw_data.sla)} />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Embudo de Conversión">
+                <ChartWrapper
+                  title="Embudo de Conversión"
+                  loading={!loadedCharts.has("embudo")}
+                >
                   <EmbudoConversionChart
                     data={transformEmbudoData(raw_data.embudo_conversion)}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
             </>
           )}
@@ -574,55 +691,76 @@ export default function DashboardPage() {
           {activeTab === "categorias" && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Top 5 Categorías">
+                <ChartWrapper
+                  title="Top 5 Categorías"
+                  loading={!loadedCharts.has("top-categorias")}
+                >
                   <CategoriaChart
                     data={transformCategoriaData(raw_data.top_categorias)}
                     title="Top 5 Categorías Más Reportadas"
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Denuncias por Prioridad">
+                <ChartWrapper
+                  title="Denuncias por Prioridad"
+                  loading={!loadedCharts.has("prioridad")}
+                >
                   <PrioridadChart
                     data={transformPrioridadData(raw_data.por_prioridad)}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Categorías vs Prioridad">
+                <ChartWrapper
+                  title="Categorías vs Prioridad"
+                  loading={!loadedCharts.has("categoria-prioridad")}
+                >
                   <CategoriaPrioridadChart
                     data={transformCategoriasPrioridadData(
                       raw_data.categorias_prioridad
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Tasa de Crecimiento">
+                <ChartWrapper
+                  title="Tasa de Crecimiento"
+                  loading={!loadedCharts.has("crecimiento")}
+                >
                   <CrecimientoMensualChart
                     data={transformCrecimientoData(
                       raw_data.crecimiento_mensual
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Asignadas vs Sin Asignar">
+                <ChartWrapper
+                  title="Asignadas vs Sin Asignar"
+                  loading={!loadedCharts.has("categorias-asignadas")}
+                >
                   <CategoriasAsignadasChart
                     data={transformCategoriasAsignacionData(
                       raw_data.categorias_asignacion
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Tasa de Resolución por Categoría">
+                <ChartWrapper
+                  title="Tasa de Resolución por Categoría"
+                  loading={!loadedCharts.has("tasa-resolucion")}
+                >
                   <TasaResolucionChart
                     data={raw_data.tasa_resolucion_categoria}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
 
-              <ChartContainer title="Palabras Más Frecuentes">
+              <ChartWrapper
+                title="Palabras Más Frecuentes"
+                loading={!loadedCharts.has("word-cloud")}
+              >
                 <WordCloudChart data={raw_data.word_cloud} />
-              </ChartContainer>
+              </ChartWrapper>
             </>
           )}
 
@@ -630,55 +768,73 @@ export default function DashboardPage() {
           {activeTab === "inspectores" && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Carga de Trabajo">
+                <ChartWrapper
+                  title="Carga de Trabajo"
+                  loading={!loadedCharts.has("carga-inspector")}
+                >
                   <CargaInspectorChart
                     data={transformCargaInspectorData(
                       raw_data.carga_inspectores
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Eficiencia de Inspectores">
+                <ChartWrapper
+                  title="Eficiencia de Inspectores"
+                  loading={!loadedCharts.has("eficiencia-inspector")}
+                >
                   <EficienciaInspectorChart
                     data={transformEficienciaData(
                       raw_data.eficiencia_inspectores
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Top 10 Más Activos">
+                <ChartWrapper
+                  title="Top 10 Más Activos"
+                  loading={!loadedCharts.has("inspectores-activos")}
+                >
                   <InspectoresActivosChart
                     data={transformInspectoresActivosData(
                       raw_data.inspectores_activos
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Distribución por Turno">
+                <ChartWrapper
+                  title="Distribución por Turno"
+                  loading={!loadedCharts.has("distribucion-turno")}
+                >
                   <DistribucionTurnoChart
                     data={transformDistribucionTurnoData(
                       raw_data.distribucion_turno
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Tiempo por Estado">
+                <ChartWrapper
+                  title="Tiempo por Estado"
+                  loading={!loadedCharts.has("tiempo-estado")}
+                >
                   <TiempoPorEstadoChart
                     data={transformTiempoPorEstadoData(
                       raw_data.tiempo_promedio_estado
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Tendencia Tiempo Respuesta">
+                <ChartWrapper
+                  title="Tendencia Tiempo Respuesta"
+                  loading={!loadedCharts.has("tendencia-tiempo")}
+                >
                   <TendenciaTiempoRespuestaChart
                     data={transformTendenciaTiempoRespuestaData(
                       raw_data.tendencia_tiempo_respuesta
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
             </>
           )}
@@ -686,15 +842,21 @@ export default function DashboardPage() {
           {/* Tab: Ubicaciones */}
           {activeTab === "ubicaciones" && (
             <>
-              <ChartContainer title="Top 10 Ubicaciones con Más Denuncias">
+              <ChartWrapper
+                title="Top 10 Ubicaciones con Más Denuncias"
+                loading={!loadedCharts.has("top-ubicaciones")}
+              >
                 <TopUbicacionesChart data={raw_data.top_ubicaciones} />
-              </ChartContainer>
+              </ChartWrapper>
 
-              <ChartContainer title="Patrón de Reporte por Día y Hora">
+              <ChartWrapper
+                title="Patrón de Reporte por Día y Hora"
+                loading={!loadedCharts.has("patron-ubicaciones")}
+              >
                 <HeatMapDiaHoraChart
                   data={transformHeatMapData(raw_data.heat_map_dia_hora)}
                 />
-              </ChartContainer>
+              </ChartWrapper>
             </>
           )}
 
@@ -702,54 +864,72 @@ export default function DashboardPage() {
           {activeTab === "tendencias" && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Tendencia Temporal (6 meses)">
+                <ChartWrapper
+                  title="Tendencia Temporal (6 meses)"
+                  loading={!loadedCharts.has("tendencia-temporal")}
+                >
                   <TendenciaTemporalChart
                     data={transformTendenciaTemporalData(
                       raw_data.denuncias_por_mes
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Comparativa Año Actual vs Anterior">
+                <ChartWrapper
+                  title="Comparativa Año Actual vs Anterior"
+                  loading={!loadedCharts.has("comparativa-anual")}
+                >
                   <ComparativaAnualChart
                     data={transformComparativaAnualData(
                       raw_data.comparativa_anual
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Proyección de Denuncias">
+                <ChartWrapper
+                  title="Proyección de Denuncias"
+                  loading={!loadedCharts.has("proyeccion")}
+                >
                   <ProyeccionDenunciasChart
                     data={raw_data.proyeccion_denuncias}
                     historicCount={6}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Evolución de Estados">
+                <ChartWrapper
+                  title="Evolución de Estados"
+                  loading={!loadedCharts.has("estados-evolucion")}
+                >
                   <EstadosEvolucionChart
                     data={transformEstadosEvolucionData(
                       raw_data.estados_evolucion
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartContainer title="Tasa de Crecimiento Mensual">
+                <ChartWrapper
+                  title="Tasa de Crecimiento Mensual"
+                  loading={!loadedCharts.has("crecimiento-mensual")}
+                >
                   <CrecimientoMensualChart
                     data={transformCrecimientoData(
                       raw_data.crecimiento_mensual
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
 
-                <ChartContainer title="Tendencia Tiempo Respuesta">
+                <ChartWrapper
+                  title="Tendencia Tiempo Respuesta"
+                  loading={!loadedCharts.has("tendencia-tiempo")}
+                >
                   <TendenciaTiempoRespuestaChart
                     data={transformTendenciaTiempoRespuestaData(
                       raw_data.tendencia_tiempo_respuesta
                     )}
                   />
-                </ChartContainer>
+                </ChartWrapper>
               </div>
             </>
           )}

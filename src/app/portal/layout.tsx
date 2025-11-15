@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
+import { DashboardProvider } from "@/context/DashboardContext";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -27,6 +28,23 @@ export default function PortalLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const catalogRef = useRef<HTMLDivElement>(null);
+  // Cierra el dropdown si se hace click fuera
+  useEffect(() => {
+    if (!catalogOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        catalogRef.current &&
+        !catalogRef.current.contains(event.target as Node)
+      ) {
+        setCatalogOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [catalogOpen]);
   const { role, name } = useUser();
 
   const roleLabel =
@@ -102,7 +120,7 @@ export default function PortalLayout({
               })}
 
               {/* Dropdown Catálogos */}
-              <div className="relative">
+              <div className="relative" ref={catalogRef}>
                 <button
                   onClick={() => setCatalogOpen(!catalogOpen)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
@@ -173,10 +191,12 @@ export default function PortalLayout({
 
       {/* Contenido Principal */}
       <main className="pt-20 min-h-screen">
-        <div className="w-full">
-          {children}
-          <SpeedInsights />
-        </div>
+        <DashboardProvider>
+          <div className="w-full">
+            {children}
+            <SpeedInsights />
+          </div>
+        </DashboardProvider>
       </main>
     </div>
   );
