@@ -16,6 +16,12 @@ Automatizacion/
 │   ├── package.json
 │   ├── credenciales_inspectores.txt (generado)
 │   └── inspectores_generados.json (generado)
+├── operadores/          # Scripts para generar cuentas de operadores
+│   ├── generarOperadores.js
+│   ├── package.json
+│   ├── README.md
+│   ├── credenciales_operadores.txt (generado)
+│   └── operadores_generados.json (generado)
 └── README.md
 ```
 
@@ -60,7 +66,7 @@ Este script genera 20 cuentas de inspectores con datos aleatorios y emails corpo
 #### 1. Instalar dependencias
 
 ```bash
-cd Automatizacion/ciudadanos
+cd Automatizacion/inspectores
 npm install
 ```
 
@@ -82,7 +88,39 @@ npm run generar
 O directamente:
 
 ```bash
-node generarCiudadanos.js
+node generarInspectores.js
+```
+
+### Generar Operadores
+
+Este script genera 15 cuentas de operadores con datos aleatorios y emails corporativos `@sanbernardo.gob.cl`.
+
+#### 1. Instalar dependencias
+
+```bash
+cd Automatizacion/operadores
+npm install
+```
+
+#### 2. Configurar variables de entorno
+
+Asegúrate de tener un archivo `.env.local` en la raíz del proyecto con:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
+```
+
+#### 3. Ejecutar el script
+
+```bash
+npm run generar
+```
+
+O directamente:
+
+```bash
+node generarOperadores.js
 ```
 
 ### 📄 Archivos Generados
@@ -96,6 +134,11 @@ node generarCiudadanos.js
 
 - **`credenciales_inspectores.txt`**: Archivo de texto legible con las credenciales de todos los inspectores generados
 - **`inspectores_generados.json`**: Archivo JSON con datos completos para uso programático
+
+#### Operadores
+
+- **`credenciales_operadores.txt`**: Archivo de texto legible con las credenciales de todos los operadores generados
+- **`operadores_generados.json`**: Archivo JSON con datos completos para uso programático
 
 ### ⚙️ Características de los Scripts
 
@@ -120,6 +163,20 @@ node generarCiudadanos.js
 - ✅ Asigna turno aleatorio de los tipos disponibles en BD
 - ✅ Crea registro en tabla `inspectores` automáticamente
 - ✅ Teléfono formato chileno: `+56 9 XXXX XXXX`
+- ✅ Delay de 1.5 segundos entre creaciones
+- ✅ Rollback automático en caso de error
+- ✅ Genera archivos TXT y JSON con credenciales
+
+#### Script de Operadores
+
+- ✅ Genera 15 operadores con datos aleatorios
+- ✅ Emails corporativos: `[inicial(es)][apellido]@sanbernardo.gob.cl`
+- ✅ Usa la misma lógica de generación de emails que `formatEmployeeEmails.ts`
+- ✅ Genera email único automáticamente (1 inicial, 2 iniciales, o sufijo numérico)
+- ✅ Contraseñas con formato: `[Nombre][3 dígitos aleatorios]`
+- ✅ Asigna automáticamente el rol de "Operador" desde `roles_portal`
+- ✅ Crea registro en tabla `usuarios_portal` automáticamente
+- ✅ Verifica existencia de email contra `auth.users` usando Admin API
 - ✅ Delay de 1.5 segundos entre creaciones
 - ✅ Rollback automático en caso de error
 - ✅ Genera archivos TXT y JSON con credenciales
@@ -153,6 +210,15 @@ node generarCiudadanos.js
 - UUID de usuario en Supabase
 - Perfil en `perfiles_ciudadanos`
 - Registro en tabla `inspectores` con turno activo
+
+#### Cada operador incluye:
+
+- Nombre y apellido aleatorios (español)
+- Email corporativo: `[inicial(es)][apellido]@sanbernardo.gob.cl` (ej: `jperez@sanbernardo.gob.cl`)
+- Contraseña: `[Nombre][3 dígitos]` (ej: `Maria789`)
+- Rol de "Operador" asignado automáticamente
+- UUID de usuario en Supabase
+- Registro en tabla `usuarios_portal` con rol y estado activo
 
 ### 🛠️ Troubleshooting
 

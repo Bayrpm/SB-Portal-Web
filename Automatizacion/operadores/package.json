@@ -1,0 +1,23 @@
+{
+  "name": "generador-operadores",
+  "version": "1.0.0",
+  "description": "Script para generar operadores de prueba en la base de datos",
+  "type": "module",
+  "main": "generarOperadores.js",
+  "scripts": {
+    "generar": "node generarOperadores.js"
+  },
+  "keywords": [
+    "supabase",
+    "faker",
+    "seed",
+    "operadores"
+  ],
+  "author": "Portal San Bernardo",
+  "license": "MIT",
+  "dependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1"
+  }
+}
