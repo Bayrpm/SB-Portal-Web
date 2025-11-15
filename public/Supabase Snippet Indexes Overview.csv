@@ -1,0 +1,115 @@
+schemaname,tablename,indexname,indexdef
+public,alertas_oficiales,alertas_oficiales_pkey,CREATE UNIQUE INDEX alertas_oficiales_pkey ON public.alertas_oficiales USING btree (id)
+public,alertas_oficiales,idx_alertas_cuadrante_fecha,"CREATE INDEX idx_alertas_cuadrante_fecha ON public.alertas_oficiales USING btree (cuadrante_id, created_at DESC)"
+public,alertas_oficiales,idx_alertas_oficiales_creado_por_fk_4fa82e,CREATE INDEX idx_alertas_oficiales_creado_por_fk_4fa82e ON public.alertas_oficiales USING btree (creado_por)
+public,alertas_oficiales,idx_alertas_oficiales_cuadrante_id_fk_3eb35b,CREATE INDEX idx_alertas_oficiales_cuadrante_id_fk_3eb35b ON public.alertas_oficiales USING btree (cuadrante_id)
+public,alertas_oficiales,idx_alertas_oficiales_denuncia_id_fk_86ac30,CREATE INDEX idx_alertas_oficiales_denuncia_id_fk_86ac30 ON public.alertas_oficiales USING btree (denuncia_id)
+public,asignaciones_inspector,asignaciones_inspector_pkey,CREATE UNIQUE INDEX asignaciones_inspector_pkey ON public.asignaciones_inspector USING btree (id)
+public,asignaciones_inspector,idx_asig_por_denuncia,CREATE INDEX idx_asig_por_denuncia ON public.asignaciones_inspector USING btree (denuncia_id)
+public,asignaciones_inspector,idx_asignaciones_inspector_asignado_por_fk_bbd632,CREATE INDEX idx_asignaciones_inspector_asignado_por_fk_bbd632 ON public.asignaciones_inspector USING btree (asignado_por)
+public,audit_log,audit_log_pkey,CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)
+public,audit_log,idx_audit_actor,CREATE INDEX idx_audit_actor ON public.audit_log USING btree (actor_user_id)
+public,audit_log,idx_audit_operacion,CREATE INDEX idx_audit_operacion ON public.audit_log USING btree (operacion)
+public,audit_log,idx_audit_tabla,CREATE INDEX idx_audit_tabla ON public.audit_log USING btree (tabla)
+public,audit_log,idx_audit_ts,CREATE INDEX idx_audit_ts ON public.audit_log USING btree (ts DESC)
+public,cat_familias,cat_familias_nombre_key,CREATE UNIQUE INDEX cat_familias_nombre_key ON public.cat_familias USING btree (nombre)
+public,cat_familias,cat_familias_pkey,CREATE UNIQUE INDEX cat_familias_pkey ON public.cat_familias USING btree (id)
+public,cat_grupos,cat_grupos_pkey,CREATE UNIQUE INDEX cat_grupos_pkey ON public.cat_grupos USING btree (id)
+public,cat_grupos,cat_grupos_unq,"CREATE UNIQUE INDEX cat_grupos_unq ON public.cat_grupos USING btree (familia_id, nombre)"
+public,cat_grupos,idx_grupos_familia,CREATE INDEX idx_grupos_familia ON public.cat_grupos USING btree (familia_id)
+public,cat_req_mapeo_publico,cat_req_mapeo_publico_pkey,CREATE UNIQUE INDEX cat_req_mapeo_publico_pkey ON public.cat_req_mapeo_publico USING btree (requerimiento_id)
+public,cat_req_mapeo_publico,idx_mapeo_catpub,CREATE INDEX idx_mapeo_catpub ON public.cat_req_mapeo_publico USING btree (categoria_publica_id)
+public,cat_requerimientos,cat_requerimientos_pkey,CREATE UNIQUE INDEX cat_requerimientos_pkey ON public.cat_requerimientos USING btree (id)
+public,cat_requerimientos,cat_requerimientos_unq,"CREATE UNIQUE INDEX cat_requerimientos_unq ON public.cat_requerimientos USING btree (subgrupo_id, nombre)"
+public,cat_requerimientos,idx_reqs_subgrupo,CREATE INDEX idx_reqs_subgrupo ON public.cat_requerimientos USING btree (subgrupo_id)
+public,cat_subgrupos,cat_subgrupos_pkey,CREATE UNIQUE INDEX cat_subgrupos_pkey ON public.cat_subgrupos USING btree (id)
+public,cat_subgrupos,cat_subgrupos_unq,"CREATE UNIQUE INDEX cat_subgrupos_unq ON public.cat_subgrupos USING btree (grupo_id, nombre)"
+public,cat_subgrupos,idx_subgrupos_grupo,CREATE INDEX idx_subgrupos_grupo ON public.cat_subgrupos USING btree (grupo_id)
+public,categorias_publicas,categorias_publicas_nombre_key,CREATE UNIQUE INDEX categorias_publicas_nombre_key ON public.categorias_publicas USING btree (nombre)
+public,categorias_publicas,categorias_publicas_pkey,CREATE UNIQUE INDEX categorias_publicas_pkey ON public.categorias_publicas USING btree (id)
+public,comentario_reacciones,comentario_reacciones_pkey,CREATE UNIQUE INDEX comentario_reacciones_pkey ON public.comentario_reacciones USING btree (id)
+public,comentario_reacciones,idx_comentario_reac_comentario,CREATE INDEX idx_comentario_reac_comentario ON public.comentario_reacciones USING btree (comentario_id)
+public,comentario_reacciones,idx_comentario_reac_usuario,CREATE INDEX idx_comentario_reac_usuario ON public.comentario_reacciones USING btree (usuario_id)
+public,comentario_reacciones,ux_comentario_reac_comentario_usuario,"CREATE UNIQUE INDEX ux_comentario_reac_comentario_usuario ON public.comentario_reacciones USING btree (comentario_id, usuario_id)"
+public,comentarios_denuncias,comentarios_denuncias_pkey,CREATE UNIQUE INDEX comentarios_denuncias_pkey ON public.comentarios_denuncias USING btree (id)
+public,comentarios_denuncias,idx_comentarios_denuncia_id,CREATE INDEX idx_comentarios_denuncia_id ON public.comentarios_denuncias USING btree (denuncia_id)
+public,comentarios_denuncias,idx_comentarios_denuncia_parent_created,"CREATE INDEX idx_comentarios_denuncia_parent_created ON public.comentarios_denuncias USING btree (denuncia_id, parent_id, created_at DESC)"
+public,comentarios_denuncias,idx_comentarios_denuncias_denuncia_id_fk_1ddfa9,CREATE INDEX idx_comentarios_denuncias_denuncia_id_fk_1ddfa9 ON public.comentarios_denuncias USING btree (denuncia_id)
+public,comentarios_denuncias,idx_comentarios_denuncias_usuario_id_fk_5537d7,CREATE INDEX idx_comentarios_denuncias_usuario_id_fk_5537d7 ON public.comentarios_denuncias USING btree (usuario_id)
+public,comentarios_denuncias,idx_comentarios_parent_id,CREATE INDEX idx_comentarios_parent_id ON public.comentarios_denuncias USING btree (parent_id)
+public,comentarios_denuncias,idx_comentarios_usuario_id,CREATE INDEX idx_comentarios_usuario_id ON public.comentarios_denuncias USING btree (usuario_id)
+public,cuadrantes,cuadrantes_codigo_key,CREATE UNIQUE INDEX cuadrantes_codigo_key ON public.cuadrantes USING btree (codigo)
+public,cuadrantes,cuadrantes_pkey,CREATE UNIQUE INDEX cuadrantes_pkey ON public.cuadrantes USING btree (id)
+public,denuncia_clasificaciones,denuncia_clasificaciones_pkey,CREATE UNIQUE INDEX denuncia_clasificaciones_pkey ON public.denuncia_clasificaciones USING btree (id)
+public,denuncia_clasificaciones,idx_clasif_denuncia,"CREATE INDEX idx_clasif_denuncia ON public.denuncia_clasificaciones USING btree (denuncia_id, vigente)"
+public,denuncia_clasificaciones,idx_clasif_req,CREATE INDEX idx_clasif_req ON public.denuncia_clasificaciones USING btree (requerimiento_id)
+public,denuncia_evidencias,denuncia_evidencias_pkey,CREATE UNIQUE INDEX denuncia_evidencias_pkey ON public.denuncia_evidencias USING btree (id)
+public,denuncia_evidencias,idx_denuncia_evidencias_denuncia_id_fk_32121a,CREATE INDEX idx_denuncia_evidencias_denuncia_id_fk_32121a ON public.denuncia_evidencias USING btree (denuncia_id)
+public,denuncia_evidencias,idx_evidencias_denuncia_orden,"CREATE INDEX idx_evidencias_denuncia_orden ON public.denuncia_evidencias USING btree (denuncia_id, orden)"
+public,denuncia_historial,denuncia_historial_pkey,CREATE UNIQUE INDEX denuncia_historial_pkey ON public.denuncia_historial USING btree (id)
+public,denuncia_historial,idx_denuncia_historial_actor_usuario_id_fk_82cff7,CREATE INDEX idx_denuncia_historial_actor_usuario_id_fk_82cff7 ON public.denuncia_historial USING btree (actor_usuario_id)
+public,denuncia_historial,idx_denuncia_historial_denuncia_id_fk_cc79b0,CREATE INDEX idx_denuncia_historial_denuncia_id_fk_cc79b0 ON public.denuncia_historial USING btree (denuncia_id)
+public,denuncia_historial,idx_historial_denuncia_fecha,"CREATE INDEX idx_historial_denuncia_fecha ON public.denuncia_historial USING btree (denuncia_id, created_at)"
+public,denuncia_observaciones,denuncia_observaciones_pkey,CREATE UNIQUE INDEX denuncia_observaciones_pkey ON public.denuncia_observaciones USING btree (id)
+public,denuncia_observaciones,idx_denuncia_observaciones_creado_por_fk_72fb41,CREATE INDEX idx_denuncia_observaciones_creado_por_fk_72fb41 ON public.denuncia_observaciones USING btree (creado_por)
+public,denuncia_observaciones,idx_denuncia_observaciones_denuncia_id_fk_bb76db,CREATE INDEX idx_denuncia_observaciones_denuncia_id_fk_bb76db ON public.denuncia_observaciones USING btree (denuncia_id)
+public,denuncia_observaciones,idx_obs_denuncia_fecha,"CREATE INDEX idx_obs_denuncia_fecha ON public.denuncia_observaciones USING btree (denuncia_id, created_at)"
+public,denuncia_reacciones,denuncia_reacciones_pkey,CREATE UNIQUE INDEX denuncia_reacciones_pkey ON public.denuncia_reacciones USING btree (id)
+public,denuncia_reacciones,idx_denuncia_reac_denuncia,CREATE INDEX idx_denuncia_reac_denuncia ON public.denuncia_reacciones USING btree (denuncia_id)
+public,denuncia_reacciones,idx_denuncia_reac_usuario,CREATE INDEX idx_denuncia_reac_usuario ON public.denuncia_reacciones USING btree (usuario_id)
+public,denuncia_reacciones,ux_denuncia_reac_denuncia_usuario,"CREATE UNIQUE INDEX ux_denuncia_reac_denuncia_usuario ON public.denuncia_reacciones USING btree (denuncia_id, usuario_id)"
+public,denuncias,denuncias_folio_key,CREATE UNIQUE INDEX denuncias_folio_key ON public.denuncias USING btree (folio)
+public,denuncias,denuncias_pkey,CREATE UNIQUE INDEX denuncias_pkey ON public.denuncias USING btree (id)
+public,denuncias,idx_denuncias_ciudadano_id_fk_c055d4,CREATE INDEX idx_denuncias_ciudadano_id_fk_c055d4 ON public.denuncias USING btree (ciudadano_id)
+public,denuncias,idx_denuncias_cuadrante,CREATE INDEX idx_denuncias_cuadrante ON public.denuncias USING btree (cuadrante_id)
+public,denuncias,idx_denuncias_estado,CREATE INDEX idx_denuncias_estado ON public.denuncias USING btree (estado_id)
+public,denuncias,idx_denuncias_fecha,CREATE INDEX idx_denuncias_fecha ON public.denuncias USING btree (fecha_creacion DESC)
+public,denuncias,idx_denuncias_id_consentir,"CREATE INDEX idx_denuncias_id_consentir ON public.denuncias USING btree (id, consentir_publicacion)"
+public,estados_denuncia,estados_denuncia_nombre_publico_key,CREATE UNIQUE INDEX estados_denuncia_nombre_publico_key ON public.estados_denuncia USING btree (nombre)
+public,estados_denuncia,estados_denuncia_pkey,CREATE UNIQUE INDEX estados_denuncia_pkey ON public.estados_denuncia USING btree (id)
+public,evento_turno_tipo,evento_turno_tipo_codigo_key,CREATE UNIQUE INDEX evento_turno_tipo_codigo_key ON public.evento_turno_tipo USING btree (codigo)
+public,evento_turno_tipo,evento_turno_tipo_pkey,CREATE UNIQUE INDEX evento_turno_tipo_pkey ON public.evento_turno_tipo USING btree (id)
+public,eventos_turno,eventos_turno_pkey,CREATE UNIQUE INDEX eventos_turno_pkey ON public.eventos_turno USING btree (id)
+public,eventos_turno,idx_et_actor,CREATE INDEX idx_et_actor ON public.eventos_turno USING btree (actor_user_id)
+public,eventos_turno,idx_et_tipo,CREATE INDEX idx_et_tipo ON public.eventos_turno USING btree (tipo_id)
+public,eventos_turno,idx_et_turno_ts_desc,"CREATE INDEX idx_et_turno_ts_desc ON public.eventos_turno USING btree (turno_id, ts DESC)"
+public,inspectores,inspectores_pkey,CREATE UNIQUE INDEX inspectores_pkey ON public.inspectores USING btree (id)
+public,movil_tipo,movil_tipo_nombre_key,CREATE UNIQUE INDEX movil_tipo_nombre_key ON public.movil_tipo USING btree (nombre)
+public,movil_tipo,movil_tipo_pkey,CREATE UNIQUE INDEX movil_tipo_pkey ON public.movil_tipo USING btree (id)
+public,movil_uso_kilometraje,idx_uso_km_uso_ts,"CREATE INDEX idx_uso_km_uso_ts ON public.movil_uso_kilometraje USING btree (uso_id, lectura_ts)"
+public,movil_uso_kilometraje,movil_uso_kilometraje_pkey,CREATE UNIQUE INDEX movil_uso_kilometraje_pkey ON public.movil_uso_kilometraje USING btree (id)
+public,movil_usos,idx_usos_inspector_inicio,"CREATE INDEX idx_usos_inspector_inicio ON public.movil_usos USING btree (inspector_id, inicio_ts)"
+public,movil_usos,idx_usos_movil_interval,"CREATE INDEX idx_usos_movil_interval ON public.movil_usos USING btree (movil_id, inicio_ts, fin_ts)"
+public,movil_usos,idx_usos_turno,CREATE INDEX idx_usos_turno ON public.movil_usos USING btree (turno_id)
+public,movil_usos,movil_usos_pkey,CREATE UNIQUE INDEX movil_usos_pkey ON public.movil_usos USING btree (id)
+public,moviles,idx_moviles_estado,CREATE INDEX idx_moviles_estado ON public.moviles USING btree (estado)
+public,moviles,idx_moviles_tipo,CREATE INDEX idx_moviles_tipo ON public.moviles USING btree (tipo_id)
+public,moviles,moviles_patente_key,CREATE UNIQUE INDEX moviles_patente_key ON public.moviles USING btree (patente)
+public,moviles,moviles_pkey,CREATE UNIQUE INDEX moviles_pkey ON public.moviles USING btree (id)
+public,notificaciones_enviadas,idx_notificaciones_enviadas_usuario_id_fk_dfd71e,CREATE INDEX idx_notificaciones_enviadas_usuario_id_fk_dfd71e ON public.notificaciones_enviadas USING btree (usuario_id)
+public,notificaciones_enviadas,notificaciones_enviadas_pkey,CREATE UNIQUE INDEX notificaciones_enviadas_pkey ON public.notificaciones_enviadas USING btree (id)
+public,perfiles_ciudadanos,perfiles_ciudadanos_pkey,CREATE UNIQUE INDEX perfiles_ciudadanos_pkey ON public.perfiles_ciudadanos USING btree (usuario_id)
+public,prioridades_denuncia,prioridad_nombre_key,CREATE UNIQUE INDEX prioridad_nombre_key ON public.prioridades_denuncia USING btree (nombre)
+public,prioridades_denuncia,prioridad_pkey,CREATE UNIQUE INDEX prioridad_pkey ON public.prioridades_denuncia USING btree (id)
+public,push_status_queue,idx_push_status_queue_pending,CREATE INDEX idx_push_status_queue_pending ON public.push_status_queue USING btree (created_at) WHERE (processed_at IS NULL)
+public,push_status_queue,push_status_queue_pkey,CREATE UNIQUE INDEX push_status_queue_pkey ON public.push_status_queue USING btree (id)
+public,roles_portal,roles_portal_nombre_key,CREATE UNIQUE INDEX roles_portal_nombre_key ON public.roles_portal USING btree (nombre)
+public,roles_portal,roles_portal_pkey,CREATE UNIQUE INDEX roles_portal_pkey ON public.roles_portal USING btree (id)
+public,tokens_push,idx_tokens_push_usuario_id_fk_b36c0b,CREATE INDEX idx_tokens_push_usuario_id_fk_b36c0b ON public.tokens_push USING btree (usuario_id)
+public,tokens_push,idx_tokens_push_usuario_token,"CREATE UNIQUE INDEX idx_tokens_push_usuario_token ON public.tokens_push USING btree (usuario_id, expo_token)"
+public,tokens_push,tokens_push_pkey,"CREATE UNIQUE INDEX tokens_push_pkey ON public.tokens_push USING btree (usuario_id, device_id)"
+public,turno_tipo,turno_tipo_nombre_key,CREATE UNIQUE INDEX turno_tipo_nombre_key ON public.turno_tipo USING btree (nombre)
+public,turno_tipo,turno_tipo_pkey,CREATE UNIQUE INDEX turno_tipo_pkey ON public.turno_tipo USING btree (id)
+public,turnos,idx_t_cuadrante_fecha,"CREATE INDEX idx_t_cuadrante_fecha ON public.turnos USING btree (cuadrante_id, fecha)"
+public,turnos,idx_t_estado_fecha,"CREATE INDEX idx_t_estado_fecha ON public.turnos USING btree (estado, fecha)"
+public,turnos,idx_t_inspector_fecha,"CREATE INDEX idx_t_inspector_fecha ON public.turnos USING btree (inspector_id, fecha)"
+public,turnos,turnos_pkey,CREATE UNIQUE INDEX turnos_pkey ON public.turnos USING btree (id)
+public,turnos,turnos_uniq_por_dia,"CREATE UNIQUE INDEX turnos_uniq_por_dia ON public.turnos USING btree (inspector_id, fecha)"
+public,turnos_excepciones,idx_te_planificado,CREATE INDEX idx_te_planificado ON public.turnos_excepciones USING btree (turno_planificado_id)
+public,turnos_excepciones,turnos_excepciones_pkey,CREATE UNIQUE INDEX turnos_excepciones_pkey ON public.turnos_excepciones USING btree (id)
+public,turnos_planificados,idx_tp_cuadrante_fecha,"CREATE INDEX idx_tp_cuadrante_fecha ON public.turnos_planificados USING btree (cuadrante_id, fecha)"
+public,turnos_planificados,idx_tp_inspector_fecha,"CREATE INDEX idx_tp_inspector_fecha ON public.turnos_planificados USING btree (inspector_id, fecha)"
+public,turnos_planificados,turnos_planificados_pkey,CREATE UNIQUE INDEX turnos_planificados_pkey ON public.turnos_planificados USING btree (id)
+public,turnos_planificados,turnos_planificados_uniq,"CREATE UNIQUE INDEX turnos_planificados_uniq ON public.turnos_planificados USING btree (inspector_id, fecha, hora_inicio, hora_fin)"
+public,usuarios_portal,idx_usuarios_portal_rol_id_fk_10da6d,CREATE INDEX idx_usuarios_portal_rol_id_fk_10da6d ON public.usuarios_portal USING btree (rol_id)
+public,usuarios_portal,usuarios_portal_pkey,CREATE UNIQUE INDEX usuarios_portal_pkey ON public.usuarios_portal USING btree (usuario_id)

@@ -31,9 +31,23 @@ Este documento proporciona información esencial para trabajar eficientemente co
 
 1. **Cliente**: 3 tipos diferentes de clientes de Supabase:
 
-   - `/lib/supabase/client.ts`: Cliente para uso en navegador
-   - `/lib/supabase/server.ts`: Cliente para uso en Server Components
-   - `/lib/supabase/middleware.ts`: Cliente para uso en middleware de Next.js
+### Buckets de almacenamiento en Supabase
+
+En Supabase existen 2 buckets principales para almacenamiento de archivos:
+
+- **avatars**: Solo imágenes. Se utiliza para almacenar los avatares de los usuarios del sistema. Solo se permiten archivos de tipo imagen (jpg, png, webp, etc.).
+- **evidencias**: Imágenes y/o videos. Se utiliza para almacenar archivos adjuntos a denuncias, como fotos y videos subidos por los usuarios o inspectores.
+
+Ten en cuenta:
+
+- El bucket `avatars` solo debe aceptar imágenes.
+- El bucket `evidencias` puede aceptar imágenes y videos (formatos comunes: jpg, png, mp4, mov, webp, etc.).
+
+Al subir archivos, asegúrate de validar el tipo de archivo según el bucket destino.
+
+- `/lib/supabase/client.ts`: Cliente para uso en navegador
+- `/lib/supabase/server.ts`: Cliente para uso en Server Components
+- `/lib/supabase/middleware.ts`: Cliente para uso en middleware de Next.js
 
 2. **Autenticación**:
 
@@ -488,10 +502,26 @@ La base de datos en Supabase (PostgreSQL) contiene las siguientes tablas princip
 - **Clasificaciones**: Solo una clasificación vigente por denuncia
 - **Auditoría**: Múltiples tablas con trigger `t_audit_*` para registro automático
 
+### Índices Importantes
+
+La base de datos tiene índices optimizados en las siguientes tablas y columnas principales:
+
+- **denuncias**: `idx_denuncias_fecha` (fecha_creacion DESC), `idx_denuncias_estado` (estado_id), `idx_denuncias_categoria` (categoria_publica_id), `idx_denuncias_inspector` (inspector_id), `idx_denuncias_cuadrante` (cuadrante_id)
+- **asignaciones_inspector**: `idx_asig_por_denuncia` (denuncia_id), índices en inspector_id y asignado_por
+- **denuncia_historial**: `idx_historial_denuncia_fecha` (denuncia_id, created_at)
+- **inspectores**: Índices en usuario_id y tipo_turno
+- **turnos**: `idx_t_inspector_fecha` (inspector_id, fecha), `idx_t_estado_fecha` (estado, fecha)
+- **movil_usos**: `idx_usos_movil_interval` (movil_id, inicio_ts, fin_ts), `idx_usos_inspector_inicio` (inspector_id, inicio_ts)
+- **comentarios_denuncias**: `idx_comentarios_denuncia_parent_created` (denuncia_id, parent_id, created_at DESC)
+- **audit_log**: `idx_audit_ts` (ts DESC), `idx_audit_tabla` (tabla), `idx_audit_operacion` (operacion)
+
+Estos índices están optimizados para consultas de dashboard, reportes y operaciones frecuentes.
+
 ### Dashboard
 
-- Los datos se obtienen actualmente de archivos JSON estáticos en `/public`
-  - Cuando se implemente completamente, serán endpoints en el BFF consultando las tablas de denuncias, estados, asignaciones, etc.
+- Los datos se obtienen de una vista materializada optimizada (`dashboard_metricas_v1`) que pre-calcula todas las métricas
+- El endpoint `/api/dashboard` consume esta vista para entregar datos al frontend
+- La vista se refresca periódicamente mediante función `refresh_dashboard_metricas()`
 
 ## Pautas y Mejores Prácticas
 
