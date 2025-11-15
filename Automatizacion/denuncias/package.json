@@ -1,0 +1,24 @@
+{
+  "name": "generador-denuncias",
+  "version": "1.0.0",
+  "description": "Generador automatizado de 1000 denuncias para Portal Web San Bernardo",
+  "type": "module",
+  "main": "generarDenuncias.js",
+  "scripts": {
+    "generar": "node generarDenuncias.js",
+    "test": "node test-conexion.js"
+  },
+  "keywords": [
+    "denuncias",
+    "supabase",
+    "faker",
+    "san-bernardo"
+  ],
+  "author": "Portal Web San Bernardo",
+  "license": "MIT",
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@supabase/supabase-js": "^2.39.7",
+    "dotenv": "^16.4.1"
+  }
+}

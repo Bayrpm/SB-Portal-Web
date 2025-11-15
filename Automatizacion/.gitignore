@@ -1,0 +1,23 @@
+# Ignorar node_modules en subcarpetas de automatización
+node_modules/
+ciudadanos/node_modules/
+inspectores/node_modules/
+
+# Archivos de entorno y configuración
+.env
+.env.*
+
+# Salidas de scripts de automatización
+ciudadanos/credenciales_ciudadanos.txt
+ciudadanos/ciudadanos_generados.json
+inspectores/credenciales_inspectores.txt
+inspectores/inspectores_generados.json
+
+# Archivos temporales y logs
+*.log
+*.tmp
+*.bak
+
+# Salidas de pruebas o dumps
+*.out
+*.dump

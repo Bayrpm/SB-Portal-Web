@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno
+.env
+.env.local
+
+# Reportes generados
+denuncias_generadas_reporte.txt
+denuncias_generadas_reporte.json
+
+# Checkpoint de generación
+generacion_checkpoint.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

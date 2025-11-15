@@ -1,0 +1,23 @@
+{
+  "name": "generador-inspectores",
+  "version": "1.0.0",
+  "description": "Script para generar inspectores de prueba en la base de datos",
+  "type": "module",
+  "main": "generarInspectores.js",
+  "scripts": {
+    "generar": "node generarInspectores.js"
+  },
+  "keywords": [
+    "supabase",
+    "faker",
+    "seed",
+    "inspectores"
+  ],
+  "author": "Portal San Bernardo",
+  "license": "MIT",
+  "dependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1"
+  }
+}
