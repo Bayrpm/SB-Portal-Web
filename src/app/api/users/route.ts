@@ -4,47 +4,83 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import {
+    createUserSchema,
+    updateUserSchema,
+    deleteUserSchema,
+    getUserByEmailSchema,
+    userResponseSchema,
+    userInfoResponseSchema,
+    successResponseSchema,
+    validateInput,
+    validateOutput,
+    parseQueryParams,
+    withAuth,
+    rateLimit,
+    rateLimitPresets,
+    logger
+} from '@/lib/validation';
 
-const CHILEAN_PHONE_REGEX = /^\+56\s?9\s?\d{4}\s?\d{4}$/;
+export const POST = withAuth(async (req: NextRequest) => {
+    // Rate limiting para creación de usuarios (10 por minuto)
+    const rateLimitResponse = await rateLimit(req, rateLimitPresets.critical);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
 
-export async function POST(req: NextRequest) {
     return registerStaff(req);
-}
+});
 
-export async function PUT(req: NextRequest) {
+export const PUT = withAuth(async (req: NextRequest) => {
     return updateUser(req);
-}
+});
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withAuth(async (req: NextRequest) => {
     return deleteUser(req);
-}
+});
 
-export async function GET(req: NextRequest) {
-    const url = new URL(req.url);
-    const email = url.searchParams.get("email");
-    if (!email) return NextResponse.json({ error: "Email es requerido" }, { status: 400 });
+export const GET = withAuth(async (req: NextRequest) => {
+    const params = parseQueryParams(req.url);
 
+    // Validar query params
+    const validation = validateInput(getUserByEmailSchema, params);
+    if (!validation.success) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { email } = validation.data;
     const result = await getUserInfo(email);
-    if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
-    return NextResponse.json(result);
-}
+
+    if ("error" in result) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    // Validar salida
+    const outputValidation = validateOutput(userInfoResponseSchema, result);
+    if (!outputValidation.success) {
+        logger.error('GET /api/users: error validando salida', { error: outputValidation.error });
+        return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    }
+
+    return NextResponse.json(outputValidation.data);
+});
 
 async function registerStaff(req: NextRequest) {
-    const { email, password, name, last_name, phone, rol_id } = await req.json();
-
-    if (!email || !password) {
-        return NextResponse.json({ error: "Email y password requeridos" }, { status: 400 });
-    }
-    if (phone && !CHILEAN_PHONE_REGEX.test(phone)) {
-        return NextResponse.json({ error: "El número de teléfono debe tener formato chileno: +56 9 XXXX XXXX" }, { status: 400 });
-    }
-    if (name == null || last_name == null) {
-        return NextResponse.json({ error: "Nombre y apellido son requeridos" }, { status: 400 });
-    }
-
     try {
+        const body = await req.json();
+
+        // Validar entrada
+        const validation = validateInput(createUserSchema, body);
+        if (!validation.success) {
+            logger.warn('Crear usuario: validación fallida', { error: validation.error });
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
+        const { email, password, name, last_name, phone, rol_id } = validation.data;
+
+        logger.info('Intentando crear usuario', { email, rol_id });
+
         // 1) Crear usuario con service role (server-side)
-        console.log("Intentando crear usuario con Supabase Admin...");
         const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
@@ -53,22 +89,21 @@ async function registerStaff(req: NextRequest) {
         });
 
         if (createErr) {
-            console.error("Error creando usuario:", createErr);
+            logger.error('Error creando usuario en auth', createErr, { email });
             return NextResponse.json({ error: createErr.message }, { status: 500 });
         }
 
         if (!created?.user) {
-            console.error("No se obtuvo información del usuario creado");
+            logger.error('No se obtuvo información del usuario creado', { email });
             return NextResponse.json({ error: "No se pudo crear el usuario" }, { status: 500 });
         }
 
         const usuario_id = created.user.id;
-        console.log("Usuario creado correctamente:", usuario_id);
+        logger.debug('Usuario creado en auth', { usuario_id, email });
 
-        // 2) Insertar en usuarios_portal con service role (evita problemas de permisos/RLS)
+        // 2) Insertar en usuarios_portal con service role
         let portalError;
         try {
-            console.log("Insertando en usuarios_portal...");
             const result = await supabaseAdmin
                 .from("usuarios_portal")
                 .insert([{ usuario_id, rol_id, activo: true }]);
@@ -76,8 +111,9 @@ async function registerStaff(req: NextRequest) {
             portalError = result.error;
 
             if (portalError) {
-                console.error("Error insertando en usuarios_portal:", portalError);
-                console.log("Intentando método alternativo...");
+                logger.warn('Error insertando en usuarios_portal, intentando método alternativo', {
+                    error: portalError.message
+                });
 
                 // Método alternativo usando createServerClient
                 const supabaseServer = await createServerClient();
@@ -86,35 +122,44 @@ async function registerStaff(req: NextRequest) {
                     .insert([{ usuario_id, rol_id, activo: true }]);
 
                 if (serverResult.error) {
-                    console.error("Error con método alternativo:", serverResult.error);
+                    logger.error('Error con método alternativo', serverResult.error);
                     portalError = serverResult.error;
                 } else {
-                    console.log("Método alternativo exitoso");
+                    logger.debug('Método alternativo exitoso');
                     portalError = null;
                 }
             }
         } catch (insertError) {
-            console.error("Excepción insertando en usuarios_portal:", insertError);
+            logger.error('Excepción insertando en usuarios_portal', insertError instanceof Error ? insertError : undefined);
             portalError = { message: insertError instanceof Error ? insertError.message : String(insertError) };
         }
 
         if (portalError) {
-            console.error("Error final insertando en usuarios_portal:", portalError);
+            logger.error('Error final insertando en usuarios_portal, ejecutando rollback', portalError);
             // rollback: borra el usuario recién creado
             try {
                 await supabaseAdmin.auth.admin.deleteUser(usuario_id);
-                console.log("Usuario eliminado en rollback");
+                logger.info('Usuario eliminado en rollback', { usuario_id });
             } catch (deleteError) {
-                console.error("Error durante rollback:", deleteError);
+                logger.error('Error durante rollback', deleteError instanceof Error ? deleteError : undefined);
             }
             return NextResponse.json({ error: portalError.message }, { status: 500 });
         }
 
-        console.log("Usuario registrado completamente con éxito");
-        return NextResponse.json({ user: created.user });
+        // Validar salida
+        const responseData = { user: created.user };
+        const outputValidation = validateOutput(userResponseSchema, responseData);
+
+        if (!outputValidation.success) {
+            logger.error('Crear usuario: error validando salida', { error: outputValidation.error });
+            return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+        }
+
+        logger.info('Usuario creado exitosamente', { usuario_id, email, rol_id });
+        return NextResponse.json(outputValidation.data);
 
     } catch (error) {
-        console.error("Excepción durante el proceso de registro:", error);
+        logger.error('Excepción durante registro de usuario', error instanceof Error ? error : undefined);
         return NextResponse.json({
             error: error instanceof Error ? error.message : "Error inesperado conectando con Supabase"
         }, { status: 500 });
@@ -149,19 +194,20 @@ async function getUserInfo(email: string) {
 }
 
 async function updateUser(req: NextRequest) {
-    const { id, name, last_name, phone, rol_id, activo } = await req.json();
-
-    if (!id) {
-        return NextResponse.json({ error: "ID de usuario requerido" }, { status: 400 });
-    }
-
-    if (phone && !CHILEAN_PHONE_REGEX.test(phone)) {
-        return NextResponse.json({
-            error: "El número de teléfono debe tener formato chileno: +56 9 XXXX XXXX"
-        }, { status: 400 });
-    }
-
     try {
+        const body = await req.json();
+
+        // Validar entrada
+        const validation = validateInput(updateUserSchema, body);
+        if (!validation.success) {
+            logger.warn('Actualizar usuario: validación fallida', { error: validation.error });
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
+        const { id, name, last_name, phone, rol_id, activo } = validation.data;
+
+        logger.info('Actualizando usuario', { id });
+
         // Actualizar metadata del usuario si se proporcionan name, last_name o phone
         if (name !== undefined || last_name !== undefined || phone !== undefined) {
             const updateData: { user_metadata: { name?: string; last_name?: string; phone?: string } } = {
@@ -178,7 +224,7 @@ async function updateUser(req: NextRequest) {
             );
 
             if (metadataError) {
-                console.error("Error actualizando metadata:", metadataError);
+                logger.error('Error actualizando metadata', metadataError, { id });
                 return NextResponse.json({ error: metadataError.message }, { status: 500 });
             }
 
@@ -194,7 +240,7 @@ async function updateUser(req: NextRequest) {
                 .eq("usuario_id", id);
 
             if (perfilError) {
-                console.error("Error actualizando perfil:", perfilError);
+                logger.error('Error actualizando perfil', perfilError, { id });
             }
         }
 
@@ -210,15 +256,25 @@ async function updateUser(req: NextRequest) {
                 .eq("usuario_id", id);
 
             if (portalError) {
-                console.error("Error actualizando usuarios_portal:", portalError);
+                logger.error('Error actualizando usuarios_portal', portalError, { id });
                 return NextResponse.json({ error: portalError.message }, { status: 500 });
             }
         }
 
-        return NextResponse.json({ success: true, message: "Usuario actualizado correctamente" });
+        // Validar salida
+        const responseData = { success: true, message: "Usuario actualizado correctamente" };
+        const outputValidation = validateOutput(successResponseSchema, responseData);
+
+        if (!outputValidation.success) {
+            logger.error('Actualizar usuario: error validando salida', { error: outputValidation.error });
+            return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+        }
+
+        logger.info('Usuario actualizado exitosamente', { id });
+        return NextResponse.json(outputValidation.data);
 
     } catch (error) {
-        console.error("Error actualizando usuario:", error);
+        logger.error('Error actualizando usuario', error instanceof Error ? error : undefined);
         return NextResponse.json({
             error: error instanceof Error ? error.message : "Error inesperado"
         }, { status: 500 });
@@ -226,13 +282,20 @@ async function updateUser(req: NextRequest) {
 }
 
 async function deleteUser(req: NextRequest) {
-    const { id } = await req.json();
-
-    if (!id) {
-        return NextResponse.json({ error: "ID de usuario requerido" }, { status: 400 });
-    }
-
     try {
+        const body = await req.json();
+
+        // Validar entrada
+        const validation = validateInput(deleteUserSchema, body);
+        if (!validation.success) {
+            logger.warn('Eliminar usuario: validación fallida', { error: validation.error });
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
+        const { id } = validation.data;
+
+        logger.info('Eliminando usuario', { id });
+
         // 1. Eliminar de usuarios_portal
         const { error: portalError } = await supabaseAdmin
             .from("usuarios_portal")
@@ -240,7 +303,7 @@ async function deleteUser(req: NextRequest) {
             .eq("usuario_id", id);
 
         if (portalError) {
-            console.error("Error eliminando de usuarios_portal:", portalError);
+            logger.error('Error eliminando de usuarios_portal', portalError, { id });
             return NextResponse.json({ error: portalError.message }, { status: 500 });
         }
 
@@ -251,21 +314,31 @@ async function deleteUser(req: NextRequest) {
             .eq("usuario_id", id);
 
         if (perfilError) {
-            console.error("Error eliminando perfil:", perfilError);
+            logger.warn('Error eliminando perfil (puede no existir)', perfilError, { id });
         }
 
         // 3. Eliminar usuario de auth
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
         if (authError) {
-            console.error("Error eliminando usuario de auth:", authError);
+            logger.error('Error eliminando usuario de auth', authError, { id });
             return NextResponse.json({ error: authError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, message: "Usuario eliminado correctamente" });
+        // Validar salida
+        const responseData = { success: true, message: "Usuario eliminado correctamente" };
+        const outputValidation = validateOutput(successResponseSchema, responseData);
+
+        if (!outputValidation.success) {
+            logger.error('Eliminar usuario: error validando salida', { error: outputValidation.error });
+            return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+        }
+
+        logger.info('Usuario eliminado exitosamente', { id });
+        return NextResponse.json(outputValidation.data);
 
     } catch (error) {
-        console.error("Error eliminando usuario:", error);
+        logger.error('Error eliminando usuario', error instanceof Error ? error : undefined);
         return NextResponse.json({
             error: error instanceof Error ? error.message : "Error inesperado"
         }, { status: 500 });

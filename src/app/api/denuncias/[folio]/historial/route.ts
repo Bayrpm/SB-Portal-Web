@@ -77,7 +77,6 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
             const nombreCompleto = perfil
                 ? `${perfil.nombre} ${perfil.apellido}`.trim()
                 : 'sin nombre';
-            console.log(`[INSPECTOR] ID: ${i.id}, Nombre: ${nombreCompleto}, Datos: `, JSON.stringify(i));
             return [String(i.id), nombreCompleto];
         })
     );
@@ -212,10 +211,6 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
 
             const rolInspector = item.detalle?.rol === 'principal' ? 'Inspector Principal' : item.detalle?.rol === 'acompañante' ? 'Inspector Acompañante' : 'Inspector';
             const fechaAsignacion = (item.detalle?.fecha_derivacion as string) || (item.detalle?.fecha_asignacion as string) || item.created_at;
-
-            console.log(`[ASIGNACION] Inspector ID: ${inspectorId}`);
-            console.log(`[ASIGNACION] Inspector Nombre: ${inspectorNombre}`);
-            console.log(`[ASIGNACION] Rol: ${rolInspector}`);
 
             detallesLeibles = {
                 'Inspector Asignado': inspectorNombre,
