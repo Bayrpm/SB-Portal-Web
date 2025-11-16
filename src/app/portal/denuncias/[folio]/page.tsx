@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import { useRouter } from "next/navigation";
 import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
@@ -584,9 +585,11 @@ export default function DenunciaDetallePage({
                   >
                     {evidencia.tipo === "FOTO" ? (
                       evidencia.url ? (
-                        <img
+                        <Image
                           src={evidencia.url}
                           alt="Evidencia"
+                          width={400}
+                          height={192}
                           className="w-full h-48 object-cover rounded-md mb-3"
                         />
                       ) : (

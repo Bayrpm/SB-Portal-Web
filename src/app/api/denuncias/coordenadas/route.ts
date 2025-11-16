@@ -81,6 +81,7 @@ export async function GET() {
             .select(
                 `
         folio,
+        titulo,
         coords_x,
         coords_y,
         ubicacion_texto,
@@ -160,6 +161,7 @@ export async function GET() {
 
                     return {
                         folio: denuncia.folio,
+                        titulo: denuncia.titulo || "Sin título",
                         lat: coords.lat,
                         lng: coords.lng,
                         ubicacion: denuncia.ubicacion_texto || "Sin ubicación",
