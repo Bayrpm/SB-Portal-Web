@@ -185,7 +185,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [] // Sin dependencias para evitar recreación constante
+    [data] // Incluir data como dependencia
   );
 
   const clearCache = useCallback(() => {
