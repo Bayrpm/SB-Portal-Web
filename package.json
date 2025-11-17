@@ -28,7 +28,8 @@
     "react-leaflet": "^5.0.0",
     "sweetalert2": "^11.26.2",
     "tailwindcss": "^4.1.14",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

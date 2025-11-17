@@ -16,7 +16,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         return NextResponse.json({ error: 'Denuncia no encontrada' }, { status: 404 });
     }
 
-    // Obtener evidencias de la denuncia con información del creador
+    // Obtener evidencias de la denuncia
     const { data: evidencias, error } = await supabase
         .from('denuncia_evidencias')
         .select(`
@@ -25,14 +25,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
             storage_path,
             orden,
             created_at,
-            created_by,
-            perfiles_ciudadanos!denuncia_evidencias_created_by_fkey (
-                nombre,
-                apellido
-            ),
-            usuarios_portal!denuncia_evidencias_created_by_fkey (
-                nombre
-            )
+            created_by
         `)
         .eq('denuncia_id', denuncia.id)
         .order('created_at', { ascending: false });
@@ -40,6 +33,24 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
     if (error) {
         console.error('Error al obtener evidencias:', error);
         return NextResponse.json({ error: 'Error al obtener evidencias' }, { status: 500 });
+    }
+
+    // Obtener perfiles de los creadores (batch query)
+    let perfiles: Record<string, { nombre: string; apellido: string }> = {};
+    if (evidencias && evidencias.length > 0) {
+        const creadorIds = [...new Set(evidencias.map(ev => ev.created_by).filter(Boolean))];
+        if (creadorIds.length > 0) {
+            const { data: perfilesData } = await supabase
+                .from('perfiles_ciudadanos')
+                .select('usuario_id, nombre, apellido')
+                .in('usuario_id', creadorIds);
+
+            if (perfilesData) {
+                perfiles = Object.fromEntries(
+                    perfilesData.map(p => [p.usuario_id, { nombre: p.nombre || '', apellido: p.apellido || '' }])
+                );
+            }
+        }
     }
 
     // Formatear las evidencias con URLs firmadas
@@ -50,18 +61,11 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
                 .from('evidencias')
                 .createSignedUrl(ev.storage_path, 3600);
 
-            // Determinar quién subió la evidencia
+            // Obtener información del creador
             let subidoPor = 'Usuario desconocido';
-            let tipoUsuario = 'desconocido';
-
-            if (ev.perfiles_ciudadanos && Array.isArray(ev.perfiles_ciudadanos) && ev.perfiles_ciudadanos.length > 0) {
-                const perfil = ev.perfiles_ciudadanos[0];
-                subidoPor = `${perfil.nombre} ${perfil.apellido}`;
-                tipoUsuario = 'ciudadano';
-            } else if (ev.usuarios_portal && Array.isArray(ev.usuarios_portal) && ev.usuarios_portal.length > 0) {
-                const usuario = ev.usuarios_portal[0];
-                subidoPor = usuario.nombre;
-                tipoUsuario = 'operador/inspector';
+            if (ev.created_by && perfiles[ev.created_by]) {
+                const perfil = perfiles[ev.created_by];
+                subidoPor = `${perfil.nombre} ${perfil.apellido}`.trim() || 'Usuario desconocido';
             }
 
             return {
@@ -71,7 +75,6 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
                 orden: ev.orden,
                 fecha_subida: ev.created_at,
                 subido_por: subidoPor,
-                tipo_usuario: tipoUsuario,
             };
         })
     );

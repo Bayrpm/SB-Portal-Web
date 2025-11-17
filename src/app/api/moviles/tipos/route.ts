@@ -3,6 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
+function handleDuplicateError(error: unknown, message: string) {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: string }).code === "23505"
+    ) {
+        return NextResponse.json({ error: message }, { status: 409 });
+    }
+    return null;
+}
+
 // GET - Obtener todos los tipos de móviles
 export async function GET() {
     try {
@@ -15,7 +27,7 @@ export async function GET() {
 
         if (error) throw error;
 
-        return NextResponse.json({ tipos: tipos || [] });
+        return NextResponse.json({ tipos: tipos ?? [] });
     } catch (error) {
         console.error("Error al obtener tipos de móviles:", error);
         return NextResponse.json(
@@ -29,9 +41,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
-        const body = await request.json();
-
-        const { nombre, descripcion, activo } = body;
+        const { nombre, descripcion, activo } = await request.json();
 
         if (!nombre) {
             return NextResponse.json(
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
             .insert({
                 nombre,
                 descripcion,
-                activo: activo !== undefined ? activo : true,
+                activo: activo ?? true,
             })
             .select()
             .single();
@@ -55,12 +65,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ tipo: data }, { status: 201 });
     } catch (error) {
         console.error("Error al crear tipo de móvil:", error);
-        if (error && typeof error === 'object' && 'code' in error && error.code === "23505") {
-            return NextResponse.json(
-                { error: "El nombre del tipo ya existe" },
-                { status: 409 }
-            );
-        }
+        const conflict = handleDuplicateError(error, "El nombre del tipo ya existe");
+        if (conflict) return conflict;
+
         return NextResponse.json(
             { error: "Error al crear tipo de móvil" },
             { status: 500 }
@@ -68,13 +75,11 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PUT - Actualizar tipo de móvil existente
+// PUT - Actualizar tipo de móvil
 export async function PUT(request: NextRequest) {
     try {
         const supabase = await createClient();
-        const body = await request.json();
-
-        const { id, nombre, descripcion, activo } = body;
+        const { id, nombre, descripcion, activo } = await request.json();
 
         if (!id) {
             return NextResponse.json(
@@ -88,6 +93,13 @@ export async function PUT(request: NextRequest) {
         if (descripcion !== undefined) updateData.descripcion = descripcion;
         if (activo !== undefined) updateData.activo = activo;
 
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json(
+                { error: "No se enviaron campos para actualizar" },
+                { status: 400 }
+            );
+        }
+
         const { data, error } = await supabase
             .from("movil_tipo")
             .update(updateData)
@@ -100,12 +112,9 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ tipo: data });
     } catch (error) {
         console.error("Error al actualizar tipo de móvil:", error);
-        if (error && typeof error === 'object' && 'code' in error && error.code === "23505") {
-            return NextResponse.json(
-                { error: "El nombre del tipo ya existe" },
-                { status: 409 }
-            );
-        }
+        const conflict = handleDuplicateError(error, "El nombre del tipo ya existe");
+        if (conflict) return conflict;
+
         return NextResponse.json(
             { error: "Error al actualizar tipo de móvil" },
             { status: 500 }

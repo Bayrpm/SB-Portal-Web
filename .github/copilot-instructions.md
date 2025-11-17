@@ -2,6 +2,12 @@
 
 Este documento proporciona información esencial para trabajar eficientemente con el código del Portal Web de San Bernardo, una plataforma interna para la gestión de denuncias ciudadanas.
 
+## Instrucción clave sobre endpoints y base de datos
+
+**IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando el archivo `public/script-BD-13-11.sql`. Este archivo contiene la definición oficial de las tablas, campos, tipos y relaciones, y es la referencia obligatoria para asegurar la coherencia y validez de cualquier cambio o consulta sobre la capa de datos.
+
+No asumas la estructura de la base de datos ni los nombres de los campos sin revisar este archivo.
+
 ## Arquitectura General
 
 - **Frontend/SSR**: Next.js 15 con App Router usando React 19

@@ -72,10 +72,10 @@ const prioridadColor: Record<string, string> = {
 export default function DenunciaDetallePage({
   params,
 }: {
-  params: { folio: string };
+  params: Promise<{ folio: string }>;
 }) {
   const router = useRouter();
-  const { folio } = params;
+  const { folio } = React.use(params);
   const [denuncia, setDenuncia] = useState<DenunciaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [editandoPrioridad, setEditandoPrioridad] = useState(false);
@@ -620,12 +620,6 @@ export default function DenunciaDetallePage({
                       <p className="text-xs text-gray-500">
                         <span className="font-semibold">Subido por:</span>{" "}
                         {evidencia.subido_por}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-semibold">Rol:</span>{" "}
-                        {evidencia.tipo_usuario === "ciudadano"
-                          ? "Ciudadano"
-                          : "Inspector/Operador"}
                       </p>
                       <p className="text-xs text-gray-500">
                         <span className="font-semibold">Fecha:</span>{" "}
