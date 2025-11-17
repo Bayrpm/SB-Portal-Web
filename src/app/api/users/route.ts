@@ -314,14 +314,14 @@ async function deleteUser(req: NextRequest) {
             .eq("usuario_id", id);
 
         if (perfilError) {
-            logger.warn('Error eliminando perfil (puede no existir)', perfilError, { id });
+            logger.warn('Error eliminando perfil (puede no existir)', { error: perfilError.message, id });
         }
 
         // 3. Eliminar usuario de auth
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
         if (authError) {
-            logger.error('Error eliminando usuario de auth', authError, { id });
+            logger.error('Error eliminando usuario de auth', { error: authError.message, id });
             return NextResponse.json({ error: authError.message }, { status: 500 });
         }
 
