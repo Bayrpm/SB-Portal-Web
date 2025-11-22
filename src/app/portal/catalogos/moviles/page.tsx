@@ -6,6 +6,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import SearchComponent from "@/app/components/SearchComponent";
+import PageAccessValidator from "@/app/components/PageAccessValidator";
 import MovilModal, { MovilFormData } from "./components/MovilModal";
 import TipoMovilModal, { TipoMovilFormData } from "./components/TipoMovilModal";
 import Swal from "sweetalert2";
@@ -293,264 +294,268 @@ export default function MovilesPage() {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="px-6 py-5">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Car className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Gestión de Móviles
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Administra los vehículos y tipos disponibles
-              </p>
+    <PageAccessValidator pagePath="/portal/catalogos/moviles">
+      <div className="w-full min-h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-6 py-5">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Car className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Gestión de Móviles
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Administra los vehículos y tipos disponibles
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Contenido */}
-      <div className="flex-1 p-6">
-        <div className="flex gap-4 h-full">
-          {/* Sección Móviles - 60% */}
-          <div className="w-[60%] bg-white rounded-lg shadow-sm flex flex-col">
-            {/* Header con título e icono */}
-            <div className="px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
-              <div className="flex items-center gap-2">
-                <Car className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Móviles</h2>
+        {/* Contenido */}
+        <div className="flex-1 p-6">
+          <div className="flex gap-4 h-full">
+            {/* Sección Móviles - 60% */}
+            <div className="w-[60%] bg-white rounded-lg shadow-sm flex flex-col">
+              {/* Header con título e icono */}
+              <div className="px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+                <div className="flex items-center gap-2">
+                  <Car className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Móviles
+                  </h2>
+                </div>
               </div>
-            </div>
 
-            {/* Toolbar */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between gap-4">
-                <SearchComponent
-                  value={searchTermMoviles}
-                  onChange={(e) => setSearchTermMoviles(e.target.value)}
-                  placeholder="Buscar por patente, marca, modelo o tipo..."
-                  className="flex-1 max-w-md"
-                />
-                <ButtonComponent
-                  accion="agregar"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                  onClick={handleCreateMovil}
-                >
-                  Nuevo Móvil
-                </ButtonComponent>
+              {/* Toolbar */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between gap-4">
+                  <SearchComponent
+                    value={searchTermMoviles}
+                    onChange={(e) => setSearchTermMoviles(e.target.value)}
+                    placeholder="Buscar por patente, marca, modelo o tipo..."
+                    className="flex-1 max-w-md"
+                  />
+                  <ButtonComponent
+                    accion="agregar"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={handleCreateMovil}
+                  >
+                    Nuevo Móvil
+                  </ButtonComponent>
+                </div>
               </div>
-            </div>
 
-            {/* Tabla Móviles */}
-            <div className="flex-1 overflow-hidden">
-              <TableComponent
-                data={filteredMoviles}
-                columns={[
-                  {
-                    key: "patente",
-                    header: "Patente",
-                    width: "100px",
-                    render: (row) => (
-                      <span className="font-mono font-bold text-gray-900">
-                        {row.patente}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "tipo",
-                    header: "Tipo",
-                    render: (row) => (
-                      <span className="text-sm text-gray-700">
-                        {row.tipo?.nombre || "-"}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "vehiculo",
-                    header: "Vehículo",
-                    render: (row) => (
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {row.marca} {row.modelo}
-                        </div>
-                        <div className="text-gray-500">Año {row.anio}</div>
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "kilometraje_actual",
-                    header: "Kilometraje",
-                    align: "right",
-                    render: (row) => (
-                      <span className="text-sm text-gray-700">
-                        {row.kilometraje_actual.toLocaleString()} km
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "estado",
-                    header: "Estado",
-                    align: "center",
-                    width: "180px",
-                    render: (row) => getEstadoBadge(row.estado),
-                  },
-                  {
-                    key: "activo",
-                    header: "Activo",
-                    width: "100px",
-                    align: "center",
-                    render: (row) => (
-                      <ToggleSwitch
-                        isActive={row.activo}
-                        onChange={(enabled) =>
-                          handleToggleMovil(row.id, enabled)
-                        }
-                      />
-                    ),
-                  },
-                  {
-                    key: "actions",
-                    header: "Acciones",
-                    width: "100px",
-                    align: "center",
-                    render: (row) => (
-                      <button
-                        onClick={() => handleEditMovil(row.id)}
-                        className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    ),
-                  },
-                ]}
-                page={pageMoviles}
-                pageSize={pageSizeMoviles}
-                onPageChange={setPageMoviles}
-                onPageSizeChange={setPageSizeMoviles}
-                loading={loadingMoviles}
-              />
-            </div>
-          </div>
-
-          {/* Sección Tipos de Móviles - 40% */}
-          <div className="w-[40%] bg-white rounded-lg shadow-sm flex flex-col">
-            {/* Header con título e icono */}
-            <div className="px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
-              <div className="flex items-center gap-2">
-                <Tags className="w-5 h-5 text-green-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Tipos de Móviles
-                </h2>
-              </div>
-            </div>
-
-            {/* Toolbar */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <SearchComponent
-                  value={searchTermTipos}
-                  onChange={(e) => setSearchTermTipos(e.target.value)}
-                  placeholder="Buscar tipos..."
-                  className="flex-1"
-                />
-                <ButtonComponent
-                  accion="agregar"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                  onClick={handleCreateTipo}
-                >
-                  Nuevo Tipo
-                </ButtonComponent>
-              </div>
-            </div>
-
-            {/* Tabla Tipos */}
-            <div className="flex-1 overflow-hidden">
-              <TableComponent
-                data={filteredTipos}
-                columns={[
-                  {
-                    key: "nombre",
-                    header: "Nombre",
-                    render: (row) => (
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {row.nombre}
-                        </div>
-                        {row.descripcion && (
-                          <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                            {row.descripcion}
+              {/* Tabla Móviles */}
+              <div className="flex-1 overflow-hidden">
+                <TableComponent
+                  data={filteredMoviles}
+                  columns={[
+                    {
+                      key: "patente",
+                      header: "Patente",
+                      width: "100px",
+                      render: (row) => (
+                        <span className="font-mono font-bold text-gray-900">
+                          {row.patente}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "tipo",
+                      header: "Tipo",
+                      render: (row) => (
+                        <span className="text-sm text-gray-700">
+                          {row.tipo?.nombre || "-"}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "vehiculo",
+                      header: "Vehículo",
+                      render: (row) => (
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            {row.marca} {row.modelo}
                           </div>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "activo",
-                    header: "Estado",
-                    width: "100px",
-                    align: "center",
-                    render: (row) => (
-                      <ToggleSwitch
-                        isActive={row.activo}
-                        onChange={(enabled) =>
-                          handleToggleTipo(row.id, enabled)
-                        }
-                      />
-                    ),
-                  },
-                  {
-                    key: "actions",
-                    header: "Acciones",
-                    width: "100px",
-                    align: "center",
-                    render: (row) => (
-                      <button
-                        onClick={() => handleEditTipo(row.id)}
-                        className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    ),
-                  },
-                ]}
-                page={pageTipos}
-                pageSize={pageSizeTipos}
-                onPageChange={setPageTipos}
-                onPageSizeChange={setPageSizeTipos}
-                loading={loadingTipos}
-              />
+                          <div className="text-gray-500">Año {row.anio}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "kilometraje_actual",
+                      header: "Kilometraje",
+                      align: "right",
+                      render: (row) => (
+                        <span className="text-sm text-gray-700">
+                          {row.kilometraje_actual.toLocaleString()} km
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "estado",
+                      header: "Estado",
+                      align: "center",
+                      width: "180px",
+                      render: (row) => getEstadoBadge(row.estado),
+                    },
+                    {
+                      key: "activo",
+                      header: "Activo",
+                      width: "100px",
+                      align: "center",
+                      render: (row) => (
+                        <ToggleSwitch
+                          isActive={row.activo}
+                          onChange={(enabled) =>
+                            handleToggleMovil(row.id, enabled)
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      key: "actions",
+                      header: "Acciones",
+                      width: "100px",
+                      align: "center",
+                      render: (row) => (
+                        <button
+                          onClick={() => handleEditMovil(row.id)}
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      ),
+                    },
+                  ]}
+                  page={pageMoviles}
+                  pageSize={pageSizeMoviles}
+                  onPageChange={setPageMoviles}
+                  onPageSizeChange={setPageSizeMoviles}
+                  loading={loadingMoviles}
+                />
+              </div>
+            </div>
+
+            {/* Sección Tipos de Móviles - 40% */}
+            <div className="w-[40%] bg-white rounded-lg shadow-sm flex flex-col">
+              {/* Header con título e icono */}
+              <div className="px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
+                <div className="flex items-center gap-2">
+                  <Tags className="w-5 h-5 text-green-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Tipos de Móviles
+                  </h2>
+                </div>
+              </div>
+
+              {/* Toolbar */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <SearchComponent
+                    value={searchTermTipos}
+                    onChange={(e) => setSearchTermTipos(e.target.value)}
+                    placeholder="Buscar tipos..."
+                    className="flex-1"
+                  />
+                  <ButtonComponent
+                    accion="agregar"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={handleCreateTipo}
+                  >
+                    Nuevo Tipo
+                  </ButtonComponent>
+                </div>
+              </div>
+
+              {/* Tabla Tipos */}
+              <div className="flex-1 overflow-hidden">
+                <TableComponent
+                  data={filteredTipos}
+                  columns={[
+                    {
+                      key: "nombre",
+                      header: "Nombre",
+                      render: (row) => (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {row.nombre}
+                          </div>
+                          {row.descripcion && (
+                            <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                              {row.descripcion}
+                            </div>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "activo",
+                      header: "Estado",
+                      width: "100px",
+                      align: "center",
+                      render: (row) => (
+                        <ToggleSwitch
+                          isActive={row.activo}
+                          onChange={(enabled) =>
+                            handleToggleTipo(row.id, enabled)
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      key: "actions",
+                      header: "Acciones",
+                      width: "100px",
+                      align: "center",
+                      render: (row) => (
+                        <button
+                          onClick={() => handleEditTipo(row.id)}
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      ),
+                    },
+                  ]}
+                  page={pageTipos}
+                  pageSize={pageSizeTipos}
+                  onPageChange={setPageTipos}
+                  onPageSizeChange={setPageSizeTipos}
+                  loading={loadingTipos}
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Modales */}
+        <MovilModal
+          isOpen={modalMovilOpen}
+          onClose={() => {
+            setModalMovilOpen(false);
+            setSelectedMovil(null);
+          }}
+          onSubmit={handleSubmitMovil}
+          initialData={selectedMovil}
+          title={selectedMovil ? "Editar Móvil" : "Nuevo Móvil"}
+          tipos={tipos.filter((t) => t.activo)}
+        />
+
+        <TipoMovilModal
+          isOpen={modalTipoOpen}
+          onClose={() => {
+            setModalTipoOpen(false);
+            setSelectedTipo(null);
+          }}
+          onSubmit={handleSubmitTipo}
+          initialData={selectedTipo}
+          title={selectedTipo ? "Editar Tipo de Móvil" : "Nuevo Tipo de Móvil"}
+        />
       </div>
-
-      {/* Modales */}
-      <MovilModal
-        isOpen={modalMovilOpen}
-        onClose={() => {
-          setModalMovilOpen(false);
-          setSelectedMovil(null);
-        }}
-        onSubmit={handleSubmitMovil}
-        initialData={selectedMovil}
-        title={selectedMovil ? "Editar Móvil" : "Nuevo Móvil"}
-        tipos={tipos.filter((t) => t.activo)}
-      />
-
-      <TipoMovilModal
-        isOpen={modalTipoOpen}
-        onClose={() => {
-          setModalTipoOpen(false);
-          setSelectedTipo(null);
-        }}
-        onSubmit={handleSubmitTipo}
-        initialData={selectedTipo}
-        title={selectedTipo ? "Editar Tipo de Móvil" : "Nuevo Tipo de Móvil"}
-      />
-    </div>
+    </PageAccessValidator>
   );
 }

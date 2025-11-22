@@ -4,6 +4,7 @@
 CREATE MATERIALIZED VIEW derivaciones_vista AS
 WITH denuncias_con_info AS (
     -- Base: todas las denuncias con sus datos principales
+    -- Filtra solo denuncias del día de hoy y días anteriores (no futuras)
     SELECT
         d.id,
         d.folio,
@@ -21,6 +22,7 @@ WITH denuncias_con_info AS (
     FROM denuncias d
     LEFT JOIN categorias_publicas cp ON d.categoria_publica_id = cp.id
     LEFT JOIN prioridades_denuncia pd ON d.prioridad_id = pd.id
+    WHERE d.fecha_creacion <= NOW()
 ),
 acompanantes_count AS (
     -- Contar asignaciones activas por denuncia

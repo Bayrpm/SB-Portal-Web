@@ -8,6 +8,7 @@ import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
 import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
 import AsignarAcompanantesDropdown from "./components/AsignarAcompanantesDropdown";
 import HistorialTimeline from "./components/HistorialTimeline";
+import { useRealtimeDenunciaDetalle } from "@/hooks/useRealtimeDenunciaDetalle";
 import { Pencil } from "lucide-react";
 
 interface DenunciaDetalle {
@@ -35,27 +36,6 @@ interface Evidencia {
   tipo_usuario: string;
 }
 
-interface Observacion {
-  id: string;
-  tipo: string;
-  contenido: string;
-  fecha: string;
-  creado_por: string;
-  cargo: string;
-}
-
-interface HistorialItem {
-  id: string;
-  evento: string;
-  descripcion: string;
-  detallesLeibles: Record<string, unknown>;
-  detalle: Record<string, unknown> | null;
-  fecha: string;
-  autor: string;
-  icono: string;
-  tipo: string;
-}
-
 const estadoColor: Record<string, string> = {
   Pendiente: "bg-yellow-100 text-yellow-800 border border-yellow-200",
   Resuelta: "bg-green-100 text-green-800 border border-green-200",
@@ -76,6 +56,10 @@ export default function DenunciaDetallePage({
 }) {
   const router = useRouter();
   const { folio } = React.use(params);
+  // Realtime hooks para historial y observaciones
+  const { historial, observaciones, loadingHistorial } =
+    useRealtimeDenunciaDetalle(folio);
+
   const [denuncia, setDenuncia] = useState<DenunciaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [editandoPrioridad, setEditandoPrioridad] = useState(false);
@@ -83,6 +67,9 @@ export default function DenunciaDetallePage({
   const [inspectorAsignadoId, setInspectorAsignadoId] = useState<string | null>(
     null
   );
+  const [inspectorAsignadoNombre, setInspectorAsignadoNombre] = useState<
+    string | null
+  >(null);
   const [acompanantes, setAcompanantes] = useState<
     { id: string; nombre: string }[]
   >([]);
@@ -93,10 +80,8 @@ export default function DenunciaDetallePage({
     "resumen" | "evidencias" | "observaciones"
   >("resumen");
   const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
-  const [observaciones, setObservaciones] = useState<Observacion[]>([]);
-  const [historial, setHistorial] = useState<HistorialItem[]>([]);
   const [loadingTab, setLoadingTab] = useState(false);
-  const [loadingHistorial, setLoadingHistorial] = useState(true);
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -113,6 +98,9 @@ export default function DenunciaDetallePage({
         // Setear inspector y acompañantes desde asignaciones
         if (asignacionesData.inspector_principal) {
           setInspectorAsignadoId(asignacionesData.inspector_principal.id);
+          setInspectorAsignadoNombre(
+            asignacionesData.inspector_principal.nombre
+          );
         }
         if (
           asignacionesData.acompanantes &&
@@ -129,24 +117,10 @@ export default function DenunciaDetallePage({
       });
   }, [folio]);
 
-  // Cargar datos según la tab activa
+  // Cargar evidencias cuando se abre la tab
   useEffect(() => {
-    if (tabActiva === "resumen") {
-      // Cargar historial cuando se abre la tab de resumen
-      setLoadingHistorial(true);
-      fetch(`/api/denuncias/${folio}/historial`)
-        .then((res) => res.json())
-        .then((data) => {
-          setHistorial(data.historial || []);
-          setLoadingHistorial(false);
-        })
-        .catch(() => setLoadingHistorial(false));
-      return;
-    }
-
-    setLoadingTab(true);
-
     if (tabActiva === "evidencias" && evidencias.length === 0) {
+      setLoadingTab(true);
       fetch(`/api/denuncias/${folio}/evidencias`)
         .then((res) => res.json())
         .then((data) => {
@@ -154,18 +128,27 @@ export default function DenunciaDetallePage({
           setLoadingTab(false);
         })
         .catch(() => setLoadingTab(false));
-    } else if (tabActiva === "observaciones" && observaciones.length === 0) {
-      fetch(`/api/denuncias/${folio}/observaciones`)
-        .then((res) => res.json())
-        .then((data) => {
-          setObservaciones(data.observaciones || []);
-          setLoadingTab(false);
-        })
-        .catch(() => setLoadingTab(false));
     } else {
       setLoadingTab(false);
     }
-  }, [tabActiva, folio, evidencias.length, observaciones.length]);
+  }, [tabActiva, folio, evidencias.length]);
+
+  // Manejar tecla ESC para cerrar imagen ampliada
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && imagenAmpliada) {
+        setImagenAmpliada(null);
+      }
+    };
+
+    if (imagenAmpliada) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [imagenAmpliada]);
 
   if (!denuncia && !loading) {
     // Show friendly 404 message if denuncia not found
@@ -331,14 +314,7 @@ export default function DenunciaDetallePage({
                               inspectorNombre: string,
                               inspectorId: string
                             ) => {
-                              setDenuncia((d) =>
-                                d
-                                  ? {
-                                      ...d,
-                                      inspector_asignado: inspectorNombre,
-                                    }
-                                  : d
-                              );
+                              setInspectorAsignadoNombre(inspectorNombre);
                               setInspectorAsignadoId(inspectorId);
                               setEditandoInspector(false);
                             }}
@@ -351,10 +327,10 @@ export default function DenunciaDetallePage({
                             Cancelar
                           </button>
                         </span>
-                      ) : denuncia.inspector_asignado ? (
+                      ) : inspectorAsignadoNombre ? (
                         <span className="flex items-center gap-2">
                           <span className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200">
-                            {denuncia.inspector_asignado}
+                            {inspectorAsignadoNombre}
                           </span>
                           <button
                             type="button"
@@ -398,7 +374,7 @@ export default function DenunciaDetallePage({
                       </div>
                     </td>
                     <td className="py-3 px-5 border-b border-gray-100">
-                      {denuncia.inspector_asignado ? (
+                      {inspectorAsignadoNombre ? (
                         editandoAcompanantes ? (
                           <>
                             <AsignarAcompanantesDropdown
@@ -577,67 +553,130 @@ export default function DenunciaDetallePage({
                 No hay evidencias para esta denuncia
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {evidencias.map((evidencia) => (
-                  <div
-                    key={evidencia.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    {evidencia.tipo === "FOTO" ? (
-                      evidencia.url ? (
-                        <Image
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {evidencias.map((evidencia) => (
+                    <div
+                      key={evidencia.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      {evidencia.tipo === "FOTO" ? (
+                        evidencia.url ? (
+                          <button
+                            onClick={() => setImagenAmpliada(evidencia.url)}
+                            className="w-full h-48 relative cursor-pointer group"
+                            title="Click para ver imagen completa"
+                          >
+                            <Image
+                              src={evidencia.url}
+                              alt="Evidencia"
+                              width={400}
+                              height={192}
+                              className="w-full h-48 object-cover rounded-md mb-3 group-hover:opacity-80 transition-opacity"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-black bg-opacity-30">
+                              <svg
+                                className="w-8 h-8 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                                />
+                              </svg>
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 rounded-md mb-3 flex items-center justify-center">
+                            <span className="text-gray-400">
+                              Imagen no disponible
+                            </span>
+                          </div>
+                        )
+                      ) : evidencia.url ? (
+                        <video
                           src={evidencia.url}
-                          alt="Evidencia"
-                          width={400}
-                          height={192}
-                          className="w-full h-48 object-cover rounded-md mb-3"
+                          controls
+                          className="w-full h-48 rounded-md mb-3"
                         />
                       ) : (
                         <div className="w-full h-48 bg-gray-200 rounded-md mb-3 flex items-center justify-center">
                           <span className="text-gray-400">
-                            Imagen no disponible
+                            Video no disponible
                           </span>
                         </div>
-                      )
-                    ) : evidencia.url ? (
-                      <video
-                        src={evidencia.url}
-                        controls
-                        className="w-full h-48 rounded-md mb-3"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-200 rounded-md mb-3 flex items-center justify-center">
-                        <span className="text-gray-400">
-                          Video no disponible
-                        </span>
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-500">
+                          <span className="font-semibold">Tipo:</span>{" "}
+                          {evidencia.tipo === "FOTO" ? "Fotografía" : "Video"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <span className="font-semibold">Subido por:</span>{" "}
+                          {evidencia.subido_por}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <span className="font-semibold">Fecha:</span>{" "}
+                          {new Date(evidencia.fecha_subida).toLocaleString(
+                            "es-CL",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
                       </div>
-                    )}
-                    <div className="space-y-1">
-                      <p className="text-xs text-gray-500">
-                        <span className="font-semibold">Tipo:</span>{" "}
-                        {evidencia.tipo === "FOTO" ? "Fotografía" : "Video"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-semibold">Subido por:</span>{" "}
-                        {evidencia.subido_por}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-semibold">Fecha:</span>{" "}
-                        {new Date(evidencia.fecha_subida).toLocaleString(
-                          "es-CL",
-                          {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Imagen ampliada */}
+                {imagenAmpliada && (
+                  <div
+                    className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setImagenAmpliada(null)}
+                  >
+                    <div
+                      className="relative max-w-4xl max-h-[90vh] w-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Image
+                        src={imagenAmpliada}
+                        alt="Imagen ampliada"
+                        width={1200}
+                        height={900}
+                        className="w-full h-auto max-h-[90vh] object-contain"
+                      />
+                      <button
+                        onClick={() => setImagenAmpliada(null)}
+                        className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-75 p-2 rounded-full transition"
+                        title="Cerrar (ESC)"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}

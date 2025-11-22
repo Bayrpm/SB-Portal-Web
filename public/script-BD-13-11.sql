@@ -1,3 +1,25 @@
+-- Trigger y función: Actualizar estado de denuncia a 'En proceso' al asignar inspector
+DROP TRIGGER IF EXISTS tg_set_denuncia_en_proceso ON public.asignaciones_inspector;
+DROP FUNCTION IF EXISTS public.trg_set_denuncia_en_proceso();
+
+CREATE OR REPLACE FUNCTION public.trg_set_denuncia_en_proceso()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Si la denuncia está en estado Pendiente (id=1), la pasa a En proceso (id=2)
+  UPDATE public.denuncias
+  SET estado_id = 2
+  WHERE id = NEW.denuncia_id
+    AND estado_id = 1;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER tg_set_denuncia_en_proceso
+AFTER INSERT ON public.asignaciones_inspector
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_set_denuncia_en_proceso();
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
@@ -425,4 +447,26 @@ CREATE TABLE public.usuarios_portal (
   CONSTRAINT usuarios_portal_pkey PRIMARY KEY (usuario_id),
   CONSTRAINT usuarios_portal_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES auth.users(id),
   CONSTRAINT usuarios_portal_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.roles_portal(id)
+);
+
+-- Tabla: paginas
+CREATE TABLE public.paginas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nombre text NOT NULL,
+  titulo text NOT NULL,
+  path text NOT NULL,
+  activo boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT paginas_pkey PRIMARY KEY (id)
+);
+
+-- Tabla: roles_paginas
+CREATE TABLE public.roles_paginas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  rol_id integer NOT NULL,
+  pagina_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT roles_paginas_pkey PRIMARY KEY (id),
+  CONSTRAINT roles_paginas_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.roles_portal(id),
+  CONSTRAINT roles_paginas_pagina_id_fkey FOREIGN KEY (pagina_id) REFERENCES public.paginas(id)
 );

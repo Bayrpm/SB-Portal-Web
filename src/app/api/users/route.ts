@@ -296,6 +296,14 @@ async function deleteUser(req: NextRequest) {
 
         logger.info('Eliminando usuario', { id });
 
+        // 0. Verificar referencias en otras tablas antes de eliminar
+        const referencesCheck = await checkUserReferences(id);
+        if (referencesCheck.hasReferences) {
+            const message = `Este usuario no puede ser eliminado porque cuenta con registros en: ${referencesCheck.references.join(", ")}`;
+            logger.warn('Usuario tiene referencias activas', { id, references: referencesCheck.references });
+            return NextResponse.json({ error: message }, { status: 400 });
+        }
+
         // 1. Eliminar de usuarios_portal
         const { error: portalError } = await supabaseAdmin
             .from("usuarios_portal")
@@ -321,8 +329,21 @@ async function deleteUser(req: NextRequest) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
         if (authError) {
-            logger.error('Error eliminando usuario de auth', { error: authError.message, id });
-            return NextResponse.json({ error: authError.message }, { status: 500 });
+            // Si hay error en auth, buscar TODAS las referencias posibles como fallback
+            logger.warn('Error en auth, verificando referencias exhaustivamente', { error: authError.message, id });
+            const detailedReferences = await checkUserReferencesDetailed(id);
+
+            if (detailedReferences.hasReferences) {
+                const message = `Este usuario no puede ser eliminado porque cuenta con registros activos en: ${detailedReferences.references.join(", ")}. Por favor, elimine o reasigne estos registros primero.`;
+                logger.warn('Usuario tiene referencias que impiden eliminación', { id, references: detailedReferences.references });
+                return NextResponse.json({ error: message }, { status: 400 });
+            }
+
+            // Si no hay referencias encontradas pero sigue habiendo error, probablemente sea un sesión activa
+            logger.error('Error eliminando usuario de auth sin referencias detectadas', { error: authError.message, id });
+            return NextResponse.json({
+                error: `No se puede eliminar el usuario. El usuario podría tener sesiones activas. Intente nuevamente o contacte al administrador. Error: ${authError.message}`
+            }, { status: 500 });
         }
 
         // Validar salida
@@ -343,4 +364,184 @@ async function deleteUser(req: NextRequest) {
             error: error instanceof Error ? error.message : "Error inesperado"
         }, { status: 500 });
     }
+}
+
+/**
+ * Verifica si el usuario tiene referencias activas en otras tablas
+ * Retorna información sobre dónde tiene registros
+ */
+async function checkUserReferences(userId: string): Promise<{ hasReferences: boolean; references: string[] }> {
+    const references: string[] = [];
+
+    try {
+        // Verificar en denuncias (como ciudadano)
+        const { count: denunciasCiudadano } = await supabaseAdmin
+            .from("denuncias")
+            .select("*", { count: "exact", head: true })
+            .eq("ciudadano_id", userId);
+
+        if (denunciasCiudadano && denunciasCiudadano > 0) {
+            references.push(`Denuncias creadas (${denunciasCiudadano})`);
+        }
+
+        // Verificar en inspectores
+        const { count: inspectores } = await supabaseAdmin
+            .from("inspectores")
+            .select("*", { count: "exact", head: true })
+            .eq("usuario_id", userId);
+
+        if (inspectores && inspectores > 0) {
+            references.push(`Perfil de Inspector`);
+        }
+
+        // Verificar en asignaciones_inspector (asignador)
+        const { count: asignacionesAsignador } = await supabaseAdmin
+            .from("asignaciones_inspector")
+            .select("*", { count: "exact", head: true })
+            .eq("asignado_por", userId);
+
+        if (asignacionesAsignador && asignacionesAsignador > 0) {
+            references.push(`Asignaciones realizadas (${asignacionesAsignador})`);
+        }
+
+        // Verificar en denuncias (como inspector asignado)
+        const { data: denunciasPorInspector } = await supabaseAdmin
+            .from("denuncias")
+            .select("id", { count: "exact" })
+            .eq("inspector_id", userId);
+
+        if (denunciasPorInspector && denunciasPorInspector.length > 0) {
+            references.push(`Denuncias asignadas como inspector (${denunciasPorInspector.length})`);
+        }
+
+        // Verificar en denuncia_historial (como actor)
+        const { count: historialActor } = await supabaseAdmin
+            .from("denuncia_historial")
+            .select("*", { count: "exact", head: true })
+            .eq("actor_usuario_id", userId);
+
+        if (historialActor && historialActor > 0) {
+            references.push(`Eventos en historial de denuncias (${historialActor})`);
+        }
+
+        // Verificar en denuncia_observaciones (creadas por)
+        const { count: observacionesCreadas } = await supabaseAdmin
+            .from("denuncia_observaciones")
+            .select("*", { count: "exact", head: true })
+            .eq("creado_por", userId);
+
+        if (observacionesCreadas && observacionesCreadas > 0) {
+            references.push(`Observaciones creadas (${observacionesCreadas})`);
+        }
+
+        // Verificar en denuncia_clasificaciones (clasificadas por)
+        const { count: clasificaciones } = await supabaseAdmin
+            .from("denuncia_clasificaciones")
+            .select("*", { count: "exact", head: true })
+            .eq("clasificado_por", userId);
+
+        if (clasificaciones && clasificaciones > 0) {
+            references.push(`Denuncias clasificadas (${clasificaciones})`);
+        }
+
+        // Verificar en comentarios_denuncias
+        const { count: comentarios } = await supabaseAdmin
+            .from("comentarios_denuncias")
+            .select("*", { count: "exact", head: true })
+            .eq("usuario_id", userId);
+
+        if (comentarios && comentarios > 0) {
+            references.push(`Comentarios creados (${comentarios})`);
+        }
+
+        // Verificar en turnos (como inspector)
+        const { count: turnos } = await supabaseAdmin
+            .from("turnos")
+            .select("*", { count: "exact", head: true })
+            .eq("inspector_id", userId);
+
+        if (turnos && turnos > 0) {
+            references.push(`Turnos registrados (${turnos})`);
+        }
+
+        // Verificar en movil_usos
+        const { count: movilUsos } = await supabaseAdmin
+            .from("movil_usos")
+            .select("*", { count: "exact", head: true })
+            .eq("inspector_id", userId);
+
+        if (movilUsos && movilUsos > 0) {
+            references.push(`Usos de móviles (${movilUsos})`);
+        }
+
+        logger.debug('Referencias del usuario verificadas', { userId, references });
+
+        return {
+            hasReferences: references.length > 0,
+            references
+        };
+
+    } catch (error) {
+        logger.error('Error verificando referencias del usuario', error instanceof Error ? error : undefined, { userId });
+        // En caso de error, permitir el intento de eliminación (el error específico saldrá después)
+        return { hasReferences: false, references: [] };
+    }
+}
+
+/**
+ * Búsqueda exhaustiva de referencias cuando hay error de eliminación
+ * Verifica todas las tablas posibles incluyendo las que podrían no existir
+ */
+async function checkUserReferencesDetailed(userId: string): Promise<{ hasReferences: boolean; references: string[] }> {
+    const references: string[] = [];
+
+    // Lista de todas las tablas y columnas a verificar
+    const tablesToCheck: Array<{ table: string; column: string; label: string }> = [
+        { table: "denuncias", column: "ciudadano_id", label: "Denuncias (como ciudadano)" },
+        { table: "denuncias", column: "inspector_id", label: "Denuncias (como inspector)" },
+        { table: "inspectores", column: "usuario_id", label: "Inspectores" },
+        { table: "asignaciones_inspector", column: "asignado_por", label: "Asignaciones realizadas" },
+        { table: "asignaciones_inspector", column: "inspector_id", label: "Asignaciones como inspector" },
+        { table: "denuncia_historial", column: "actor_usuario_id", label: "Historial de denuncias" },
+        { table: "denuncia_observaciones", column: "creado_por", label: "Observaciones creadas" },
+        { table: "denuncia_clasificaciones", column: "clasificado_por", label: "Clasificaciones realizadas" },
+        { table: "comentarios_denuncias", column: "usuario_id", label: "Comentarios" },
+        { table: "comentario_reacciones", column: "usuario_id", label: "Reacciones a comentarios" },
+        { table: "denuncia_reacciones", column: "usuario_id", label: "Reacciones a denuncias" },
+        { table: "turnos", column: "inspector_id", label: "Turnos" },
+        { table: "turnos_planificados", column: "inspector_id", label: "Turnos planificados" },
+        { table: "movil_usos", column: "inspector_id", label: "Usos de móviles" },
+        { table: "movil_usos", column: "actor_user_id", label: "Registros de móviles" },
+        { table: "movil_uso_kilometraje", column: "actor_user_id", label: "Registros de kilometraje" },
+        { table: "eventos_turno", column: "actor_user_id", label: "Eventos de turno" },
+        { table: "push_status_queue", column: "user_id", label: "Notificaciones en cola" },
+        { table: "notificaciones_enviadas", column: "usuario_id", label: "Notificaciones enviadas" },
+        { table: "alertas_oficiales", column: "creado_por", label: "Alertas creadas" },
+        // NOTA: audit_log NO tiene FK constraint, solo registra auditoría histórica
+        // No impide eliminación del usuario
+    ];
+
+    for (const item of tablesToCheck) {
+        try {
+            const { count } = await supabaseAdmin
+                .from(item.table)
+                .select("*", { count: "exact", head: true })
+                .eq(item.column, userId);
+
+            if (count && count > 0) {
+                references.push(`${item.label} (${count})`);
+                logger.debug('Referencia encontrada', { table: item.table, column: item.column, count, userId });
+            }
+        } catch {
+            // La tabla podría no existir, continuamos con la siguiente
+            logger.debug('Tabla no verificable', { table: item.table, column: item.column });
+        }
+    }
+
+    logger.debug('Búsqueda exhaustiva completada', { userId, referencesFound: references.length });
+
+    return {
+        hasReferences: references.length > 0,
+        references
+    };
 }

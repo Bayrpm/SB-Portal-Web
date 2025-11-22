@@ -76,6 +76,8 @@ export async function GET() {
         const supabase = await createClient();
 
         // Obtener denuncias con coordenadas
+        // Filtra solo denuncias del día de hoy y días anteriores (no futuras)
+        const ahora = new Date().toISOString();
         const { data: denuncias, error } = await supabase
             .from("denuncias")
             .select(
@@ -92,7 +94,8 @@ export async function GET() {
       `
             )
             .not("coords_x", "is", null)
-            .not("coords_y", "is", null);
+            .not("coords_y", "is", null)
+            .lte("fecha_creacion", ahora);
 
         if (error) {
             console.error("Error al obtener coordenadas:", error);

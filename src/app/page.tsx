@@ -16,7 +16,7 @@ export default function Login() {
   const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const { setRole, setName } = useUser();
+  const { setRole, setName, loadAllowedPages } = useUser();
 
   useEffect(() => {
     const expireAt = localStorage.getItem("sessionExpireAt");
@@ -67,9 +67,15 @@ export default function Login() {
       setRole(userInfo.role);
       setName(userInfo.name ?? null);
 
+      // Cargar las páginas permitidas para este rol
+      const allowedPages = await loadAllowedPages(userInfo.role);
+
       const expireAt = Date.now() + 12 * 60 * 60 * 1000;
       localStorage.setItem("sessionExpireAt", String(expireAt));
-      router.push("/portal/dashboard");
+
+      // Redirigir a la primera página permitida (o dashboard si está permitido)
+      const firstAllowedPath = allowedPages?.[0]?.path || "/portal/dashboard";
+      router.push(firstAllowedPath);
     } catch (error) {
       console.error("Error durante el inicio de sesión:", error);
       setErrorMsg("Error de conexión. Intenta nuevamente.");
@@ -304,9 +310,19 @@ export default function Login() {
                       }
                       setRole(userInfo.role);
                       setName(userInfo.name ?? null);
+
+                      // Cargar las páginas permitidas para este rol
+                      const allowedPages = await loadAllowedPages(
+                        userInfo.role
+                      );
+
                       const expireAt = Date.now() + 12 * 60 * 60 * 1000;
                       localStorage.setItem("sessionExpireAt", String(expireAt));
-                      router.push("/portal/dashboard");
+
+                      // Redirigir a la primera página permitida (o dashboard si está permitido)
+                      const firstAllowedPath =
+                        allowedPages?.[0]?.path || "/portal/dashboard";
+                      router.push(firstAllowedPath);
                     } catch (error) {
                       console.error(
                         "Error durante el inicio de sesión demo:",

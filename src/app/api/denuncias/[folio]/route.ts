@@ -45,7 +45,11 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
 
         const supabase = await createClient();
 
+        // Obtener hora actual para validar que la denuncia no sea futura
+        const ahora = new Date().toISOString();
+
         // Consulta optimizada: trae TODA la información en una sola llamada
+        // Filtra solo denuncias del día de hoy y días anteriores (no futuras)
         const { data: denuncia, error } = await supabase
             .from('denuncias')
             .select(`
@@ -73,6 +77,7 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
                 )
             `)
             .eq('folio', folio)
+            .lte('fecha_creacion', ahora)
             .single();
 
         const queryTime = Date.now() - startTime;
