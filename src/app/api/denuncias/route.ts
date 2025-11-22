@@ -7,7 +7,12 @@ export const runtime = "nodejs";
 export async function GET() {
     try {
         const supabase = await createClient();
+
+        // Obtener hora actual para filtrar solo denuncias hasta hoy (sin futuras)
+        const ahora = new Date().toISOString();
+
         // Consulta optimizada: anida los datos relacionados en una sola consulta
+        // Filtra solo denuncias del día de hoy y días anteriores (no futuras)
         const { data, error } = await supabase
             .from("denuncias")
             .select(`
@@ -19,7 +24,8 @@ export async function GET() {
                 ciudadano:perfiles_ciudadanos!denuncias_ciudadano_id_fkey (nombre, apellido),
                 categoria:categorias_publicas (nombre),
                 prioridad:prioridades_denuncia (nombre)
-            `);
+            `)
+            .lte("fecha_creacion", ahora);
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

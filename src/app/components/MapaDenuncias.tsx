@@ -6,8 +6,10 @@ import Loader from "./Loader";
 import { ChevronRight, ChevronLeft, MapPin } from "lucide-react";
 import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { useRealtimeDenuncias } from "@/hooks/useRealtimeDenuncias";
+import { notifyStatusChange, showToast } from "@/lib/utils/toast";
 
-const SAN_BERNARDO_CENTER: [number, number] = [-33.592, -70.704];
+const SAN_BERNARDO_CENTER: [number, number] = [-33.5931, -70.7046];
 
 const SAN_BERNARDO_MAX_BOUNDS: [[number, number], [number, number]] = [
   [-33.7, -70.8],
@@ -61,7 +63,7 @@ function CuadrantesLayer({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [geojsonData, setGeojsonData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingCuadrantes, setLoadingCuadrantes] = useState(false);
 
   useEffect(() => {
     if (!visible) {
@@ -86,14 +88,14 @@ function CuadrantesLayer({
             onBoundsCalculated(bounds);
           });
         }
-        setLoading(false);
+        setLoadingCuadrantes(false);
         return;
       } catch (error) {
         console.error("Error parseando cache de cuadrantes:", error);
       }
     }
 
-    setLoading(true);
+    setLoadingCuadrantes(true);
 
     fetch("/api/cuadrantes")
       .then((res) => {
@@ -122,10 +124,10 @@ function CuadrantesLayer({
         }
       })
       .catch((error) => console.error("Error cargando cuadrantes:", error))
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingCuadrantes(false));
   }, [visible, onBoundsCalculated]);
 
-  if (!visible || !geojsonData || loading) return null;
+  if (!visible || !geojsonData || loadingCuadrantes) return null;
 
   return (
     <>
@@ -201,8 +203,41 @@ export default function MapaDenuncias({
   dateRange,
 }: MapaDenunciasProps) {
   const [isClient, setIsClient] = useState(false);
-  const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedDenuncia, setSelectedDenuncia] = useState<string | null>(null);
+  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
+  const [mostrarCuadrantes, setMostrarCuadrantes] = useState(true);
+  const [L, setL] = useState<typeof import("leaflet") | null>(null);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelRecientesVisible, setPanelRecientesVisible] = useState(false);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Usar hook de Realtime en lugar de polling
+  const { denuncias, loading } = useRealtimeDenuncias({
+    onAssignmentChange: (folio, newStatus) => {
+      // Marcar como actualizado recientemente para animación
+      setRecentlyUpdated((prev) => new Set([...prev, folio]));
+      notifyStatusChange(folio, "Pendiente", newStatus);
+
+      // Limpiar marca después de 3 segundos
+      setTimeout(() => {
+        setRecentlyUpdated((prev) => {
+          const updated = new Set(prev);
+          updated.delete(folio);
+          return updated;
+        });
+      }, 3000);
+    },
+    onError: (error) => {
+      console.error("Error en Realtime:", error);
+      showToast({
+        message: "Error sincronizando datos en tiempo real",
+        type: "error",
+        duration: 3000,
+      });
+    },
+  });
 
   // Denuncias más recientes en estado pendiente (últimas 24 horas)
   const ahora = new Date();
@@ -214,12 +249,7 @@ export default function MapaDenuncias({
     })
     .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
     .slice(0, 5);
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [panelRecientesVisible, setPanelRecientesVisible] = useState(false);
-  const [selectedDenuncia, setSelectedDenuncia] = useState<string | null>(null);
-  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
-  const [mostrarCuadrantes, setMostrarCuadrantes] = useState(true);
-  const [L, setL] = useState<typeof import("leaflet") | null>(null);
+
   // Filtro de estados
   // Obtener estados únicos de las denuncias
   const estadosUnicos = Array.from(
@@ -288,19 +318,31 @@ export default function MapaDenuncias({
   const createCustomIcon = (color: string, folio: string) => {
     if (!L) return null;
     const esReciente = isReciente(folio);
+    const esActualizado = recentlyUpdated.has(folio);
     return L.divIcon({
-      className: esReciente ? "pulse-marker" : "custom-marker",
+      className: esActualizado
+        ? "pulse-marker-updated"
+        : esReciente
+        ? "pulse-marker"
+        : "custom-marker",
       html: `
         <div style="
           background-color: ${color};
           width: 25px;
           height: 25px;
           border-radius: 50% 50% 50% 0;
-          border: 2px solid ${esReciente ? "#2563eb" : "white"};
+          border: 2px solid ${
+            esActualizado ? "#10b981" : esReciente ? "#2563eb" : "white"
+          };
           transform: rotate(-45deg);
           box-shadow: 0 2px 5px rgba(0,0,0,0.3)${
-            esReciente ? ", 0 0 15px rgba(37, 99, 235, 0.6)" : ""
+            esActualizado
+              ? ", 0 0 20px rgba(16, 185, 129, 0.8)"
+              : esReciente
+              ? ", 0 0 15px rgba(37, 99, 235, 0.6)"
+              : ""
           };
+          animation: ${esActualizado ? "pulse 0.6s ease-in-out 2" : "none"};
         ">
           <div style="
             width: 10px;
@@ -339,18 +381,6 @@ export default function MapaDenuncias({
           "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
     });
-
-    fetch("/api/denuncias/coordenadas")
-      .then((res) => res.json())
-      .then((data) => {
-        setDenuncias(data.coordenadas || []);
-      })
-      .catch((error) => {
-        console.error("Error cargando coordenadas:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
   }, []);
 
   if (!isClient) {
@@ -400,6 +430,18 @@ export default function MapaDenuncias({
         ...style,
       }}
     >
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3), 0 0 20px rgba(16, 185, 129, 0.8);
+            transform: rotate(-45deg) scale(1);
+          }
+          50% {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3), 0 0 30px rgba(16, 185, 129, 1);
+            transform: rotate(-45deg) scale(1.1);
+          }
+        }
+      `}</style>
       <MapContainer
         center={center}
         zoom={13}
@@ -429,34 +471,448 @@ export default function MapaDenuncias({
                 createCustomIcon(denuncia.color, denuncia.folio) ?? undefined
               }
             >
-              <Popup>
-                <div className="min-w-[200px]">
-                  <h3 className="font-bold text-lg mb-2">
-                    Folio: {denuncia.folio}
-                  </h3>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <strong>Categoría:</strong> {denuncia.categoria}
-                    </p>
-                    <p>
-                      <strong>Prioridad:</strong>{" "}
-                      <span
-                        className="px-2 py-1 rounded text-white text-xs"
-                        style={{ backgroundColor: denuncia.color }}
+              <Popup maxWidth={320} minWidth={280}>
+                <div
+                  style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                >
+                  {/* Header con folio */}
+                  <div
+                    style={{
+                      background: "linear-gradient(to right, #2563eb, #1d4ed8)",
+                      margin: "-15px -20px 12px -20px",
+                      padding: "12px 16px",
+                      borderRadius: "8px 8px 0 0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "15px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <svg
+                        style={{ width: "18px", height: "18px" }}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
                       >
-                        {denuncia.prioridad}
-                      </span>
-                    </p>
-                    <p>
-                      <strong>Estado:</strong> {denuncia.estado}
-                    </p>
-                    <p>
-                      <strong>Ubicación:</strong> {denuncia.ubicacion}
-                    </p>
-                    <p className="text-gray-500 text-xs mt-2">
-                      {new Date(denuncia.fecha).toLocaleDateString()}
-                    </p>
+                        <path
+                          fillRule="evenodd"
+                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Folio: {denuncia.folio}
+                    </div>
                   </div>
+
+                  {/* Título */}
+                  <h4
+                    style={{
+                      fontWeight: "600",
+                      color: "#111827",
+                      fontSize: "14px",
+                      marginBottom: "12px",
+                      lineHeight: "1.4",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {denuncia.titulo}
+                  </h4>
+
+                  {/* Info grid */}
+                  <div style={{ marginBottom: "12px" }}>
+                    {/* Categoría */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <svg
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          color: "#9ca3af",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                        />
+                      </svg>
+                      <div style={{ flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                            margin: "0 0 2px 0",
+                          }}
+                        >
+                          Categoría
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            color: "#111827",
+                            margin: 0,
+                          }}
+                        >
+                          {denuncia.categoria}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Estado */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <svg
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          color: "#9ca3af",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div style={{ flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                            margin: "0 0 2px 0",
+                          }}
+                        >
+                          Estado
+                        </p>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: "#f3f4f6",
+                            color: "#374151",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {denuncia.estado}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Prioridad */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <svg
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          color: "#9ca3af",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <div style={{ flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                            margin: "0 0 2px 0",
+                          }}
+                        >
+                          Prioridad
+                        </p>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: denuncia.color,
+                            color: "white",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          {denuncia.prioridad}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Ubicación */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <svg
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          color: "#9ca3af",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <div style={{ flex: 1 }}>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                            margin: "0 0 2px 0",
+                          }}
+                        >
+                          Ubicación
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "13px",
+                            color: "#111827",
+                            margin: 0,
+                            lineHeight: "1.4",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {denuncia.ubicacion}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Fecha y hora */}
+                    <div
+                      style={{
+                        borderTop: "1px solid #e5e7eb",
+                        paddingTop: "8px",
+                        marginTop: "8px",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "8px",
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <svg
+                          style={{
+                            width: "14px",
+                            height: "14px",
+                            color: "#9ca3af",
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <div style={{ flex: 1 }}>
+                          <p
+                            style={{
+                              fontSize: "10px",
+                              color: "#6b7280",
+                              margin: "0 0 1px 0",
+                            }}
+                          >
+                            Fecha
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              color: "#111827",
+                              margin: 0,
+                            }}
+                          >
+                            {new Date(denuncia.fecha).toLocaleDateString(
+                              "es-CL",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <svg
+                          style={{
+                            width: "14px",
+                            height: "14px",
+                            color: "#9ca3af",
+                            flexShrink: 0,
+                            marginTop: "2px",
+                          }}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <div style={{ flex: 1 }}>
+                          <p
+                            style={{
+                              fontSize: "10px",
+                              color: "#6b7280",
+                              margin: "0 0 1px 0",
+                            }}
+                          >
+                            Hora
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              color: "#111827",
+                              margin: 0,
+                            }}
+                          >
+                            {new Date(denuncia.fecha).toLocaleTimeString(
+                              "es-CL",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botón */}
+                  <a
+                    href={`/portal/denuncias/${denuncia.folio}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      width: "100%",
+                      background: "linear-gradient(to right, #2563eb, #1d4ed8)",
+                      color: "white",
+                      padding: "10px 16px",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      textDecoration: "none",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      transition: "all 0.2s",
+                      margin: "12px -20px -15px -20px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(to right, #1d4ed8, #1e40af)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 8px rgba(0,0,0,0.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(to right, #2563eb, #1d4ed8)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 4px rgba(0,0,0,0.1)";
+                    }}
+                  >
+                    <svg
+                      style={{ width: "16px", height: "16px" }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                    Ver Detalle Completo
+                  </a>
                 </div>
               </Popup>
             </Marker>
@@ -620,13 +1076,16 @@ export default function MapaDenuncias({
                 <div className="divide-y divide-gray-100">
                   {denunciasFiltradas.map((denuncia, index) => {
                     const esReciente = isReciente(denuncia.folio);
+                    const esActualizado = recentlyUpdated.has(denuncia.folio);
                     return (
                       <button
                         key={denuncia.folio}
                         onClick={() => flyToDenuncia(denuncia)}
-                        className={`w-full p-4 text-left hover:bg-blue-50 transition-colors ${
+                        className={`w-full p-4 text-left hover:bg-blue-50 transition-all ${
                           selectedDenuncia === denuncia.folio
                             ? "bg-blue-100 border-l-4 border-blue-600"
+                            : esActualizado
+                            ? "bg-green-50/50 border-l-4 border-green-500"
                             : esReciente
                             ? "border-l-4 border-blue-400 bg-blue-50/30"
                             : ""
@@ -654,15 +1113,23 @@ export default function MapaDenuncias({
                               {denuncia.categoria}
                             </p>
 
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span
                                 className="px-2 py-0.5 rounded text-white text-xs font-medium"
                                 style={{ backgroundColor: denuncia.color }}
                               >
                                 {denuncia.prioridad}
                               </span>
-                              <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">
-                                {denuncia.estado}
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  esActualizado
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {esActualizado
+                                  ? "✓ Actualizado"
+                                  : denuncia.estado}
                               </span>
                             </div>
 

@@ -1,3 +1,25 @@
+-- Trigger y función: Actualizar estado de denuncia a 'En proceso' al asignar inspector
+DROP TRIGGER IF EXISTS tg_set_denuncia_en_proceso ON public.asignaciones_inspector;
+DROP FUNCTION IF EXISTS public.trg_set_denuncia_en_proceso();
+
+CREATE OR REPLACE FUNCTION public.trg_set_denuncia_en_proceso()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Si la denuncia está en estado Pendiente (id=1), la pasa a En proceso (id=2)
+  UPDATE public.denuncias
+  SET estado_id = 2
+  WHERE id = NEW.denuncia_id
+    AND estado_id = 1;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER tg_set_denuncia_en_proceso
+AFTER INSERT ON public.asignaciones_inspector
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_set_denuncia_en_proceso();
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 

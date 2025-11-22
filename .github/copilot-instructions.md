@@ -4,9 +4,16 @@ Este documento proporciona información esencial para trabajar eficientemente co
 
 ## Instrucción clave sobre endpoints y base de datos
 
-**IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando el archivo `public/script-BD-13-11.sql`. Este archivo contiene la definición oficial de las tablas, campos, tipos y relaciones, y es la referencia obligatoria para asegurar la coherencia y validez de cualquier cambio o consulta sobre la capa de datos.
+**IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando los siguientes archivos de referencia:
 
-No asumas la estructura de la base de datos ni los nombres de los campos sin revisar este archivo.
+- `public/script-BD-13-11.sql`: Definición oficial de las tablas, campos, tipos y relaciones.
+- `public/Supabase Snippet Inventario de triggers de usuario.csv`: Inventario actualizado de triggers y funciones asociadas a cada tabla.
+- `public/Supabase Snippet Funciones y procedimientos de usuario.csv`: Listado de funciones y procedimientos definidos en la base de datos, con sus argumentos y tipos de retorno.
+- `public/Supabase Snippet Indexes Overview.csv`: Resumen de los índices existentes en cada tabla.
+
+Estos archivos son la referencia obligatoria para asegurar la coherencia y validez de cualquier cambio o consulta sobre la capa de datos.
+
+No asumas la estructura de la base de datos, los triggers, funciones ni los nombres de los campos sin revisar estos archivos.
 
 ## Arquitectura General
 

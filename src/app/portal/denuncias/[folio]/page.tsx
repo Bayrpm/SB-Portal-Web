@@ -8,6 +8,7 @@ import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
 import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
 import AsignarAcompanantesDropdown from "./components/AsignarAcompanantesDropdown";
 import HistorialTimeline from "./components/HistorialTimeline";
+import { useRealtimeDenunciaDetalle } from "@/hooks/useRealtimeDenunciaDetalle";
 import { Pencil } from "lucide-react";
 
 interface DenunciaDetalle {
@@ -76,6 +77,10 @@ export default function DenunciaDetallePage({
 }) {
   const router = useRouter();
   const { folio } = React.use(params);
+  // Realtime hooks para historial y observaciones
+  const { historial, observaciones, loadingHistorial } =
+    useRealtimeDenunciaDetalle(folio);
+
   const [denuncia, setDenuncia] = useState<DenunciaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
   const [editandoPrioridad, setEditandoPrioridad] = useState(false);
@@ -83,6 +88,9 @@ export default function DenunciaDetallePage({
   const [inspectorAsignadoId, setInspectorAsignadoId] = useState<string | null>(
     null
   );
+  const [inspectorAsignadoNombre, setInspectorAsignadoNombre] = useState<
+    string | null
+  >(null);
   const [acompanantes, setAcompanantes] = useState<
     { id: string; nombre: string }[]
   >([]);
@@ -93,10 +101,7 @@ export default function DenunciaDetallePage({
     "resumen" | "evidencias" | "observaciones"
   >("resumen");
   const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
-  const [observaciones, setObservaciones] = useState<Observacion[]>([]);
-  const [historial, setHistorial] = useState<HistorialItem[]>([]);
   const [loadingTab, setLoadingTab] = useState(false);
-  const [loadingHistorial, setLoadingHistorial] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -113,6 +118,9 @@ export default function DenunciaDetallePage({
         // Setear inspector y acompañantes desde asignaciones
         if (asignacionesData.inspector_principal) {
           setInspectorAsignadoId(asignacionesData.inspector_principal.id);
+          setInspectorAsignadoNombre(
+            asignacionesData.inspector_principal.nombre
+          );
         }
         if (
           asignacionesData.acompanantes &&
@@ -129,24 +137,10 @@ export default function DenunciaDetallePage({
       });
   }, [folio]);
 
-  // Cargar datos según la tab activa
+  // Cargar evidencias cuando se abre la tab
   useEffect(() => {
-    if (tabActiva === "resumen") {
-      // Cargar historial cuando se abre la tab de resumen
-      setLoadingHistorial(true);
-      fetch(`/api/denuncias/${folio}/historial`)
-        .then((res) => res.json())
-        .then((data) => {
-          setHistorial(data.historial || []);
-          setLoadingHistorial(false);
-        })
-        .catch(() => setLoadingHistorial(false));
-      return;
-    }
-
-    setLoadingTab(true);
-
     if (tabActiva === "evidencias" && evidencias.length === 0) {
+      setLoadingTab(true);
       fetch(`/api/denuncias/${folio}/evidencias`)
         .then((res) => res.json())
         .then((data) => {
@@ -154,18 +148,10 @@ export default function DenunciaDetallePage({
           setLoadingTab(false);
         })
         .catch(() => setLoadingTab(false));
-    } else if (tabActiva === "observaciones" && observaciones.length === 0) {
-      fetch(`/api/denuncias/${folio}/observaciones`)
-        .then((res) => res.json())
-        .then((data) => {
-          setObservaciones(data.observaciones || []);
-          setLoadingTab(false);
-        })
-        .catch(() => setLoadingTab(false));
     } else {
       setLoadingTab(false);
     }
-  }, [tabActiva, folio, evidencias.length, observaciones.length]);
+  }, [tabActiva, folio, evidencias.length]);
 
   if (!denuncia && !loading) {
     // Show friendly 404 message if denuncia not found
@@ -331,14 +317,7 @@ export default function DenunciaDetallePage({
                               inspectorNombre: string,
                               inspectorId: string
                             ) => {
-                              setDenuncia((d) =>
-                                d
-                                  ? {
-                                      ...d,
-                                      inspector_asignado: inspectorNombre,
-                                    }
-                                  : d
-                              );
+                              setInspectorAsignadoNombre(inspectorNombre);
                               setInspectorAsignadoId(inspectorId);
                               setEditandoInspector(false);
                             }}
@@ -351,10 +330,10 @@ export default function DenunciaDetallePage({
                             Cancelar
                           </button>
                         </span>
-                      ) : denuncia.inspector_asignado ? (
+                      ) : inspectorAsignadoNombre ? (
                         <span className="flex items-center gap-2">
                           <span className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200">
-                            {denuncia.inspector_asignado}
+                            {inspectorAsignadoNombre}
                           </span>
                           <button
                             type="button"
@@ -398,7 +377,7 @@ export default function DenunciaDetallePage({
                       </div>
                     </td>
                     <td className="py-3 px-5 border-b border-gray-100">
-                      {denuncia.inspector_asignado ? (
+                      {inspectorAsignadoNombre ? (
                         editandoAcompanantes ? (
                           <>
                             <AsignarAcompanantesDropdown

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import StatsCard from "@/app/components/StatsCard";
+import { useRealtimeDerivaciones } from "@/hooks/useRealtimeDerivaciones";
 import {
   Users,
   AlertTriangle,
@@ -30,40 +31,9 @@ type VistaFiltro = "sin_asignar" | "pendiente_acompanantes" | "todas";
 
 export default function DerivacionesPage() {
   const router = useRouter();
-  const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
-  const [loading, setLoading] = useState(true);
   const [vistaActual, setVistaActual] = useState<VistaFiltro>("sin_asignar");
+  const { denuncias, stats, loading } = useRealtimeDerivaciones(vistaActual);
   const [seleccionadas, setSeleccionadas] = useState<Set<string>>(new Set());
-  const [stats, setStats] = useState({
-    sin_asignar: 0,
-    pendiente_acompanantes: 0,
-    vencidas_sla: 0,
-  });
-
-  const cargarDenuncias = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/derivaciones?vista=${vistaActual}`);
-      const data = await response.json();
-      setDenuncias(data.denuncias || []);
-      setStats(
-        data.stats || {
-          sin_asignar: 0,
-          pendiente_acompanantes: 0,
-          vencidas_sla: 0,
-        }
-      );
-    } catch (error) {
-      console.error("Error al cargar denuncias:", error);
-      setDenuncias([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [vistaActual]);
-
-  useEffect(() => {
-    cargarDenuncias();
-  }, [cargarDenuncias]);
 
   const toggleSeleccion = (folio: string) => {
     const nuevasSeleccionadas = new Set(seleccionadas);

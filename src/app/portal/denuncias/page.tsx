@@ -9,6 +9,7 @@ import SelectComponent from "@/app/components/SelectComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import DateRangePicker, { DateRange } from "@/app/components/DateRangePicker";
 import TableComponent from "@/app/components/TableComponent";
+import { useRealtimeDenunciasListado } from "@/hooks/useRealtimeDenunciasListado";
 
 type Denuncia = {
   folio: string;
@@ -44,9 +45,8 @@ const prioridadColor: Record<string, string> = {
 
 export default function DenunciasPage() {
   const router = useRouter();
-  const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
+  const { denuncias, loading } = useRealtimeDenunciasListado();
   const [filteredDenuncias, setFilteredDenuncias] = useState<Denuncia[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [prioridadFilter, setPrioridadFilter] = useState("");
@@ -64,21 +64,6 @@ export default function DenunciasPage() {
   const [prioridades, setPrioridades] = useState<
     { id: number; nombre: string; orden: number }[]
   >([]);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/denuncias")
-      .then((res) => res.json())
-      .then((data) => {
-        setDenuncias(data.denuncias || []);
-        setFilteredDenuncias(data.denuncias || []);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error cargando denuncias:", error);
-        setLoading(false);
-      });
-  }, []);
 
   // Nuevo: cargar categorías desde el endpoint dinámico
   useEffect(() => {

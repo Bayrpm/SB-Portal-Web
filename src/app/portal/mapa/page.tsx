@@ -30,9 +30,9 @@ export default function MapaPage() {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-gray-50">
+    <div className="w-full h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
         <div className="px-6 py-5">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 rounded-lg">
@@ -52,7 +52,7 @@ export default function MapaPage() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex-shrink-0">
         <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
           {/* Filtros a la izquierda */}
           <div className="flex items-center gap-6 flex-wrap">
@@ -124,8 +124,8 @@ export default function MapaPage() {
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="relative" style={{ height: "calc(100vh - 260px)" }}>
+      {/* Map Container - Usa flex-1 para ocupar todo el espacio restante */}
+      <div className="relative flex-1 overflow-hidden">
         <MapaDenuncias
           height="100%"
           selectedEstados={selectedEstados}
