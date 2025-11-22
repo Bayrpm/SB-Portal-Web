@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ButtonComponent from "@/app/components/ButtonComponent";
@@ -14,18 +14,6 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
-
-interface Denuncia {
-  folio: string;
-  titulo: string;
-  categoria: string;
-  prioridad: string;
-  fecha_creacion: string;
-  ubicacion_texto: string;
-  inspector_asignado: string | null;
-  tiene_acompanantes: boolean;
-  horas_sin_asignar: number;
-}
 
 type VistaFiltro = "sin_asignar" | "pendiente_acompanantes" | "todas";
 

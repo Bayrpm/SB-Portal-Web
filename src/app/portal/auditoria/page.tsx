@@ -22,6 +22,7 @@ interface AuditoriaRegistro {
   ts: string;
   actor_user_id: string | null;
   actor_email: string;
+  actor_nombre: string;
   actor_es_portal: boolean;
   actor_es_admin: boolean;
   tabla: string;
@@ -136,16 +137,25 @@ export default function AuditoriaPage() {
     }
 
     try {
-      const exportData = registros.map((reg) => ({
-        ID: reg.id,
-        Fecha: new Date(reg.ts).toLocaleString("es-CL"),
-        Usuario: reg.actor_email,
-        "Es Admin": reg.actor_es_admin ? "Sí" : "No",
-        "Es Portal": reg.actor_es_portal ? "Sí" : "No",
-        Tabla: reg.tabla,
-        Operación: reg.operacion,
-        "ID Fila": reg.fila_id_text,
-      }));
+      const exportData = registros.map((reg) => {
+        const operacionMap: Record<string, string> = {
+          INSERT: "Creado",
+          UPDATE: "Modificado",
+          DELETE: "Eliminado",
+        };
+
+        return {
+          ID: reg.id,
+          Fecha: new Date(reg.ts).toLocaleString("es-CL"),
+          Usuario: reg.actor_nombre || reg.actor_email,
+          Email: reg.actor_email,
+          "Es Admin": reg.actor_es_admin ? "Sí" : "No",
+          "Es Portal": reg.actor_es_portal ? "Sí" : "No",
+          Tabla: reg.tabla,
+          Operación: operacionMap[reg.operacion] || reg.operacion,
+          "ID Fila": reg.fila_id_text,
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
@@ -175,22 +185,38 @@ export default function AuditoriaPage() {
   };
 
   const getOperacionBadge = (operacion: string) => {
-    const badges: Record<string, { bg: string; text: string }> = {
-      INSERT: { bg: "bg-green-100", text: "text-green-800" },
-      UPDATE: { bg: "bg-blue-100", text: "text-blue-800" },
-      DELETE: { bg: "bg-red-100", text: "text-red-800" },
+    const operacionMap: Record<
+      string,
+      { traduccion: string; bg: string; text: string }
+    > = {
+      INSERT: {
+        traduccion: "Creado",
+        bg: "bg-green-100",
+        text: "text-green-800",
+      },
+      UPDATE: {
+        traduccion: "Modificado",
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+      },
+      DELETE: {
+        traduccion: "Eliminado",
+        bg: "bg-red-100",
+        text: "text-red-800",
+      },
     };
 
-    const badge = badges[operacion] || {
+    const operacionInfo = operacionMap[operacion] || {
+      traduccion: operacion,
       bg: "bg-gray-100",
       text: "text-gray-800",
     };
 
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${operacionInfo.bg} ${operacionInfo.text}`}
       >
-        {operacion}
+        {operacionInfo.traduccion}
       </span>
     );
   };
@@ -390,9 +416,9 @@ export default function AuditoriaPage() {
               }}
             >
               <option value="">Todas las operaciones</option>
-              <option value="INSERT">INSERT</option>
-              <option value="UPDATE">UPDATE</option>
-              <option value="DELETE">DELETE</option>
+              <option value="INSERT">Creado</option>
+              <option value="UPDATE">Modificado</option>
+              <option value="DELETE">Eliminado</option>
             </SelectComponent>
 
             {/* Fecha desde */}
@@ -499,9 +525,12 @@ export default function AuditoriaPage() {
                 width: "200px",
                 render: (row) => (
                   <div className="text-sm">
-                    {row.actor_email ? (
+                    {row.actor_nombre && row.actor_nombre !== "Desconocido" ? (
                       <>
                         <div className="font-medium text-gray-900">
+                          {row.actor_nombre}
+                        </div>
+                        <div className="text-xs text-gray-500">
                           {row.actor_email}
                         </div>
                         <div className="flex gap-1 mt-1">
@@ -518,8 +547,22 @@ export default function AuditoriaPage() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
-                        No se encontró usuario
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {row.actor_email}
+                        </div>
+                        <div className="flex gap-1 mt-1">
+                          {row.actor_es_admin && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              Admin
+                            </span>
+                          )}
+                          {row.actor_es_portal && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              Portal
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

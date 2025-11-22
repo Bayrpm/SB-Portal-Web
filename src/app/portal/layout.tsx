@@ -69,7 +69,7 @@ export default function PortalLayout({
   };
 
   const navItems = [
-    { href: "/portal/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/portal/dashboard", icon: Home, label: "Graficos" },
     { href: "/portal/denuncias", icon: FileText, label: "Denuncias" },
     { href: "/portal/derivaciones", icon: Share2, label: "Derivaciones" },
     { href: "/portal/mapa", icon: MapPin, label: "Mapa" },
@@ -157,7 +157,19 @@ export default function PortalLayout({
                       href="/portal/catalogos/moviles"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Moviles
+                      Móviles
+                    </Link>
+                    <Link
+                      href="/portal/catalogos/paginas"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Páginas
+                    </Link>
+                    <Link
+                      href="/portal/catalogos/roles"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Roles
                     </Link>
                   </div>
                 )}

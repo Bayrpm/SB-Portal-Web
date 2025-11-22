@@ -97,6 +97,41 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Obtener nombres de usuarios desde perfiles_ciudadanos
+        const usuariosIds = [...new Set(
+            (registros || [])
+                .map((r: { actor_user_id: string | null }) => r.actor_user_id)
+                .filter((id: string | null) => id !== null)
+        )] as string[];
+
+        let usuariosMap = new Map<string, string>();
+
+        if (usuariosIds.length > 0) {
+            const { data: perfiles } = await supabase
+                .from("perfiles_ciudadanos")
+                .select("usuario_id, nombre, apellido")
+                .in("usuario_id", usuariosIds);
+
+            if (perfiles) {
+                usuariosMap = new Map(
+                    perfiles.map((p: { usuario_id: string; nombre: string; apellido: string }) => [
+                        p.usuario_id,
+                        `${p.nombre} ${p.apellido}`.trim(),
+                    ])
+                );
+            }
+        }
+
+        // Agregar nombre al registro
+        const registrosConNombre = (registros || []).map((r: {
+            actor_user_id: string;
+            actor_email: string;
+            [key: string]: unknown;
+        }) => ({
+            ...r,
+            actor_nombre: usuariosMap.get(r.actor_user_id) || r.actor_email || "Desconocido",
+        }));
+
         // Obtener lista de tablas únicas (para filtro)
         const { data: tablas } = await supabase
             .from("audit_log")
@@ -108,7 +143,7 @@ export async function GET(request: NextRequest) {
             : [];
 
         return NextResponse.json({
-            registros: registros || [],
+            registros: registrosConNombre,
             total: count || 0,
             page,
             pageSize,

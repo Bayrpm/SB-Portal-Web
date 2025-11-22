@@ -448,3 +448,25 @@ CREATE TABLE public.usuarios_portal (
   CONSTRAINT usuarios_portal_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES auth.users(id),
   CONSTRAINT usuarios_portal_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.roles_portal(id)
 );
+
+-- Tabla: paginas
+CREATE TABLE public.paginas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nombre text NOT NULL,
+  titulo text NOT NULL,
+  path text NOT NULL,
+  activo boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT paginas_pkey PRIMARY KEY (id)
+);
+
+-- Tabla: roles_paginas
+CREATE TABLE public.roles_paginas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  rol_id integer NOT NULL,
+  pagina_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT roles_paginas_pkey PRIMARY KEY (id),
+  CONSTRAINT roles_paginas_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.roles_portal(id),
+  CONSTRAINT roles_paginas_pagina_id_fkey FOREIGN KEY (pagina_id) REFERENCES public.paginas(id)
+);
