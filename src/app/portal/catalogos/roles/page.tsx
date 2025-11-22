@@ -7,6 +7,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent, { Column } from "@/app/components/TableComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import Loader from "@/app/components/Loader";
+import PageAccessValidator from "@/app/components/PageAccessValidator";
 import GestionarUsuariosModal from "./components/GestionarUsuariosModal";
 import GestionarPaginasModal from "./components/GestionarPaginasModal";
 import RolModal, { RolFormData } from "./components/RolModal";
@@ -292,103 +293,105 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
+    <PageAccessValidator pagePath="/portal/catalogos/roles">
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: "#0B4F9E" }}
+              >
+                <ShieldCheck className="text-white" size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Gestión de Roles
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Administra los roles del sistema y sus permisos
+                </p>
+              </div>
+            </div>
+            <ButtonComponent accion="agregar" onClick={handleCrearRol}>
+              Crear Rol
+            </ButtonComponent>
+          </div>
+        </div>
+
+        {/* Búsqueda y Estadísticas */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            <SearchComponent
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nombre de rol..."
+            />
+          </div>
+          <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: "#0B4F9E" }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: "#E6F4FA" }}
             >
-              <ShieldCheck className="text-white" size={24} />
+              <ShieldCheck style={{ color: "#0085CA" }} size={20} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Gestión de Roles
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Administra los roles del sistema y sus permisos
-              </p>
+              <p className="text-xs text-gray-600">Total de Roles</p>
+              <p className="text-xl font-bold text-gray-900">{roles.length}</p>
             </div>
           </div>
-          <ButtonComponent accion="agregar" onClick={handleCrearRol}>
-            Crear Rol
-          </ButtonComponent>
         </div>
+
+        {/* Tabla */}
+        <TableComponent
+          columns={columns}
+          data={rolesPaginados}
+          loading={loading}
+          emptyMessage="No se encontraron roles"
+          page={page}
+          pageSize={pageSize}
+          total={rolesFiltrados.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+
+        {/* Modales */}
+        <RolModal
+          isOpen={rolModalAbierto}
+          onClose={() => setRolModalAbierto(false)}
+          initialData={rolParaEditar || undefined}
+          onSubmit={handleSubmitRol}
+          title={rolParaEditar ? "Editar Rol" : "Crear Nuevo Rol"}
+        />
+
+        {selectedRol && (
+          <>
+            <GestionarUsuariosModal
+              isOpen={modalUsuariosAbierto}
+              onClose={() => {
+                setModalUsuariosAbierto(false);
+                setSelectedRol(null);
+              }}
+              rol={{
+                id: selectedRol.id,
+                nombre: selectedRol.nombre,
+              }}
+              onSuccess={cargarRoles}
+            />
+
+            <GestionarPaginasModal
+              isOpen={modalPaginasAbierto}
+              onClose={() => {
+                setModalPaginasAbierto(false);
+                setSelectedRol(null);
+              }}
+              rol={selectedRol}
+              onSuccess={cargarRoles}
+            />
+          </>
+        )}
       </div>
-
-      {/* Búsqueda y Estadísticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-3">
-          <SearchComponent
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nombre de rol..."
-          />
-        </div>
-        <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: "#E6F4FA" }}
-          >
-            <ShieldCheck style={{ color: "#0085CA" }} size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-600">Total de Roles</p>
-            <p className="text-xl font-bold text-gray-900">{roles.length}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla */}
-      <TableComponent
-        columns={columns}
-        data={rolesPaginados}
-        loading={loading}
-        emptyMessage="No se encontraron roles"
-        page={page}
-        pageSize={pageSize}
-        total={rolesFiltrados.length}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-      />
-
-      {/* Modales */}
-      <RolModal
-        isOpen={rolModalAbierto}
-        onClose={() => setRolModalAbierto(false)}
-        initialData={rolParaEditar || undefined}
-        onSubmit={handleSubmitRol}
-        title={rolParaEditar ? "Editar Rol" : "Crear Nuevo Rol"}
-      />
-
-      {selectedRol && (
-        <>
-          <GestionarUsuariosModal
-            isOpen={modalUsuariosAbierto}
-            onClose={() => {
-              setModalUsuariosAbierto(false);
-              setSelectedRol(null);
-            }}
-            rol={{
-              id: selectedRol.id,
-              nombre: selectedRol.nombre,
-            }}
-            onSuccess={cargarRoles}
-          />
-
-          <GestionarPaginasModal
-            isOpen={modalPaginasAbierto}
-            onClose={() => {
-              setModalPaginasAbierto(false);
-              setSelectedRol(null);
-            }}
-            rol={selectedRol}
-            onSuccess={cargarRoles}
-          />
-        </>
-      )}
-    </div>
+    </PageAccessValidator>
   );
 }

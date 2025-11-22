@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import SelectComponent from "@/app/components/SelectComponent";
 import { User } from "lucide-react";
+import PageAccessValidator from "@/app/components/PageAccessValidator";
 import UserModal from "./components/UserModal";
 import EditUserModal from "./components/EditUserModal";
 import Swal from "sweetalert2";
+import { useUser } from "@/context/UserContext";
 
 const rolColor: Record<string, string> = {
   Administrador: "bg-red-100 text-red-700",
@@ -43,6 +46,8 @@ interface UserForm {
 }
 
 export default function UsuariosPage() {
+  const router = useRouter();
+  const { isPageAllowed } = useUser();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
@@ -50,6 +55,7 @@ export default function UsuariosPage() {
   const [selectedUser, setSelectedUser] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -59,9 +65,22 @@ export default function UsuariosPage() {
 
   // Cargar funcionarios al montar el componente
   useEffect(() => {
+    // Verificar acceso a esta página
+    if (!isPageAllowed("/portal/usuarios")) {
+      console.warn("Usuario no tiene acceso a /portal/usuarios");
+      setAccessDenied(true);
+      setLoading(false);
+
+      // Redirigir después de 2 segundos
+      const timer = setTimeout(() => {
+        router.push("/portal/dashboard");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+
     fetchEmployees();
     fetchRoles();
-  }, []);
+  }, [isPageAllowed, router]);
 
   // Función para cargar roles disponibles
   const fetchRoles = async () => {
@@ -80,6 +99,12 @@ export default function UsuariosPage() {
     try {
       setLoading(true);
       const res = await fetch("/api/employees");
+
+      if (res.status === 403) {
+        console.warn("No autorizado para acceder a funcionarios");
+        setAccessDenied(true);
+        return;
+      }
 
       if (!res.ok) {
         throw new Error("Error al obtener funcionarios");
@@ -324,231 +349,260 @@ export default function UsuariosPage() {
     return matchesSearch && matchesRol && matchesEstado;
   });
 
-  return (
-    <div className="w-full py-8 px-4">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gestión de Usuarios
+  // Si no tiene acceso
+  if (accessDenied) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-red-600 mb-4">
+            Acceso Denegado
           </h1>
-          <p className="text-sm text-gray-600">
-            Administración de usuarios del portal (Administradores y Operadores)
+          <p className="text-gray-600 mb-6">
+            No tienes permiso para acceder a esta página.
           </p>
-        </div>
-        <ButtonComponent
-          accion="agregar"
-          className="flex items-center gap-2 bg-[#003C96] hover:bg-[#0085CA]"
-          onClick={() => setModalOpen(true)}
-          disabled={loading}
-        >
-          Nuevo Usuario
-        </ButtonComponent>
-      </div>
-
-      <UserModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleAddUser}
-      />
-
-      {selectedUser && (
-        <EditUserModal
-          open={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedUser(null);
-          }}
-          onSubmit={handleUpdateUser}
-          initialData={{
-            nombre: selectedUser.name,
-            apellido: selectedUser.apellido || "",
-            telefono: selectedUser.telefono || "",
-            rol_id: selectedUser.rol_id,
-          }}
-          email={selectedUser.email}
-        />
-      )}
-
-      {/* Tarjetas resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-          <span className="text-2xl font-bold text-gray-900">
-            {employees.length}
-          </span>
-          <span className="text-sm text-gray-600 mt-1">Total Usuarios</span>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-          <span className="text-2xl font-bold text-green-600">
-            {employees.filter((u) => u.activo).length}
-          </span>
-          <span className="text-sm text-gray-600 mt-1">Activos</span>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-          <span className="text-2xl font-bold text-red-600">
-            {employees.filter((u) => !u.activo).length}
-          </span>
-          <span className="text-sm text-gray-600 mt-1">Inactivos</span>
+          <p className="text-sm text-gray-500 mb-8">
+            Serás redirigido al dashboard en unos momentos...
+          </p>
+          <button
+            onClick={() => router.push("/portal/dashboard")}
+            className="px-6 py-2 bg-[#003C96] text-white rounded-lg hover:bg-[#0085CA] transition-colors"
+          >
+            Ir al Dashboard
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Búsqueda */}
-          <SearchComponent
-            placeholder="Buscar por nombre o email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onClear={() => setSearchTerm("")}
-          />
-
-          {/* Filtro por Rol */}
-          <SelectComponent
-            placeholder="Todos los roles"
-            value={selectedRol}
-            onChange={(e) => setSelectedRol(e.target.value)}
-          >
-            <option value="">Todos los roles</option>
-            {roles.map((rol) => (
-              <option key={rol.id} value={rol.id.toString()}>
-                {rol.nombre}
-              </option>
-            ))}
-          </SelectComponent>
-
-          {/* Filtro por Estado */}
-          <SelectComponent
-            placeholder="Todos los estados"
-            value={selectedEstado}
-            onChange={(e) => setSelectedEstado(e.target.value)}
-          >
-            <option value="">Todos los estados</option>
-            <option value="activo">Activos</option>
-            <option value="inactivo">Inactivos</option>
-          </SelectComponent>
-        </div>
-
-        {/* Contador de resultados */}
-        {(searchTerm || selectedRol || selectedEstado) && (
-          <div className="mt-3 text-sm text-gray-600">
-            Mostrando {filteredEmployees.length} de {employees.length} usuarios
+  return (
+    <PageAccessValidator pagePath="/portal/usuarios">
+      <div className="w-full py-8 px-4">
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Gestión de Usuarios
+            </h1>
+            <p className="text-sm text-gray-600">
+              Administración de usuarios del portal (Administradores y
+              Operadores)
+            </p>
           </div>
-        )}
-      </div>
+          <ButtonComponent
+            accion="agregar"
+            className="flex items-center gap-2 bg-[#003C96] hover:bg-[#0085CA]"
+            onClick={() => setModalOpen(true)}
+            disabled={loading}
+          >
+            Nuevo Usuario
+          </ButtonComponent>
+        </div>
 
-      {/* Tabla de usuarios */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow p-2">
-        <TableComponent<Employee>
-          columns={[
-            {
-              key: "numero",
-              header: "N°",
-              width: "5%",
-              align: "center",
-              render: (row) => (
-                <span className="font-semibold text-gray-700">
-                  {row.numero}
-                </span>
-              ),
-            },
-            {
-              key: "name",
-              header: "Nombre",
-              width: "25%",
-              render: (row) => (
-                <span className="flex items-center gap-2 font-medium text-gray-900">
-                  <User className="w-4 h-4 text-gray-400" />
-                  {row.name}
-                </span>
-              ),
-            },
-            {
-              key: "email",
-              header: "Email",
-              width: "30%",
-              render: (row) => (
-                <span className="text-gray-700">{row.email}</span>
-              ),
-            },
-            {
-              key: "rol_id",
-              header: "Rol",
-              width: "15%",
-              align: "center",
-              render: (row) => (
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    rolColor[rolMap[row.rol_id] || "Sin rol"]
-                  }`}
-                >
-                  {rolMap[row.rol_id] || "Sin rol"}
-                </span>
-              ),
-            },
-            {
-              key: "activo",
-              header: "Estado",
-              width: "10%",
-              align: "center",
-              render: (row) => (
-                <div className="flex flex-col items-center gap-2">
-                  <ToggleSwitch
-                    isActive={row.activo}
-                    onChange={(newStatus) =>
-                      handleToggleStatus(row.id, newStatus)
-                    }
-                    size="md"
-                  />
+        <UserModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAddUser}
+        />
+
+        {selectedUser && (
+          <EditUserModal
+            open={editModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              setSelectedUser(null);
+            }}
+            onSubmit={handleUpdateUser}
+            initialData={{
+              nombre: selectedUser.name,
+              apellido: selectedUser.apellido || "",
+              telefono: selectedUser.telefono || "",
+              rol_id: selectedUser.rol_id,
+            }}
+            email={selectedUser.email}
+          />
+        )}
+
+        {/* Tarjetas resumen */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+            <span className="text-2xl font-bold text-gray-900">
+              {employees.length}
+            </span>
+            <span className="text-sm text-gray-600 mt-1">Total Usuarios</span>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+            <span className="text-2xl font-bold text-green-600">
+              {employees.filter((u) => u.activo).length}
+            </span>
+            <span className="text-sm text-gray-600 mt-1">Activos</span>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+            <span className="text-2xl font-bold text-red-600">
+              {employees.filter((u) => !u.activo).length}
+            </span>
+            <span className="text-sm text-gray-600 mt-1">Inactivos</span>
+          </div>
+        </div>
+
+        {/* Filtros y búsqueda */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Búsqueda */}
+            <SearchComponent
+              placeholder="Buscar por nombre o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClear={() => setSearchTerm("")}
+            />
+
+            {/* Filtro por Rol */}
+            <SelectComponent
+              placeholder="Todos los roles"
+              value={selectedRol}
+              onChange={(e) => setSelectedRol(e.target.value)}
+            >
+              <option value="">Todos los roles</option>
+              {roles.map((rol) => (
+                <option key={rol.id} value={rol.id.toString()}>
+                  {rol.nombre}
+                </option>
+              ))}
+            </SelectComponent>
+
+            {/* Filtro por Estado */}
+            <SelectComponent
+              placeholder="Todos los estados"
+              value={selectedEstado}
+              onChange={(e) => setSelectedEstado(e.target.value)}
+            >
+              <option value="">Todos los estados</option>
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </SelectComponent>
+          </div>
+
+          {/* Contador de resultados */}
+          {(searchTerm || selectedRol || selectedEstado) && (
+            <div className="mt-3 text-sm text-gray-600">
+              Mostrando {filteredEmployees.length} de {employees.length}{" "}
+              usuarios
+            </div>
+          )}
+        </div>
+
+        {/* Tabla de usuarios */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow p-2">
+          <TableComponent<Employee>
+            columns={[
+              {
+                key: "numero",
+                header: "N°",
+                width: "5%",
+                align: "center",
+                render: (row) => (
+                  <span className="font-semibold text-gray-700">
+                    {row.numero}
+                  </span>
+                ),
+              },
+              {
+                key: "name",
+                header: "Nombre",
+                width: "25%",
+                render: (row) => (
+                  <span className="flex items-center gap-2 font-medium text-gray-900">
+                    <User className="w-4 h-4 text-gray-400" />
+                    {row.name}
+                  </span>
+                ),
+              },
+              {
+                key: "email",
+                header: "Email",
+                width: "30%",
+                render: (row) => (
+                  <span className="text-gray-700">{row.email}</span>
+                ),
+              },
+              {
+                key: "rol_id",
+                header: "Rol",
+                width: "15%",
+                align: "center",
+                render: (row) => (
                   <span
-                    className={`text-xs font-semibold ${
-                      row.activo ? "text-[#003C96]" : "text-gray-500"
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      rolColor[rolMap[row.rol_id] || "Sin rol"]
                     }`}
                   >
-                    {row.activo ? "Activo" : "Inactivo"}
+                    {rolMap[row.rol_id] || "Sin rol"}
                   </span>
-                </div>
-              ),
-            },
-            {
-              key: "acciones",
-              header: "Acciones",
-              width: "15%",
-              align: "center",
-              render: (row) => (
-                <div className="flex gap-2 justify-center">
-                  <ButtonComponent
-                    accion="editar"
-                    className="flex items-center gap-1 bg-[#003C96] hover:bg-[#0085CA] px-3 py-1 text-xs"
-                    onClick={() => handleEdit(row.id)}
-                  >
-                    Editar
-                  </ButtonComponent>
-                  <ButtonComponent
-                    accion="eliminar"
-                    className="flex items-center gap-1 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 text-xs"
-                    onClick={() => handleDelete(row.id)}
-                  >
-                    Eliminar
-                  </ButtonComponent>
-                </div>
-              ),
-            },
-          ]}
-          data={filteredEmployees}
-          page={page}
-          pageSize={pageSize}
-          total={filteredEmployees.length}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          emptyMessage={
-            loading
-              ? "Cargando usuarios..."
-              : searchTerm || selectedRol || selectedEstado
-              ? "No se encontraron usuarios con los filtros aplicados"
-              : "No hay usuarios registrados"
-          }
-        />
+                ),
+              },
+              {
+                key: "activo",
+                header: "Estado",
+                width: "10%",
+                align: "center",
+                render: (row) => (
+                  <div className="flex flex-col items-center gap-2">
+                    <ToggleSwitch
+                      isActive={row.activo}
+                      onChange={(newStatus) =>
+                        handleToggleStatus(row.id, newStatus)
+                      }
+                      size="md"
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        row.activo ? "text-[#003C96]" : "text-gray-500"
+                      }`}
+                    >
+                      {row.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                ),
+              },
+              {
+                key: "acciones",
+                header: "Acciones",
+                width: "15%",
+                align: "center",
+                render: (row) => (
+                  <div className="flex gap-2 justify-center">
+                    <ButtonComponent
+                      accion="editar"
+                      className="flex items-center gap-1 bg-[#003C96] hover:bg-[#0085CA] px-3 py-1 text-xs"
+                      onClick={() => handleEdit(row.id)}
+                    >
+                      Editar
+                    </ButtonComponent>
+                    <ButtonComponent
+                      accion="eliminar"
+                      className="flex items-center gap-1 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 text-xs"
+                      onClick={() => handleDelete(row.id)}
+                    >
+                      Eliminar
+                    </ButtonComponent>
+                  </div>
+                ),
+              },
+            ]}
+            data={filteredEmployees}
+            page={page}
+            pageSize={pageSize}
+            total={filteredEmployees.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            emptyMessage={
+              loading
+                ? "Cargando usuarios..."
+                : searchTerm || selectedRol || selectedEstado
+                ? "No se encontraron usuarios con los filtros aplicados"
+                : "No hay usuarios registrados"
+            }
+          />
+        </div>
       </div>
-    </div>
+    </PageAccessValidator>
   );
 }

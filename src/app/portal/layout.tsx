@@ -45,7 +45,31 @@ export default function PortalLayout({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [catalogOpen]);
-  const { role, name } = useUser();
+  const {
+    role,
+    name,
+    allowedPages,
+    loadAllowedPages,
+    isPageAllowed: userPageAllowed,
+  } = useUser();
+  const [hasLoadedPages, setHasLoadedPages] = useState(false);
+
+  // Cargar las páginas permitidas cuando el rol esté disponible
+  useEffect(() => {
+    if (role && !hasLoadedPages && allowedPages.length === 0) {
+      // Las páginas no están cargadas, hacerlo ahora
+      loadAllowedPages(role)
+        .then(() => {
+          setHasLoadedPages(true);
+        })
+        .catch(() => {
+          setHasLoadedPages(true);
+        });
+    } else if (allowedPages.length > 0) {
+      // Las páginas ya están cargadas (desde localStorage)
+      setHasLoadedPages(true);
+    }
+  }, [role, loadAllowedPages]);
 
   const roleLabel =
     role === 1 ? "Administrador" : role === 2 ? "Operador" : "Usuario";
@@ -59,6 +83,7 @@ export default function PortalLayout({
 
       if (result.success) {
         localStorage.removeItem("sessionExpireAt");
+        localStorage.removeItem("allowedPages");
         router.push("/");
       } else {
         console.error("Error al cerrar sesión:", result.error);
@@ -67,6 +92,20 @@ export default function PortalLayout({
       console.error("Error al cerrar sesión:", error);
     }
   };
+
+  // Catálogos disponibles
+  const catalogItems = [
+    { href: "/portal/catalogos/inspectores", label: "Inspectores" },
+    { href: "/portal/catalogos/categorias", label: "Categorías" },
+    { href: "/portal/catalogos/moviles", label: "Móviles" },
+    { href: "/portal/catalogos/paginas", label: "Páginas" },
+    { href: "/portal/catalogos/roles", label: "Roles" },
+  ];
+
+  // Filtrar catálogos permitidos usando la función del contexto
+  const allowedCatalogs = catalogItems.filter((item) =>
+    userPageAllowed(item.href)
+  );
 
   const navItems = [
     { href: "/portal/dashboard", icon: Home, label: "Graficos" },
@@ -100,80 +139,71 @@ export default function PortalLayout({
 
             {/* Navegación Principal */}
             <nav className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                      isActive
-                        ? "bg-white/20 text-white font-medium"
-                        : "text-white/90 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span className="text-sm">{item.label}</span>
-                  </Link>
-                );
-              })}
+              {hasLoadedPages ? (
+                <>
+                  {navItems.map((item) => {
+                    // Solo mostrar si está permitido
+                    if (!userPageAllowed(item.href)) return null;
 
-              {/* Dropdown Catálogos */}
-              <div className="relative" ref={catalogRef}>
-                <button
-                  onClick={() => setCatalogOpen(!catalogOpen)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                    pathname.startsWith("/portal/catalogos")
-                      ? "bg-white/20 text-white font-medium"
-                      : "text-white/90 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <Settings size={18} />
-                  <span className="text-sm">Catálogos</span>
-                  <ChevronDown
-                    size={16}
-                    className={`transition-transform ${
-                      catalogOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                          isActive
+                            ? "bg-white/20 text-white font-medium"
+                            : "text-white/90 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span className="text-sm">{item.label}</span>
+                      </Link>
+                    );
+                  })}
 
-                {catalogOpen && (
-                  <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50">
-                    <Link
-                      href="/portal/catalogos/inspectores"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Inspectores
-                    </Link>
-                    <Link
-                      href="/portal/catalogos/categorias"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Categorías
-                    </Link>
-                    <Link
-                      href="/portal/catalogos/moviles"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Móviles
-                    </Link>
-                    <Link
-                      href="/portal/catalogos/paginas"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Páginas
-                    </Link>
-                    <Link
-                      href="/portal/catalogos/roles"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Roles
-                    </Link>
-                  </div>
-                )}
-              </div>
+                  {/* Dropdown Catálogos - solo si hay catálogos permitidos */}
+                  {allowedCatalogs.length > 0 && (
+                    <div className="relative" ref={catalogRef}>
+                      <button
+                        onClick={() => setCatalogOpen(!catalogOpen)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                          pathname.startsWith("/portal/catalogos")
+                            ? "bg-white/20 text-white font-medium"
+                            : "text-white/90 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <Settings size={18} />
+                        <span className="text-sm">Catálogos</span>
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform ${
+                            catalogOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {catalogOpen && (
+                        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50">
+                          {allowedCatalogs.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setCatalogOpen(false)}
+                            >
+                              {item.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-white/60 text-sm">Cargando menú...</div>
+              )}
             </nav>
           </div>
 

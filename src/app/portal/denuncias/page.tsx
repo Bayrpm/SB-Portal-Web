@@ -9,6 +9,7 @@ import SelectComponent from "@/app/components/SelectComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import DateRangePicker, { DateRange } from "@/app/components/DateRangePicker";
 import TableComponent from "@/app/components/TableComponent";
+import PageAccessValidator from "@/app/components/PageAccessValidator";
 import { useRealtimeDenunciasListado } from "@/hooks/useRealtimeDenunciasListado";
 
 type Denuncia = {
@@ -154,210 +155,212 @@ export default function DenunciasPage() {
   }
 
   return (
-    <div className="p-6 w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Denuncias</h1>
-          <p className="text-sm text-gray-500">
-            Gestión de denuncias ciudadanas
-          </p>
+    <PageAccessValidator pagePath="/portal/denuncias">
+      <div className="p-6 w-full">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Denuncias</h1>
+            <p className="text-sm text-gray-500">
+              Gestión de denuncias ciudadanas
+            </p>
+          </div>
+          <ExportButton
+            data={filteredDenuncias}
+            fileName="denuncias"
+            columns={[
+              "folio",
+              "nombre",
+              "categoria",
+              "prioridad",
+              "fecha_creacion",
+              "ubicacion_texto",
+            ]}
+          />
         </div>
-        <ExportButton
-          data={filteredDenuncias}
-          fileName="denuncias"
-          columns={[
-            "folio",
-            "nombre",
-            "categoria",
-            "prioridad",
-            "fecha_creacion",
-            "ubicacion_texto",
-          ]}
-        />
-      </div>
 
-      {/* Filtros */}
-      <div className="flex flex-col md:flex-row md:items-start gap-4 mb-6">
-        <div className="flex-1 max-w-xs">
-          <div className="w-full">
-            <SearchComponent
-              label="Buscar"
-              aria-label="Buscar"
-              placeholder="Buscar por folio, título..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onClear={() => setSearchTerm("")}
-              allowClear
+        {/* Filtros */}
+        <div className="flex flex-col md:flex-row md:items-start gap-4 mb-6">
+          <div className="flex-1 max-w-xs">
+            <div className="w-full">
+              <SearchComponent
+                label="Buscar"
+                aria-label="Buscar"
+                placeholder="Buscar por folio, título..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onClear={() => setSearchTerm("")}
+                allowClear
+                size="sm"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <div className="w-60">
+            <SelectComponent
+              value={prioridadFilter}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setPrioridadFilter(e.target.value)
+              }
+              label="Prioridad"
               size="sm"
-              autoComplete="off"
+            >
+              <option value="">Todas las prioridades</option>
+              {prioridades.map((p) => (
+                <option key={p.id} value={p.nombre}>
+                  {p.nombre}
+                </option>
+              ))}
+            </SelectComponent>
+          </div>
+
+          <div className="w-full md:w-64">
+            <SelectComponent
+              value={categoriaFilter}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setCategoriaFilter(e.target.value)
+              }
+              label="Categoría"
+              size="sm"
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.nombre}>
+                  {c.nombre}
+                </option>
+              ))}
+            </SelectComponent>
+          </div>
+
+          {/* 📅 Reemplazo: DateRangePicker */}
+          <div className="w-full md:w-64">
+            <DateRangePicker
+              label="Fecha"
+              value={fecha}
+              onChange={setFecha}
+              size="sm"
+              placeholderStart="Fecha inicio"
+              placeholderEnd="Fecha fin"
+              // min="2025-01-01"
+              // max="2025-12-31"
             />
           </div>
         </div>
 
-        <div className="w-60">
-          <SelectComponent
-            value={prioridadFilter}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setPrioridadFilter(e.target.value)
-            }
-            label="Prioridad"
-            size="sm"
-          >
-            <option value="">Todas las prioridades</option>
-            {prioridades.map((p) => (
-              <option key={p.id} value={p.nombre}>
-                {p.nombre}
-              </option>
-            ))}
-          </SelectComponent>
-        </div>
-
-        <div className="w-full md:w-64">
-          <SelectComponent
-            value={categoriaFilter}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setCategoriaFilter(e.target.value)
-            }
-            label="Categoría"
-            size="sm"
-          >
-            <option value="">Todas las categorías</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.nombre}>
-                {c.nombre}
-              </option>
-            ))}
-          </SelectComponent>
-        </div>
-
-        {/* 📅 Reemplazo: DateRangePicker */}
-        <div className="w-full md:w-64">
-          <DateRangePicker
-            label="Fecha"
-            value={fecha}
-            onChange={setFecha}
-            size="sm"
-            placeholderStart="Fecha inicio"
-            placeholderEnd="Fecha fin"
-            // min="2025-01-01"
-            // max="2025-12-31"
-          />
-        </div>
-      </div>
-
-      {/* Tabla */}
-      <TableComponent
-        columns={[
-          {
-            key: "folio",
-            header: "Folio",
-            width: "10%",
-            sortable: true,
-            render: (row) => (
-              <Link
-                href={`/portal/denuncias/${row.folio}`}
-                className="font-medium text-blue-600"
-              >
-                {row.folio}
-              </Link>
-            ),
-          },
-          {
-            key: "nombre",
-            header: "Nombre Ciudadano",
-            width: "15%",
-            sortable: true,
-          },
-          {
-            key: "titulo",
-            header: "Título",
-            width: "18%",
-            sortable: true,
-            render: (row) => <span>{row.titulo || ""}</span>,
-          },
-          {
-            key: "categoria",
-            header: "Categoría",
-            width: "15%",
-            sortable: true,
-          },
-          {
-            key: "prioridad",
-            header: "Prioridad",
-            width: "12%",
-            sortable: true,
-            render: (row) =>
-              row.prioridad ? (
-                <span
-                  className={`inline-block px-3 py-1 rounded text-xs font-semibold border ${
-                    prioridadColor[row.prioridad] ||
-                    "bg-gray-100 text-gray-700 border border-gray-200"
-                  }`}
+        {/* Tabla */}
+        <TableComponent
+          columns={[
+            {
+              key: "folio",
+              header: "Folio",
+              width: "10%",
+              sortable: true,
+              render: (row) => (
+                <Link
+                  href={`/portal/denuncias/${row.folio}`}
+                  className="font-medium text-blue-600"
                 >
-                  {row.prioridad}
-                </span>
-              ) : (
-                <span className="text-gray-400">Sin prioridad</span>
-              ),
-          },
-          {
-            key: "fecha_creacion",
-            header: "Fecha Creación",
-            width: "15%",
-            sortable: true,
-            render: (row) => {
-              const date = row.fecha_creacion
-                ? new Date(row.fecha_creacion)
-                : null;
-              if (date && !isNaN(date.getTime())) {
-                const dd = String(date.getDate()).padStart(2, "0");
-                const mm = String(date.getMonth() + 1).padStart(2, "0");
-                const yyyy = date.getFullYear();
-                const hh = String(date.getHours()).padStart(2, "0");
-                const min = String(date.getMinutes()).padStart(2, "0");
-                return <span>{`${dd}-${mm}-${yyyy} ${hh}:${min}`}</span>;
-              }
-              return <span>{row.fecha_creacion}</span>;
-            },
-          },
-          {
-            key: "ubicacion_texto",
-            header: "Ubicación",
-            width: "20%",
-            sortable: false,
-          },
-          {
-            key: "acciones",
-            header: "Acciones",
-            width: "10%",
-            align: "center",
-            render: (row) => (
-              <div className="flex gap-2 justify-center">
-                <Link href={`/portal/denuncias/${row.folio}`}>
-                  <ButtonComponent
-                    accion="ver"
-                    className="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
-                  >
-                    Ver denuncia
-                  </ButtonComponent>
+                  {row.folio}
                 </Link>
-              </div>
-            ),
-          },
-        ]}
-        data={currentItems}
-        loading={loading}
-        emptyMessage="No se encontraron denuncias"
-        sort={sort}
-        onSortChange={setSort}
-        page={currentPage}
-        pageSize={itemsPerPage}
-        total={filteredDenuncias.length}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={setItemsPerPage}
-        onRowClick={(row) => router.push(`/portal/denuncias/${row.folio}`)}
-      />
-    </div>
+              ),
+            },
+            {
+              key: "nombre",
+              header: "Nombre Ciudadano",
+              width: "15%",
+              sortable: true,
+            },
+            {
+              key: "titulo",
+              header: "Título",
+              width: "18%",
+              sortable: true,
+              render: (row) => <span>{row.titulo || ""}</span>,
+            },
+            {
+              key: "categoria",
+              header: "Categoría",
+              width: "15%",
+              sortable: true,
+            },
+            {
+              key: "prioridad",
+              header: "Prioridad",
+              width: "12%",
+              sortable: true,
+              render: (row) =>
+                row.prioridad ? (
+                  <span
+                    className={`inline-block px-3 py-1 rounded text-xs font-semibold border ${
+                      prioridadColor[row.prioridad] ||
+                      "bg-gray-100 text-gray-700 border border-gray-200"
+                    }`}
+                  >
+                    {row.prioridad}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">Sin prioridad</span>
+                ),
+            },
+            {
+              key: "fecha_creacion",
+              header: "Fecha Creación",
+              width: "15%",
+              sortable: true,
+              render: (row) => {
+                const date = row.fecha_creacion
+                  ? new Date(row.fecha_creacion)
+                  : null;
+                if (date && !isNaN(date.getTime())) {
+                  const dd = String(date.getDate()).padStart(2, "0");
+                  const mm = String(date.getMonth() + 1).padStart(2, "0");
+                  const yyyy = date.getFullYear();
+                  const hh = String(date.getHours()).padStart(2, "0");
+                  const min = String(date.getMinutes()).padStart(2, "0");
+                  return <span>{`${dd}-${mm}-${yyyy} ${hh}:${min}`}</span>;
+                }
+                return <span>{row.fecha_creacion}</span>;
+              },
+            },
+            {
+              key: "ubicacion_texto",
+              header: "Ubicación",
+              width: "20%",
+              sortable: false,
+            },
+            {
+              key: "acciones",
+              header: "Acciones",
+              width: "10%",
+              align: "center",
+              render: (row) => (
+                <div className="flex gap-2 justify-center">
+                  <Link href={`/portal/denuncias/${row.folio}`}>
+                    <ButtonComponent
+                      accion="ver"
+                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    >
+                      Ver denuncia
+                    </ButtonComponent>
+                  </Link>
+                </div>
+              ),
+            },
+          ]}
+          data={currentItems}
+          loading={loading}
+          emptyMessage="No se encontraron denuncias"
+          sort={sort}
+          onSortChange={setSort}
+          page={currentPage}
+          pageSize={itemsPerPage}
+          total={filteredDenuncias.length}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setItemsPerPage}
+          onRowClick={(row) => router.push(`/portal/denuncias/${row.folio}`)}
+        />
+      </div>
+    </PageAccessValidator>
   );
 }

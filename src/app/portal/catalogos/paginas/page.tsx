@@ -7,6 +7,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent, { Column } from "@/app/components/TableComponent";
 import SearchComponent from "@/app/components/SearchComponent";
 import Loader from "@/app/components/Loader";
+import PageAccessValidator from "@/app/components/PageAccessValidator";
 import PaginaModal from "./components/PaginaModal";
 
 interface Pagina {
@@ -260,90 +261,94 @@ export default function PaginasPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
+    <PageAccessValidator pagePath="/portal/catalogos/paginas">
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: "#0B4F9E" }}
+              >
+                <FileText className="text-white" size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Catálogo de Páginas
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Administra las páginas disponibles en el sistema
+                </p>
+              </div>
+            </div>
+            <ButtonComponent accion="agregar" onClick={handleCrearPagina}>
+              Crear Página
+            </ButtonComponent>
+          </div>
+        </div>
+
+        {/* Búsqueda y Estadísticas */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-2">
+            <SearchComponent
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nombre, título o ruta..."
+            />
+          </div>
+          <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: "#0B4F9E" }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: "#E6F4FA" }}
             >
-              <FileText className="text-white" size={24} />
+              <FileText style={{ color: "#0085CA" }} size={20} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Catálogo de Páginas
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Administra las páginas disponibles en el sistema
+              <p className="text-xs text-gray-600">Total de Páginas</p>
+              <p className="text-xl font-bold text-gray-900">
+                {paginas.length}
               </p>
             </div>
           </div>
-          <ButtonComponent accion="agregar" onClick={handleCrearPagina}>
-            Crear Página
-          </ButtonComponent>
+          <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: "#DCFCE7" }}
+            >
+              <Check style={{ color: "#16A34A" }} size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Páginas Activas</p>
+              <p className="text-xl font-bold text-gray-900">
+                {paginas.filter((p) => p.activo).length}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Tabla */}
+        <TableComponent
+          columns={columns}
+          data={paginasPaginadas}
+          loading={loading}
+          emptyMessage="No se encontraron páginas"
+          page={page}
+          pageSize={pageSize}
+          total={paginasFiltradas.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+
+        {/* Modal */}
+        <PaginaModal
+          isOpen={paginaModalAbierto}
+          onClose={() => setPaginaModalAbierto(false)}
+          initialData={paginaParaEditar || undefined}
+          onSubmit={handleSubmitPagina}
+          title={paginaParaEditar ? "Editar Página" : "Crear Nueva Página"}
+        />
       </div>
-
-      {/* Búsqueda y Estadísticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-2">
-          <SearchComponent
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nombre, título o ruta..."
-          />
-        </div>
-        <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: "#E6F4FA" }}
-          >
-            <FileText style={{ color: "#0085CA" }} size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-600">Total de Páginas</p>
-            <p className="text-xl font-bold text-gray-900">{paginas.length}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: "#DCFCE7" }}
-          >
-            <Check style={{ color: "#16A34A" }} size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-600">Páginas Activas</p>
-            <p className="text-xl font-bold text-gray-900">
-              {paginas.filter((p) => p.activo).length}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla */}
-      <TableComponent
-        columns={columns}
-        data={paginasPaginadas}
-        loading={loading}
-        emptyMessage="No se encontraron páginas"
-        page={page}
-        pageSize={pageSize}
-        total={paginasFiltradas.length}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-      />
-
-      {/* Modal */}
-      <PaginaModal
-        isOpen={paginaModalAbierto}
-        onClose={() => setPaginaModalAbierto(false)}
-        initialData={paginaParaEditar || undefined}
-        onSubmit={handleSubmitPagina}
-        title={paginaParaEditar ? "Editar Página" : "Crear Nueva Página"}
-      />
-    </div>
+    </PageAccessValidator>
   );
 }

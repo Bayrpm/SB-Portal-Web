@@ -32,7 +32,13 @@ export async function GET() {
                 }
 
                 // Obtener perfiles de esos usuarios
-                let usuariosCompletos = [];
+                interface UsuarioCompleto {
+                    usuario_id: string;
+                    activo: boolean;
+                    perfiles_ciudadanos: { usuario_id: string; nombre: string; apellido: string; email: string } | undefined;
+                }
+
+                let usuariosCompletos: UsuarioCompleto[] = [];
                 if (usuariosPortal && usuariosPortal.length > 0) {
                     const userIds = usuariosPortal.map(u => u.usuario_id);
                     const { data: perfiles } = await supabase

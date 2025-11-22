@@ -212,7 +212,7 @@ export default function GestionarPaginasModal({
           </div>
           <p className="text-xs text-gray-500 mt-2">
             💡 Selecciona o deselecciona múltiples páginas. Los cambios se
-            guardarán al hacer clic en "Guardar".
+            guardarán al hacer clic en &quot;Guardar&quot;.
           </p>
         </div>
 

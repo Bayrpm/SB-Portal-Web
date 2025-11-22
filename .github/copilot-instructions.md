@@ -2,6 +2,10 @@
 
 Este documento proporciona información esencial para trabajar eficientemente con el código del Portal Web de San Bernardo, una plataforma interna para la gestión de denuncias ciudadanas.
 
+## Restricción sobre archivos README
+
+**PROHIBIDO:** No puedes crear archivos README (README.md, README-interno.md, etc.) ni ningún archivo de documentación general, a menos que el usuario lo solicite explícitamente o te dé autorización previa. Si necesitas documentar algo, espera la instrucción directa del usuario.
+
 ## Instrucción clave sobre endpoints y base de datos
 
 **IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando los siguientes archivos de referencia:
