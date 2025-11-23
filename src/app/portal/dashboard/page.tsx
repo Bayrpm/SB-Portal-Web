@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/context/DashboardContext";
-import { useUser } from "@/context/UserContext";
+import { withPageProtection } from "@/lib/security/withPageProtection";
 import ChartWrapper from "@/app/components/ChartWrapper";
 import KPICard from "@/app/components/dashboard/KPICard";
 import {
@@ -203,34 +202,17 @@ interface RawDashboardData {
 
 type DashboardData = RawDashboardData;
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { isPageAllowed } = useUser();
+function DashboardPage() {
   const { data, fetchDashboardData } = useDashboardData();
   const [activeTab, setActiveTab] = useState<TabType>("resumen");
   const [dateRange] = useState("last30days");
   const [customStartDate] = useState("");
   const [customEndDate] = useState("");
-  const [accessDenied, setAccessDenied] = useState(false);
 
   // Estado para controlar qué gráficos se han cargado
   const [loadedCharts, setLoadedCharts] = useState<Set<string>>(new Set());
 
-  // Verificar acceso a la página
-  useEffect(() => {
-    if (!isPageAllowed("/portal/dashboard")) {
-      console.warn("Usuario no tiene acceso a /portal/dashboard");
-      setAccessDenied(true);
-
-      // Redirigir después de 2 segundos
-      const timer = setTimeout(() => {
-        router.push("/portal");
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isPageAllowed, router]);
-
-  // Configuración de tabs
+  // Simular carga progresiva de gráficos
   const tabs: TabConfig[] = [
     { id: "resumen", label: "Resumen General", icon: Activity },
     { id: "categorias", label: "Categorías", icon: Layers },
@@ -549,50 +531,28 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
-      {/* Si no tiene acceso, mostrar pantalla de acceso denegado */}
-      {accessDenied ? (
-        <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-red-600 mb-4">
-              Acceso Denegado
-            </h1>
-            <p className="text-gray-600 mb-6">
-              No tienes permiso para acceder a esta página.
-            </p>
-            <p className="text-sm text-gray-500">
-              Serás redirigido al portal en unos momentos...
-            </p>
-            <button
-              onClick={() => router.push("/portal")}
-              className="mt-6 px-6 py-2 bg-[#003C96] text-white rounded-lg hover:bg-[#0085CA] transition-colors"
-            >
-              Ir al Portal
-            </button>
-          </div>
+      <div className="w-full py-6 px-4 lg:px-8 max-w-[1920px] mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Dashboard Analítico
+          </h1>
+          <p className="text-gray-600">
+            Visualización completa de métricas y análisis del sistema
+          </p>
         </div>
-      ) : (
-        <div className="w-full py-6 px-4 lg:px-8 max-w-[1920px] mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Dashboard Analítico
-            </h1>
-            <p className="text-gray-600">
-              Visualización completa de métricas y análisis del sistema
-            </p>
-          </div>
 
-          {/* Tabs */}
-          <div className="mb-6 border-b border-gray-200 bg-white rounded-t-lg">
-            <nav className="flex space-x-4 px-6" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200 bg-white rounded-t-lg">
+          <nav className="flex space-x-4 px-6" aria-label="Tabs">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
                       flex items-center gap-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors
                       ${
                         isActive
@@ -600,440 +560,441 @@ export default function DashboardPage() {
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }
                     `}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* KPIs - Siempre visibles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <KPICard
-              title="Total de Denuncias"
-              value={raw_data.resumen.total_denuncias.toLocaleString()}
-              icon={BarChart3}
-              trend={{ value: totalTrend, isPositive: totalTrend >= 0 }}
-              description="Últimos 30 días"
-              color="blue"
-            />
-            <KPICard
-              title="Denuncias Asignadas"
-              value={raw_data.resumen.denuncias_asignadas.toLocaleString()}
-              icon={CheckCircle2}
-              trend={{
-                value: tasaAsignacion,
-                isPositive: tasaAsignacion >= 50,
-              }}
-              description={`${tasaAsignacion.toFixed(1)}% del total`}
-              color="green"
-            />
-            <KPICard
-              title="Sin Asignar"
-              value={raw_data.resumen.denuncias_sin_asignar.toLocaleString()}
-              icon={Target}
-              description="Requieren atención"
-              color="orange"
-            />
-            <KPICard
-              title="Tiempo Promedio"
-              value={`${raw_data.resumen.tiempo_promedio_asignacion_horas.toFixed(
-                1
-              )}h`}
-              icon={Clock}
-              description="Asignación (horas)"
-              color="purple"
-            />
-          </div>
-
-          {/* Paneles por tab */}
-          <div className="bg-white rounded-b-lg shadow px-6 py-8">
-            {/* Tab: Resumen */}
-            {activeTab === "resumen" && (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <ChartWrapper
-                    title="Denuncias por Estado"
-                    loading={!loadedCharts.has("estado")}
-                  >
-                    <EstadoDistribucionChart
-                      data={transformEstadoData(raw_data.por_estado)}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Denuncias por Categoría"
-                    loading={!loadedCharts.has("categoria")}
-                  >
-                    <CategoriaChart
-                      data={transformCategoriaData(raw_data.top_categorias)}
-                      title="Top 5 Categorías"
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Denuncias por Prioridad"
-                    loading={!loadedCharts.has("prioridad")}
-                  >
-                    <PrioridadChart
-                      data={transformPrioridadData(raw_data.por_prioridad)}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Crecimiento Mensual"
-                    loading={!loadedCharts.has("crecimiento")}
-                  >
-                    <CrecimientoMensualChart
-                      data={transformCrecimientoData(
-                        raw_data.crecimiento_mensual
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Categorías por Prioridad"
-                    loading={!loadedCharts.has("categoria-prioridad")}
-                  >
-                    <CategoriaPrioridadChart
-                      data={transformCategoriasPrioridadData(
-                        raw_data.categorias_prioridad
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Patrón Temporal Día-Hora"
-                    loading={!loadedCharts.has("patron-dia-hora")}
-                  >
-                    <HeatMapDiaHoraChart
-                      data={transformHeatMapData(raw_data.heat_map_dia_hora)}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Tiempo por Estado"
-                    loading={!loadedCharts.has("tiempo-estado")}
-                  >
-                    <TiempoPorEstadoChart
-                      data={transformTiempoPorEstadoData(
-                        raw_data.tiempo_promedio_estado
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Tendencia Temporal (6 meses)"
-                    loading={!loadedCharts.has("tendencia-temporal")}
-                  >
-                    <TendenciaTemporalChart
-                      data={transformTendenciaTemporalData(
-                        raw_data.denuncias_por_mes
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Comparativa Año Actual vs Anterior"
-                    loading={!loadedCharts.has("comparativa-anual")}
-                  >
-                    <ComparativaAnualChart
-                      data={transformComparativaAnualData(
-                        raw_data.comparativa_anual
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Proyección de Denuncias"
-                    loading={!loadedCharts.has("proyeccion")}
-                  >
-                    <ProyeccionDenunciasChart
-                      data={raw_data.proyeccion_denuncias}
-                      historicCount={6}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Evolución de Estados"
-                    loading={!loadedCharts.has("estados-evolucion")}
-                  >
-                    <EstadosEvolucionChart
-                      data={transformEstadosEvolucionData(
-                        raw_data.estados_evolucion
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Tasa de Crecimiento Mensual"
-                    loading={!loadedCharts.has("crecimiento-mensual")}
-                  >
-                    <CrecimientoMensualChart
-                      data={transformCrecimientoData(
-                        raw_data.crecimiento_mensual
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Tendencia Tiempo Respuesta"
-                    loading={!loadedCharts.has("tendencia-tiempo")}
-                  >
-                    <TendenciaTiempoRespuestaChart
-                      data={transformTendenciaTiempoRespuestaData(
-                        raw_data.tendencia_tiempo_respuesta
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-              </>
-            )}
-
-            {/* Tab: Categorías */}
-            {activeTab === "categorias" && (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ChartWrapper
-                    title="Distribución por Prioridad"
-                    loading={!loadedCharts.has("prioridad")}
-                  >
-                    <PrioridadChart
-                      data={transformPrioridadData(raw_data.por_prioridad)}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Categorías por Prioridad"
-                    loading={!loadedCharts.has("categoria-prioridad")}
-                  >
-                    <CategoriaPrioridadChart
-                      data={transformCategoriasPrioridadData(
-                        raw_data.categorias_prioridad
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Categorías Asignadas"
-                    loading={!loadedCharts.has("categorias-asignadas")}
-                  >
-                    <CategoriasAsignadasChart
-                      data={transformCategoriasAsignacionData(
-                        raw_data.categorias_asignacion
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Tasa de Resolución por Categoría"
-                    loading={!loadedCharts.has("tasa-resolucion")}
-                  >
-                    <TasaResolucionChart
-                      data={raw_data.tasa_resolucion_categoria}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Palabras Más Frecuentes"
-                    loading={!loadedCharts.has("word-cloud")}
-                  >
-                    <WordCloudChart data={raw_data.word_cloud} />
-                  </ChartWrapper>
-                </div>
-              </>
-            )}
-
-            {/* Tab: Inspectores */}
-            {activeTab === "inspectores" && (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ChartWrapper
-                    title="Carga de Trabajo"
-                    loading={!loadedCharts.has("carga-inspector")}
-                  >
-                    <CargaInspectorChart
-                      data={transformCargaInspectorData(
-                        raw_data.carga_inspectores
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Eficiencia de Inspectores"
-                    loading={!loadedCharts.has("eficiencia-inspector")}
-                  >
-                    <EficienciaInspectorChart
-                      data={transformEficienciaData(
-                        raw_data.eficiencia_inspectores
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Top 10 Más Activos"
-                    loading={!loadedCharts.has("inspectores-activos")}
-                  >
-                    <InspectoresActivosChart
-                      data={transformInspectoresActivosData(
-                        raw_data.inspectores_activos
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Distribución por Turno"
-                    loading={!loadedCharts.has("distribucion-turno")}
-                  >
-                    <DistribucionTurnoChart
-                      data={transformDistribucionTurnoData(
-                        raw_data.distribucion_turno
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Tiempo por Estado"
-                    loading={!loadedCharts.has("tiempo-estado")}
-                  >
-                    <TiempoPorEstadoChart
-                      data={transformTiempoPorEstadoData(
-                        raw_data.tiempo_promedio_estado
-                      )}
-                    />
-                  </ChartWrapper>
-
-                  <ChartWrapper
-                    title="Tendencia Tiempo Respuesta"
-                    loading={!loadedCharts.has("tendencia-tiempo")}
-                  >
-                    <TendenciaTiempoRespuestaChart
-                      data={transformTendenciaTiempoRespuestaData(
-                        raw_data.tendencia_tiempo_respuesta
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-              </>
-            )}
-
-            {/* Tab: Ubicaciones */}
-            {activeTab === "ubicaciones" && (
-              <>
-                <ChartWrapper
-                  title="Top 10 Ubicaciones con Más Denuncias"
-                  loading={!loadedCharts.has("top-ubicaciones")}
                 >
-                  <TopUbicacionesChart data={raw_data.top_ubicaciones} />
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* KPIs - Siempre visibles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <KPICard
+            title="Total de Denuncias"
+            value={raw_data.resumen.total_denuncias.toLocaleString()}
+            icon={BarChart3}
+            trend={{ value: totalTrend, isPositive: totalTrend >= 0 }}
+            description="Últimos 30 días"
+            color="blue"
+          />
+          <KPICard
+            title="Denuncias Asignadas"
+            value={raw_data.resumen.denuncias_asignadas.toLocaleString()}
+            icon={CheckCircle2}
+            trend={{
+              value: tasaAsignacion,
+              isPositive: tasaAsignacion >= 50,
+            }}
+            description={`${tasaAsignacion.toFixed(1)}% del total`}
+            color="green"
+          />
+          <KPICard
+            title="Sin Asignar"
+            value={raw_data.resumen.denuncias_sin_asignar.toLocaleString()}
+            icon={Target}
+            description="Requieren atención"
+            color="orange"
+          />
+          <KPICard
+            title="Tiempo Promedio"
+            value={`${raw_data.resumen.tiempo_promedio_asignacion_horas.toFixed(
+              1
+            )}h`}
+            icon={Clock}
+            description="Asignación (horas)"
+            color="purple"
+          />
+        </div>
+
+        {/* Paneles por tab */}
+        <div className="bg-white rounded-b-lg shadow px-6 py-8">
+          {/* Tab: Resumen */}
+          {activeTab === "resumen" && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ChartWrapper
+                  title="Denuncias por Estado"
+                  loading={!loadedCharts.has("estado-distribucion")}
+                >
+                  <EstadoDistribucionChart
+                    data={transformEstadoData(raw_data.por_estado)}
+                  />
                 </ChartWrapper>
 
-                <div className="grid grid-cols-1 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Patrón de Reporte por Día y Hora"
-                    loading={!loadedCharts.has("patron-ubicaciones")}
-                  >
-                    <HeatMapDiaHoraChart
-                      data={transformHeatMapData(raw_data.heat_map_dia_hora)}
-                    />
-                  </ChartWrapper>
-                </div>
-              </>
-            )}
+                <ChartWrapper
+                  title="Denuncias por Categoría"
+                  loading={!loadedCharts.has("top-categorias")}
+                >
+                  <CategoriaChart
+                    data={transformCategoriaData(raw_data.top_categorias)}
+                    title="Top 5 Categorías"
+                  />
+                </ChartWrapper>
 
-            {/* Tab: Tendencias */}
-            {activeTab === "tendencias" && (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ChartWrapper
-                    title="Tendencia Temporal (6 meses)"
-                    loading={!loadedCharts.has("tendencia-temporal")}
-                  >
-                    <TendenciaTemporalChart
-                      data={transformTendenciaTemporalData(
-                        raw_data.denuncias_por_mes
-                      )}
-                    />
-                  </ChartWrapper>
+                <ChartWrapper
+                  title="Denuncias por Prioridad"
+                  loading={!loadedCharts.has("prioridad")}
+                >
+                  <PrioridadChart
+                    data={transformPrioridadData(raw_data.por_prioridad)}
+                  />
+                </ChartWrapper>
+              </div>
 
-                  <ChartWrapper
-                    title="Comparativa Año Actual vs Anterior"
-                    loading={!loadedCharts.has("comparativa-anual")}
-                  >
-                    <ComparativaAnualChart
-                      data={transformComparativaAnualData(
-                        raw_data.comparativa_anual
-                      )}
-                    />
-                  </ChartWrapper>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Crecimiento Mensual"
+                  loading={!loadedCharts.has("crecimiento")}
+                >
+                  <CrecimientoMensualChart
+                    data={transformCrecimientoData(
+                      raw_data.crecimiento_mensual
+                    )}
+                  />
+                </ChartWrapper>
 
-                  <ChartWrapper
-                    title="Proyección de Denuncias"
-                    loading={!loadedCharts.has("proyeccion")}
-                  >
-                    <ProyeccionDenunciasChart
-                      data={raw_data.proyeccion_denuncias}
-                      historicCount={6}
-                    />
-                  </ChartWrapper>
+                <ChartWrapper
+                  title="Categorías por Prioridad"
+                  loading={!loadedCharts.has("categoria-prioridad")}
+                >
+                  <CategoriaPrioridadChart
+                    data={transformCategoriasPrioridadData(
+                      raw_data.categorias_prioridad
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
 
-                  <ChartWrapper
-                    title="Evolución de Estados"
-                    loading={!loadedCharts.has("estados-evolucion")}
-                  >
-                    <EstadosEvolucionChart
-                      data={transformEstadosEvolucionData(
-                        raw_data.estados_evolucion
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Patrón Temporal Día-Hora"
+                  loading={!loadedCharts.has("patron-dia-hora")}
+                >
+                  <HeatMapDiaHoraChart
+                    data={transformHeatMapData(raw_data.heat_map_dia_hora)}
+                  />
+                </ChartWrapper>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ChartWrapper
-                    title="Tasa de Crecimiento Mensual"
-                    loading={!loadedCharts.has("crecimiento-mensual")}
-                  >
-                    <CrecimientoMensualChart
-                      data={transformCrecimientoData(
-                        raw_data.crecimiento_mensual
-                      )}
-                    />
-                  </ChartWrapper>
+                <ChartWrapper
+                  title="Tiempo por Estado"
+                  loading={!loadedCharts.has("tiempo-estado")}
+                >
+                  <TiempoPorEstadoChart
+                    data={transformTiempoPorEstadoData(
+                      raw_data.tiempo_promedio_estado
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
 
-                  <ChartWrapper
-                    title="Tendencia Tiempo Respuesta"
-                    loading={!loadedCharts.has("tendencia-tiempo")}
-                  >
-                    <TendenciaTiempoRespuestaChart
-                      data={transformTendenciaTiempoRespuestaData(
-                        raw_data.tendencia_tiempo_respuesta
-                      )}
-                    />
-                  </ChartWrapper>
-                </div>
-              </>
-            )}
-          </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Tendencia Temporal (6 meses)"
+                  loading={!loadedCharts.has("tendencia-temporal")}
+                >
+                  <TendenciaTemporalChart
+                    data={transformTendenciaTemporalData(
+                      raw_data.denuncias_por_mes
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Comparativa Año Actual vs Anterior"
+                  loading={!loadedCharts.has("comparativa-anual")}
+                >
+                  <ComparativaAnualChart
+                    data={transformComparativaAnualData(
+                      raw_data.comparativa_anual
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Proyección de Denuncias"
+                  loading={!loadedCharts.has("proyeccion")}
+                >
+                  <ProyeccionDenunciasChart
+                    data={raw_data.proyeccion_denuncias}
+                    historicCount={6}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Evolución de Estados"
+                  loading={!loadedCharts.has("estados-evolucion")}
+                >
+                  <EstadosEvolucionChart
+                    data={transformEstadosEvolucionData(
+                      raw_data.estados_evolucion
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Tasa de Crecimiento Mensual"
+                  loading={!loadedCharts.has("crecimiento-mensual")}
+                >
+                  <CrecimientoMensualChart
+                    data={transformCrecimientoData(
+                      raw_data.crecimiento_mensual
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Tendencia Tiempo Respuesta"
+                  loading={!loadedCharts.has("tendencia-tiempo")}
+                >
+                  <TendenciaTiempoRespuestaChart
+                    data={transformTendenciaTiempoRespuestaData(
+                      raw_data.tendencia_tiempo_respuesta
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+            </>
+          )}
+
+          {/* Tab: Categorías */}
+          {activeTab === "categorias" && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartWrapper
+                  title="Distribución por Prioridad"
+                  loading={!loadedCharts.has("prioridad")}
+                >
+                  <PrioridadChart
+                    data={transformPrioridadData(raw_data.por_prioridad)}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Categorías por Prioridad"
+                  loading={!loadedCharts.has("categoria-prioridad")}
+                >
+                  <CategoriaPrioridadChart
+                    data={transformCategoriasPrioridadData(
+                      raw_data.categorias_prioridad
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Categorías Asignadas"
+                  loading={!loadedCharts.has("categorias-asignadas")}
+                >
+                  <CategoriasAsignadasChart
+                    data={transformCategoriasAsignacionData(
+                      raw_data.categorias_asignacion
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Tasa de Resolución por Categoría"
+                  loading={!loadedCharts.has("tasa-resolucion")}
+                >
+                  <TasaResolucionChart
+                    data={raw_data.tasa_resolucion_categoria}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 mt-6">
+                <ChartWrapper
+                  title="Palabras Más Frecuentes"
+                  loading={!loadedCharts.has("word-cloud")}
+                >
+                  <WordCloudChart data={raw_data.word_cloud} />
+                </ChartWrapper>
+              </div>
+            </>
+          )}
+
+          {/* Tab: Inspectores */}
+          {activeTab === "inspectores" && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartWrapper
+                  title="Carga de Trabajo"
+                  loading={!loadedCharts.has("carga-inspector")}
+                >
+                  <CargaInspectorChart
+                    data={transformCargaInspectorData(
+                      raw_data.carga_inspectores
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Eficiencia de Inspectores"
+                  loading={!loadedCharts.has("eficiencia-inspector")}
+                >
+                  <EficienciaInspectorChart
+                    data={transformEficienciaData(
+                      raw_data.eficiencia_inspectores
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Top 10 Más Activos"
+                  loading={!loadedCharts.has("inspectores-activos")}
+                >
+                  <InspectoresActivosChart
+                    data={transformInspectoresActivosData(
+                      raw_data.inspectores_activos
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Distribución por Turno"
+                  loading={!loadedCharts.has("distribucion-turno")}
+                >
+                  <DistribucionTurnoChart
+                    data={transformDistribucionTurnoData(
+                      raw_data.distribucion_turno
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Tiempo por Estado"
+                  loading={!loadedCharts.has("tiempo-estado")}
+                >
+                  <TiempoPorEstadoChart
+                    data={transformTiempoPorEstadoData(
+                      raw_data.tiempo_promedio_estado
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Tendencia Tiempo Respuesta"
+                  loading={!loadedCharts.has("tendencia-tiempo")}
+                >
+                  <TendenciaTiempoRespuestaChart
+                    data={transformTendenciaTiempoRespuestaData(
+                      raw_data.tendencia_tiempo_respuesta
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+            </>
+          )}
+
+          {/* Tab: Ubicaciones */}
+          {activeTab === "ubicaciones" && (
+            <>
+              <ChartWrapper
+                title="Top 10 Ubicaciones con Más Denuncias"
+                loading={!loadedCharts.has("top-ubicaciones")}
+              >
+                <TopUbicacionesChart data={raw_data.top_ubicaciones} />
+              </ChartWrapper>
+
+              <div className="grid grid-cols-1 gap-6 mt-6">
+                <ChartWrapper
+                  title="Patrón de Reporte por Día y Hora"
+                  loading={!loadedCharts.has("patron-ubicaciones")}
+                >
+                  <HeatMapDiaHoraChart
+                    data={transformHeatMapData(raw_data.heat_map_dia_hora)}
+                  />
+                </ChartWrapper>
+              </div>
+            </>
+          )}
+
+          {/* Tab: Tendencias */}
+          {activeTab === "tendencias" && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartWrapper
+                  title="Tendencia Temporal (6 meses)"
+                  loading={!loadedCharts.has("tendencia-temporal")}
+                >
+                  <TendenciaTemporalChart
+                    data={transformTendenciaTemporalData(
+                      raw_data.denuncias_por_mes
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Comparativa Año Actual vs Anterior"
+                  loading={!loadedCharts.has("comparativa-anual")}
+                >
+                  <ComparativaAnualChart
+                    data={transformComparativaAnualData(
+                      raw_data.comparativa_anual
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Proyección de Denuncias"
+                  loading={!loadedCharts.has("proyeccion")}
+                >
+                  <ProyeccionDenunciasChart
+                    data={raw_data.proyeccion_denuncias}
+                    historicCount={6}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Evolución de Estados"
+                  loading={!loadedCharts.has("estados-evolucion")}
+                >
+                  <EstadosEvolucionChart
+                    data={transformEstadosEvolucionData(
+                      raw_data.estados_evolucion
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ChartWrapper
+                  title="Tasa de Crecimiento Mensual"
+                  loading={!loadedCharts.has("crecimiento-mensual")}
+                >
+                  <CrecimientoMensualChart
+                    data={transformCrecimientoData(
+                      raw_data.crecimiento_mensual
+                    )}
+                  />
+                </ChartWrapper>
+
+                <ChartWrapper
+                  title="Tendencia Tiempo Respuesta"
+                  loading={!loadedCharts.has("tendencia-tiempo")}
+                >
+                  <TendenciaTiempoRespuestaChart
+                    data={transformTendenciaTiempoRespuestaData(
+                      raw_data.tendencia_tiempo_respuesta
+                    )}
+                  />
+                </ChartWrapper>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
+
+export default withPageProtection(DashboardPage);

@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 // POST: Cambiar el rol de un usuario
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { usuario_id, rol_id } = body;
@@ -37,6 +50,17 @@ export async function POST(request: Request) {
 export async function GET() {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
 
         // Obtener usuarios_portal con sus roles
         const { data: usuariosPortal, error } = await supabase

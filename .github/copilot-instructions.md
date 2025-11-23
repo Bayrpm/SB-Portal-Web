@@ -1,125 +1,299 @@
+# Páginas principales del Portal Web San Bernardo
+
+El portal cuenta con las siguientes secciones principales, cada una orientada a un flujo de trabajo específico y con valor agregado para la gestión municipal:
+
+---
+
+### 1. Dashboard (`/portal/dashboard`)
+
+**Finalidad:**
+
+> Vista general de métricas clave del sistema (denuncias, tiempos de atención, cargas, etc.).
+
+**Flujo:**
+
+> Acceso inmediato tras login, muestra KPIs y gráficos en tiempo real.
+
+**Valor agregado:**
+
+> Permite monitoreo centralizado y toma de decisiones rápidas por parte de administradores y operadores.
+
+---
+
+### 2. Denuncias (`/portal/denuncias`)
+
+**Finalidad:**
+
+> Gestión integral de denuncias ciudadanas.
+
+**Flujo:**
+
+> Listado, búsqueda, filtrado, visualización de detalle, cambio de estado, asignación de prioridad, adjunto de evidencias y observaciones.
+
+**Valor agregado:**
+
+> Centraliza el ciclo de vida de cada denuncia, asegurando trazabilidad, transparencia y eficiencia en la atención.
+
+---
+
+### 3. Derivaciones (`/portal/derivaciones`)
+
+**Finalidad:**
+
+> Asignación y seguimiento de denuncias a inspectores.
+
+**Flujo:**
+
+> Visualización de denuncias pendientes, selección múltiple, asignación masiva, consulta de cargas de inspectores.
+
+**Valor agregado:**
+
+> Optimiza la distribución de trabajo y reduce tiempos muertos, permitiendo balancear la carga operativa.
+
+---
+
+### 4. Usuarios (`/portal/usuarios`)
+
+**Finalidad:**
+
+> Administración de usuarios del portal (altas, bajas, edición, roles).
+
+**Flujo:**
+
+> CRUD de usuarios, asignación de roles, activación/desactivación.
+
+**Valor agregado:**
+
+> Control granular de acceso y permisos, asegurando seguridad y cumplimiento de políticas.
+
+---
+
+### 5. Catálogos (`/portal/catalogos/*`)
+
+**Finalidad:**
+
+> Gestión de entidades maestras: roles, páginas, inspectores, categorías, móviles.
+
+**Flujo:**
+
+> CRUD sobre cada entidad, asignación de permisos y relaciones.
+
+**Valor agregado:**
+
+> Permite adaptar el sistema a cambios organizacionales y mantener la integridad de datos maestros.
+
+---
+
+### 6. Mapa de denuncias (`/portal/mapa`)
+
+**Finalidad:**
+
+> Visualización geográfica de denuncias activas y su estado.
+
+**Flujo:**
+
+> Filtros por estado, prioridad y fecha; interacción con el mapa para ver detalles.
+
+**Valor agregado:**
+
+> Facilita la gestión territorial y la priorización de recursos en terreno.
+
+---
+
+Cada página está protegida por el sistema de roles y el helper `checkPageAccess`, garantizando que solo usuarios autorizados accedan a la información y acciones correspondientes.
+
+## Autorización centralizada de roles en APIs
+
+---
+
+### Helper obligatorio: `checkPageAccess`
+
+**Para autenticar y autorizar el acceso por roles a las páginas protegidas del portal, todas las APIs del backend deben utilizar el helper centralizado:**
+
+- **Ubicación:** `/src/lib/security/checkPageAccess.ts`
+- **Estado:** 100% implementado en todos los endpoints (verificado y migrado)
+
+---
+
+#### ¿Qué hace este helper?
+
+> - Centraliza la lógica de autorización de acceso a páginas protegidas según el rol del usuario.
+> - Valida en tiempo real si el usuario autenticado tiene permiso para acceder a la ruta solicitada.
+> - Reemplaza cualquier función personalizada previa de validación de roles/acceso.
+> - Es coherente con el HOC `withPageProtection` usado en el frontend.
+> - Permite subrutas automáticamente (ej: `/portal/usuarios/[id]` si `/portal/usuarios` está permitido).
+
+---
+
+#### ¿Cómo se usa?
+
+Importa y utiliza el helper en cada handler de API:
+
+```typescript
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
+
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // Verifica acceso a la página protegida
+  const hasAccess = await checkPageAccess(
+    supabase,
+    user.id,
+    "/portal/usuarios" // Ruta protegida
+  );
+  if (!hasAccess) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  // ... resto del código
+}
+```
+
+> **IMPORTANTE:**
+>
+> - No implementes validaciones de roles personalizadas en endpoints. Usa siempre este helper.
+> - El helper ya está implementado en todos los endpoints del proyecto.
+> - Si creas un nuevo endpoint protegido, debes usar `checkPageAccess` para validar el acceso.
+
+---
+
+#### Beneficios
+
+> - Única fuente de verdad para la lógica de autorización
+> - Seguridad consistente entre frontend y backend
+> - Código más limpio y fácil de mantener
+> - Fácil de auditar y escalar
+
 # Instrucciones para Agentes de IA - Portal Web San Bernardo
 
 Este documento proporciona información esencial para trabajar eficientemente con el código del Portal Web de San Bernardo, una plataforma interna para la gestión de denuncias ciudadanas.
 
+---
+
 ## Restricción sobre archivos README
 
-**PROHIBIDO:** No puedes crear archivos README (README.md, README-interno.md, etc.) ni ningún archivo de documentación general, a menos que el usuario lo solicite explícitamente o te dé autorización previa. Si necesitas documentar algo, espera la instrucción directa del usuario.
+> **PROHIBIDO:** No puedes crear archivos README (README.md, README-interno.md, etc.) ni ningún archivo de documentación general, a menos que el usuario lo solicite explícitamente o te dé autorización previa. Si necesitas documentar algo, espera la instrucción directa del usuario.
+
+---
 
 ## Instrucción clave sobre endpoints y base de datos
 
-**IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando los siguientes archivos de referencia:
+> **IMPORTANTE:** Si la tarea involucra la creación, modificación o análisis de un endpoint (API) o cualquier información relacionada con la base de datos, SIEMPRE se debe consultar primero la estructura de la base de datos utilizando los siguientes archivos de referencia:
+>
+> - `public/script-BD-13-11.sql`: Definición oficial de las tablas, campos, tipos y relaciones.
+> - `public/Supabase Snippet Inventario de triggers de usuario.csv`: Inventario actualizado de triggers y funciones asociadas a cada tabla.
+> - `public/Supabase Snippet Funciones y procedimientos de usuario.csv`: Listado de funciones y procedimientos definidos en la base de datos, con sus argumentos y tipos de retorno.
+> - `public/Supabase Snippet Indexes Overview.csv`: Resumen de los índices existentes en cada tabla.
 
-- `public/script-BD-13-11.sql`: Definición oficial de las tablas, campos, tipos y relaciones.
-- `public/Supabase Snippet Inventario de triggers de usuario.csv`: Inventario actualizado de triggers y funciones asociadas a cada tabla.
-- `public/Supabase Snippet Funciones y procedimientos de usuario.csv`: Listado de funciones y procedimientos definidos en la base de datos, con sus argumentos y tipos de retorno.
-- `public/Supabase Snippet Indexes Overview.csv`: Resumen de los índices existentes en cada tabla.
+> Estos archivos son la referencia obligatoria para asegurar la coherencia y validez de cualquier cambio o consulta sobre la capa de datos.
 
-Estos archivos son la referencia obligatoria para asegurar la coherencia y validez de cualquier cambio o consulta sobre la capa de datos.
-
-No asumas la estructura de la base de datos, los triggers, funciones ni los nombres de los campos sin revisar estos archivos.
+> No asumas la estructura de la base de datos, los triggers, funciones ni los nombres de los campos sin revisar estos archivos.
 
 ## Arquitectura General
 
-- **Frontend/SSR**: Next.js 15 con App Router usando React 19
-- **Backend**: BFF (Backend For Frontend) implementado con API Routes/Route Handlers de Next.js
-- **Base de datos**: Supabase (PostgreSQL) con autenticación JWT, RLS y almacenamiento
-- **Estilizado**: TailwindCSS 4
+> - **Frontend/SSR**: Next.js 15 con App Router usando React 19
+> - **Backend**: BFF (Backend For Frontend) implementado con API Routes/Route Handlers de Next.js
+> - **Base de datos**: Supabase (PostgreSQL) con autenticación JWT, RLS y almacenamiento
+> - **Estilizado**: TailwindCSS 4
 
 ### Estructura de carpetas clave
 
-- `/api`: Endpoints BFF para comunicación entre frontend y Supabase
-- `/app`: Componentes y páginas usando App Router de Next.js
-- `/app/components`: Componentes reutilizables globales
-- `/app/portal/`: Secciones principales post-autenticación (dashboard, denuncias, usuarios)
-- `/context`: Contextos de React, incluyendo UserContext para gestión de sesiones
-- `/lib`: Utilidades, incluida la configuración del cliente Supabase
+> - `/api`: Endpoints BFF para comunicación entre frontend y Supabase
+> - `/app`: Componentes y páginas usando App Router de Next.js
+> - `/app/components`: Componentes reutilizables globales
+> - `/app/portal/`: Secciones principales post-autenticación (dashboard, denuncias, usuarios)
+> - `/context`: Contextos de React, incluyendo UserContext para gestión de sesiones
+> - `/lib`: Utilidades, incluida la configuración del cliente Supabase
 
 ## Patrones y Convenciones
 
 ### Arquitectura BFF + Supabase
 
-- El BFF vive dentro de `/api` y es responsable de:
-  - Validar JWT y roles de usuario
-  - Componer datos desde Supabase
-  - Entregar DTOs preparados para UI
+> El BFF vive dentro de `/api` y es responsable de:
+>
+> - Validar JWT y roles de usuario
+> - Componer datos desde Supabase
+> - Entregar DTOs preparados para UI
 
 ### Supabase en el proyecto
 
-1. **Cliente**: 3 tipos diferentes de clientes de Supabase:
+> 1. **Cliente**: 3 tipos diferentes de clientes de Supabase:
 
 ### Buckets de almacenamiento en Supabase
 
-En Supabase existen 2 buckets principales para almacenamiento de archivos:
+> En Supabase existen 2 buckets principales para almacenamiento de archivos:
+>
+> - **avatars**: Solo imágenes. Se utiliza para almacenar los avatares de los usuarios del sistema. Solo se permiten archivos de tipo imagen (jpg, png, webp, etc.).
+> - **evidencias**: Imágenes y/o videos. Se utiliza para almacenar archivos adjuntos a denuncias, como fotos y videos subidos por los usuarios o inspectores.
 
-- **avatars**: Solo imágenes. Se utiliza para almacenar los avatares de los usuarios del sistema. Solo se permiten archivos de tipo imagen (jpg, png, webp, etc.).
-- **evidencias**: Imágenes y/o videos. Se utiliza para almacenar archivos adjuntos a denuncias, como fotos y videos subidos por los usuarios o inspectores.
+> Ten en cuenta:
+>
+> - El bucket `avatars` solo debe aceptar imágenes.
+> - El bucket `evidencias` puede aceptar imágenes y videos (formatos comunes: jpg, png, mp4, mov, webp, etc.).
 
-Ten en cuenta:
+> Al subir archivos, asegúrate de validar el tipo de archivo según el bucket destino.
 
-- El bucket `avatars` solo debe aceptar imágenes.
-- El bucket `evidencias` puede aceptar imágenes y videos (formatos comunes: jpg, png, mp4, mov, webp, etc.).
+> - `/lib/supabase/client.ts`: Cliente para uso en navegador
+> - `/lib/supabase/server.ts`: Cliente para uso en Server Components
+> - `/lib/supabase/middleware.ts`: Cliente para uso en middleware de Next.js
 
-Al subir archivos, asegúrate de validar el tipo de archivo según el bucket destino.
+> 2. **Autenticación**:
+>
+> - La autenticación se realiza mediante JWT de Supabase Auth
+> - Los roles se almacenan en `usuarios_portal.rol_id`
+> - El flujo de autenticación está implementado en `/api/users/login.ts`
 
-- `/lib/supabase/client.ts`: Cliente para uso en navegador
-- `/lib/supabase/server.ts`: Cliente para uso en Server Components
-- `/lib/supabase/middleware.ts`: Cliente para uso en middleware de Next.js
-
-2. **Autenticación**:
-
-   - La autenticación se realiza mediante JWT de Supabase Auth
-   - Los roles se almacenan en `usuarios_portal.rol_id`
-   - El flujo de autenticación está implementado en `/api/users/login.ts`
-
-3. **Acceso a datos**:
-   - Lecturas por usuario: RLS activado (cliente Supabase con token del usuario)
-   - Operaciones administrativas: service-role (solo servidor) + verificación de rol
+> 3. **Acceso a datos**:
+>
+> - Lecturas por usuario: RLS activado (cliente Supabase con token del usuario)
+> - Operaciones administrativas: service-role (solo servidor) + verificación de rol
 
 ### Gestión de estado
 
-- `UserContext.tsx`: Maneja la sesión de usuario con:
-  - `role`: El rol del usuario actual (almacenado en localStorage)
-  - `name`: El nombre del usuario (almacenado en localStorage)
-  - Verificación automática de expiración de sesión (12 horas por defecto)
+> `UserContext.tsx`: Maneja la sesión de usuario con:
+>
+> - `role`: El rol del usuario actual (almacenado en localStorage)
+> - `name`: El nombre del usuario (almacenado en localStorage)
+> - Verificación automática de expiración de sesión (12 horas por defecto)
 
 ## Flujos de Trabajo
 
 ### Desarrollo local
 
-1. **Configuración de entorno**:
-
-   - Crear archivo `.env.local` con:
-     ```env
-     NEXT_PUBLIC_SUPABASE_URL=https://XXXXX.supabase.co
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-     SUPABASE_SERVICE_ROLE_KEY=eyJ...
-     ```
-
-2. **Docker Desktop**:
-
-   - Usar Docker Desktop con `docker-compose.dev.yml` para desarrollo
-   - El contenedor monta el código en modo HMR/watch
-
-3. **Comandos npm**:
-   ```bash
-   npm run dev    # Desarrollo con Turbopack
-   npm run build  # Construcción con Turbopack
-   npm run start  # Servir build
-   npm run lint   # Ejecutar linter
-   ```
+> 1. **Configuración de entorno:**
+>    - Crear archivo `.env.local` con:
+>      ```env
+>      NEXT_PUBLIC_SUPABASE_URL=https://XXXXX.supabase.co
+>      NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+>      SUPABASE_SERVICE_ROLE_KEY=eyJ...
+>      ```
+> 2. **Docker Desktop:**
+>    - Usar Docker Desktop con `docker-compose.dev.yml` para desarrollo
+>    - El contenedor monta el código en modo HMR/watch
+> 3. **Comandos npm:**
+>    ```bash
+>    npm run dev    # Desarrollo con Turbopack
+>    npm run build  # Construcción con Turbopack
+>    npm run start  # Servir build
+>    npm run lint   # Ejecutar linter
+>    ```
 
 ### Autenticación y Autorización
 
-1. El flujo de login está en `/app/page.tsx` y `/api/users/login.ts`:
-
-   - Valida credenciales con Supabase Auth
-   - Verifica que el usuario esté activo en la tabla `usuarios_portal`
-   - Almacena información de sesión en localStorage
-
-2. Protección de rutas:
-   - Las rutas bajo `/portal/` están protegidas y requieren autenticación
-   - La verificación se realiza en el lado cliente con UserContext
+> 1. El flujo de login está en `/app/page.tsx` y `/api/users/login.ts`:
+>    - Valida credenciales con Supabase Auth
+>    - Verifica que el usuario esté activo en la tabla `usuarios_portal`
+>    - Almacena información de sesión en localStorage
+> 2. Protección de rutas:
+>    - Las rutas bajo `/portal/` están protegidas y requieren autenticación
+>    - La verificación se realiza en el lado cliente con UserContext
 
 ## Datos y API
 

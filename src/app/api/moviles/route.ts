@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
@@ -7,6 +8,17 @@ export const runtime = "nodejs";
 export async function GET() {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/moviles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
 
         const { data: moviles, error } = await supabase
             .from("moviles")
@@ -34,6 +46,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/moviles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { patente, tipo_id, marca, modelo, anio, kilometraje_actual, estado, activo } = body;
@@ -82,6 +106,18 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/moviles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { id, patente, tipo_id, marca, modelo, anio, kilometraje_actual, estado, activo } = body;

@@ -1,10 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
     try {
+        const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/derivaciones");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const { folios, inspector_id } = await request.json();
 
         if (!folios || !Array.isArray(folios) || folios.length === 0) {
@@ -18,19 +32,6 @@ export async function POST(request: Request) {
             return NextResponse.json(
                 { error: "inspector_id es requerido" },
                 { status: 400 }
-            );
-        }
-
-        const supabase = await createClient();
-
-        // Obtener el usuario actual
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-            return NextResponse.json(
-                { error: "Usuario no autenticado" },
-                { status: 401 }
             );
         }
 

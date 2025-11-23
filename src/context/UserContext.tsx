@@ -32,7 +32,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<number | null>(null);
   const [name, setNameState] = useState<string | null>(null);
   const [allowedPages, setAllowedPagesState] = useState<AllowedPage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -50,7 +50,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setRoleState(null);
       setNameState(null);
       setAllowedPagesState([]);
-      setIsLoading(false);
       router.push("/");
       return;
     }
@@ -72,9 +71,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setAllowedPagesState([]);
       }
     }
-    setIsLoading(false);
   }, [router]);
-
   const setRole = (newRole: number | null) => {
     setRoleState(newRole);
     if (newRole !== null) localStorage.setItem("userRole", String(newRole));
@@ -92,11 +89,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("allowedPages", JSON.stringify(pages));
   };
 
-  const loadAllowedPages = async (
-    rolId: number
-  ): Promise<AllowedPage[] | undefined> => {
+  const loadAllowedPages = async (): Promise<AllowedPage[] | undefined> => {
     try {
-      const response = await fetch(`/api/roles/pages?rolId=${rolId}`);
+      const response = await fetch(`/api/users/allowed-pages`);
       const data = await response.json();
 
       if (response.ok && data.success) {

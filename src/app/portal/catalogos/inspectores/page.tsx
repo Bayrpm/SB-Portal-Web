@@ -5,7 +5,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import { User } from "lucide-react";
-import PageAccessValidator from "@/app/components/PageAccessValidator";
+import { withPageProtection } from "@/lib/security/withPageProtection";
 import InspectorModal, { InspectorFormData } from "./components/InspectorModal";
 import EditInspectorModal from "./components/EditInspectorModal";
 import SearchComponent from "@/app/components/SearchComponent";
@@ -27,7 +27,7 @@ interface Inspector {
   };
 }
 
-export default function InspectoresPage() {
+function InspectoresPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
@@ -312,240 +312,238 @@ export default function InspectoresPage() {
   });
 
   return (
-    <PageAccessValidator pagePath="/portal/catalogos/inspectores">
-      <div className="w-full py-8 px-4">
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Catálogo de Inspectores
-            </h1>
-            <p className="text-sm text-gray-600">
-              Administración de inspectores municipales
-            </p>
-          </div>
-          <ButtonComponent
-            accion="agregar"
-            className="flex items-center gap-2 bg-[#003C96] hover:bg-[#0085CA]"
-            onClick={() => setModalOpen(true)}
-            disabled={loading}
-          >
-            Nuevo Inspector
-          </ButtonComponent>
+    <div className="w-full py-8 px-4">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Catálogo de Inspectores
+          </h1>
+          <p className="text-sm text-gray-600">
+            Administración de inspectores municipales
+          </p>
         </div>
+        <ButtonComponent
+          accion="agregar"
+          className="flex items-center gap-2 bg-[#003C96] hover:bg-[#0085CA]"
+          onClick={() => setModalOpen(true)}
+          disabled={loading}
+        >
+          Nuevo Inspector
+        </ButtonComponent>
+      </div>
 
-        {/* Tarjetas resumen */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-            <span className="text-2xl font-bold text-gray-900">
-              {inspectors.length}
-            </span>
-            <span className="text-sm text-gray-600 mt-1">
-              Total Inspectores
-            </span>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-            <span className="text-2xl font-bold text-green-600">
-              {inspectors.filter((i) => i.activo).length}
-            </span>
-            <span className="text-sm text-gray-600 mt-1">Activos</span>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
-            <span className="text-2xl font-bold text-red-600">
-              {inspectors.filter((i) => !i.activo).length}
-            </span>
-            <span className="text-sm text-gray-600 mt-1">Inactivos</span>
-          </div>
+      {/* Tarjetas resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+          <span className="text-2xl font-bold text-gray-900">
+            {inspectors.length}
+          </span>
+          <span className="text-sm text-gray-600 mt-1">Total Inspectores</span>
         </div>
-
-        <InspectorModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleAddUser}
-        />
-
-        {selectedInspector && (
-          <EditInspectorModal
-            open={editModalOpen}
-            onClose={() => {
-              setEditModalOpen(false);
-              setSelectedInspector(null);
-            }}
-            onSubmit={handleUpdateInspector}
-            initialData={{
-              name: selectedInspector.name,
-              telefono: selectedInspector.telefono,
-              turno: selectedInspector.turno,
-            }}
-          />
-        )}
-
-        {/* Filtros y búsqueda */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Búsqueda */}
-            <SearchComponent
-              placeholder="Buscar por nombre o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onClear={() => setSearchTerm("")}
-            />
-
-            {/* Filtro por Turno */}
-            <SelectComponent
-              placeholder="Todos los turnos"
-              value={selectedTurno}
-              onChange={(e) => setSelectedTurno(e.target.value)}
-            >
-              <option value="">Todos los turnos</option>
-              {turnos.map((turno) => (
-                <option key={turno.id} value={turno.id.toString()}>
-                  {turno.nombre}
-                </option>
-              ))}
-            </SelectComponent>
-
-            {/* Filtro por Estado */}
-            <SelectComponent
-              placeholder="Todos los estados"
-              value={selectedEstado}
-              onChange={(e) => setSelectedEstado(e.target.value)}
-            >
-              <option value="">Todos los estados</option>
-              <option value="activo">Activos</option>
-              <option value="inactivo">Inactivos</option>
-            </SelectComponent>
-          </div>
-
-          {/* Contador de resultados */}
-          {(searchTerm || selectedTurno || selectedEstado) && (
-            <div className="mt-3 text-sm text-gray-600">
-              Mostrando {filteredInspectors.length} de {inspectors.length}{" "}
-              inspectores
-            </div>
-          )}
+        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+          <span className="text-2xl font-bold text-green-600">
+            {inspectors.filter((i) => i.activo).length}
+          </span>
+          <span className="text-sm text-gray-600 mt-1">Activos</span>
         </div>
-
-        {/* Tabla de inspectores */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow p-2">
-          <TableComponent<Inspector>
-            columns={[
-              {
-                key: "numero",
-                header: "N°",
-                width: "5%",
-                align: "center",
-                render: (row: Inspector) => (
-                  <span className="font-semibold text-gray-700">
-                    {row.numero}
-                  </span>
-                ),
-              },
-              {
-                key: "name",
-                header: "Nombre",
-                width: "20%",
-                render: (row: Inspector) => (
-                  <span className="flex items-center gap-2 font-medium text-gray-900">
-                    <User className="w-4 h-4 text-gray-400" />
-                    {row.name}
-                  </span>
-                ),
-              },
-              {
-                key: "telefono",
-                header: "Teléfono",
-                width: "13%",
-                render: (row: Inspector) => (
-                  <span className="text-gray-700">{row.telefono}</span>
-                ),
-              },
-              {
-                key: "email",
-                header: "Email",
-                width: "22%",
-                render: (row: Inspector) => (
-                  <span className="text-gray-700">{row.email}</span>
-                ),
-              },
-              {
-                key: "turno",
-                header: "Turno",
-                width: "15%",
-                render: (row: Inspector) => (
-                  <span className="text-gray-700">
-                    {row.turno ? (
-                      row.turno.nombre
-                    ) : (
-                      <span className="text-gray-400 italic">Sin turno</span>
-                    )}
-                  </span>
-                ),
-              },
-              {
-                key: "activo",
-                header: "Estado",
-                width: "10%",
-                align: "center",
-                render: (row: Inspector) => (
-                  <div className="flex flex-col items-center gap-2">
-                    <ToggleSwitch
-                      isActive={row.activo}
-                      onChange={(newStatus) =>
-                        handleToggleStatus(row.id, newStatus)
-                      }
-                      size="md"
-                    />
-                    <span
-                      className={`text-xs font-semibold ${
-                        row.activo ? "text-[#003C96]" : "text-gray-500"
-                      }`}
-                    >
-                      {row.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                key: "acciones",
-                header: "Acciones",
-                width: "15%",
-                align: "center",
-                render: (row: Inspector) => (
-                  <div className="flex gap-2 justify-center">
-                    <ButtonComponent
-                      accion="editar"
-                      className="flex items-center gap-1 bg-[#003C96] hover:bg-[#0085CA] px-3 py-1 text-xs"
-                      onClick={() => handleEdit(row.id)}
-                    >
-                      Editar
-                    </ButtonComponent>
-                    <ButtonComponent
-                      accion="eliminar"
-                      className="flex items-center gap-1 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 text-xs"
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      Eliminar
-                    </ButtonComponent>
-                  </div>
-                ),
-              },
-            ]}
-            data={filteredInspectors}
-            page={page}
-            pageSize={pageSize}
-            total={filteredInspectors.length}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            emptyMessage={
-              loading
-                ? "Cargando inspectores..."
-                : searchTerm || selectedTurno || selectedEstado
-                ? "No se encontraron inspectores con los filtros aplicados"
-                : "No hay inspectores registrados"
-            }
-          />
+        <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
+          <span className="text-2xl font-bold text-red-600">
+            {inspectors.filter((i) => !i.activo).length}
+          </span>
+          <span className="text-sm text-gray-600 mt-1">Inactivos</span>
         </div>
       </div>
-    </PageAccessValidator>
+
+      <InspectorModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleAddUser}
+      />
+
+      {selectedInspector && (
+        <EditInspectorModal
+          open={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedInspector(null);
+          }}
+          onSubmit={handleUpdateInspector}
+          initialData={{
+            name: selectedInspector.name,
+            telefono: selectedInspector.telefono,
+            turno: selectedInspector.turno,
+          }}
+        />
+      )}
+
+      {/* Filtros y búsqueda */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow p-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Búsqueda */}
+          <SearchComponent
+            placeholder="Buscar por nombre o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onClear={() => setSearchTerm("")}
+          />
+
+          {/* Filtro por Turno */}
+          <SelectComponent
+            placeholder="Todos los turnos"
+            value={selectedTurno}
+            onChange={(e) => setSelectedTurno(e.target.value)}
+          >
+            <option value="">Todos los turnos</option>
+            {turnos.map((turno) => (
+              <option key={turno.id} value={turno.id.toString()}>
+                {turno.nombre}
+              </option>
+            ))}
+          </SelectComponent>
+
+          {/* Filtro por Estado */}
+          <SelectComponent
+            placeholder="Todos los estados"
+            value={selectedEstado}
+            onChange={(e) => setSelectedEstado(e.target.value)}
+          >
+            <option value="">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="inactivo">Inactivos</option>
+          </SelectComponent>
+        </div>
+
+        {/* Contador de resultados */}
+        {(searchTerm || selectedTurno || selectedEstado) && (
+          <div className="mt-3 text-sm text-gray-600">
+            Mostrando {filteredInspectors.length} de {inspectors.length}{" "}
+            inspectores
+          </div>
+        )}
+      </div>
+
+      {/* Tabla de inspectores */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow p-2">
+        <TableComponent<Inspector>
+          columns={[
+            {
+              key: "numero",
+              header: "N°",
+              width: "5%",
+              align: "center",
+              render: (row: Inspector) => (
+                <span className="font-semibold text-gray-700">
+                  {row.numero}
+                </span>
+              ),
+            },
+            {
+              key: "name",
+              header: "Nombre",
+              width: "20%",
+              render: (row: Inspector) => (
+                <span className="flex items-center gap-2 font-medium text-gray-900">
+                  <User className="w-4 h-4 text-gray-400" />
+                  {row.name}
+                </span>
+              ),
+            },
+            {
+              key: "telefono",
+              header: "Teléfono",
+              width: "13%",
+              render: (row: Inspector) => (
+                <span className="text-gray-700">{row.telefono}</span>
+              ),
+            },
+            {
+              key: "email",
+              header: "Email",
+              width: "22%",
+              render: (row: Inspector) => (
+                <span className="text-gray-700">{row.email}</span>
+              ),
+            },
+            {
+              key: "turno",
+              header: "Turno",
+              width: "15%",
+              render: (row: Inspector) => (
+                <span className="text-gray-700">
+                  {row.turno ? (
+                    row.turno.nombre
+                  ) : (
+                    <span className="text-gray-400 italic">Sin turno</span>
+                  )}
+                </span>
+              ),
+            },
+            {
+              key: "activo",
+              header: "Estado",
+              width: "10%",
+              align: "center",
+              render: (row: Inspector) => (
+                <div className="flex flex-col items-center gap-2">
+                  <ToggleSwitch
+                    isActive={row.activo}
+                    onChange={(newStatus) =>
+                      handleToggleStatus(row.id, newStatus)
+                    }
+                    size="md"
+                  />
+                  <span
+                    className={`text-xs font-semibold ${
+                      row.activo ? "text-[#003C96]" : "text-gray-500"
+                    }`}
+                  >
+                    {row.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: "acciones",
+              header: "Acciones",
+              width: "15%",
+              align: "center",
+              render: (row: Inspector) => (
+                <div className="flex gap-2 justify-center">
+                  <ButtonComponent
+                    accion="editar"
+                    className="flex items-center gap-1 bg-[#003C96] hover:bg-[#0085CA] px-3 py-1 text-xs"
+                    onClick={() => handleEdit(row.id)}
+                  >
+                    Editar
+                  </ButtonComponent>
+                  <ButtonComponent
+                    accion="eliminar"
+                    className="flex items-center gap-1 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 text-xs"
+                    onClick={() => handleDelete(row.id)}
+                  >
+                    Eliminar
+                  </ButtonComponent>
+                </div>
+              ),
+            },
+          ]}
+          data={filteredInspectors}
+          page={page}
+          pageSize={pageSize}
+          total={filteredInspectors.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          emptyMessage={
+            loading
+              ? "Cargando inspectores..."
+              : searchTerm || selectedTurno || selectedEstado
+              ? "No se encontraron inspectores con los filtros aplicados"
+              : "No hay inspectores registrados"
+          }
+        />
+      </div>
+    </div>
   );
 }
+
+export default withPageProtection(InspectoresPage);

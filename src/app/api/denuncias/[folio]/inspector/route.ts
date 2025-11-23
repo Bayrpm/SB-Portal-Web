@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 
 export async function POST(request: Request, context: { params: Promise<{ folio: string }> }) {
     try {
+        const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/derivaciones");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         let { inspector_id, acompanantes_ids } = await request.json();
         const { folio } = await context.params;
         if (!folio) {
@@ -34,14 +48,6 @@ export async function POST(request: Request, context: { params: Promise<{ folio:
                     return NextResponse.json({ error: `ID de acompañante inválido: "${id}" debe ser un número` }, { status: 400 });
                 }
             }
-        }
-
-        const supabase = await createClient();
-
-        // Obtener el usuario actual
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 });
         }
 
         // Obtener el ID de la denuncia usando el folio

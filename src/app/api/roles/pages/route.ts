@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 // GET: Obtener páginas accesibles por un rol específico
 export async function GET(req: NextRequest) {
@@ -36,6 +37,12 @@ export async function GET(req: NextRequest) {
                 { error: "No autenticado" },
                 { status: 401 }
             );
+        }
+
+        // Verificar autorización
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }
 
         // Obtener el rol del usuario actual desde la BD
@@ -145,6 +152,18 @@ export async function GET(req: NextRequest) {
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { rol_id, pagina_id } = body;
@@ -187,6 +206,18 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const rol_id = searchParams.get("rol_id");
         const pagina_id = searchParams.get("pagina_id");

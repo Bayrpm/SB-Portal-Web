@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/validation/utils/logger";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,18 @@ export async function GET(request: NextRequest) {
 
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/derivaciones");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const vista = searchParams.get("vista") || "sin_asignar";
 

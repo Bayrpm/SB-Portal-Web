@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
@@ -20,24 +21,12 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Verificar que sea usuario del portal
-        const { data: portalUser, error: portalError } = await supabase
-            .from("usuarios_portal")
-            .select("rol_id, activo")
-            .eq("usuario_id", user.id)
-            .single();
+        // Verificar que el usuario tenga acceso a /portal/auditoria
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/auditoria");
 
-        if (portalError || !portalUser || !portalUser.activo) {
+        if (!hasAccess) {
             return NextResponse.json(
-                { error: "Acceso denegado" },
-                { status: 403 }
-            );
-        }
-
-        // Verificar que sea administrador (rol_id = 1)
-        if (portalUser.rol_id !== 1) {
-            return NextResponse.json(
-                { error: "Solo administradores pueden acceder a auditoría" },
+                { error: "No autorizado para acceder a esta funcionalidad" },
                 { status: 403 }
             );
         }
