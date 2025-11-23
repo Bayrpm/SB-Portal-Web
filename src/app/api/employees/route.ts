@@ -1,54 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = 'nodejs'; // Para acceder a metadatos de auth
-
-/**
- * Verifica si el usuario autenticado tiene acceso a la página /portal/usuarios
- */
-async function checkAccessToUsersPage(
-    supabase: Awaited<ReturnType<typeof createClient>>,
-    userId: string
-): Promise<boolean> {
-    try {
-        // Obtener el rol del usuario
-        const { data: portalUser, error: portalError } = await supabase
-            .from("usuarios_portal")
-            .select("rol_id, activo")
-            .eq("usuario_id", userId)
-            .eq("activo", true)
-            .maybeSingle();
-
-        if (portalError || !portalUser) {
-            console.error("Error obteniendo usuario del portal o usuario inactivo", portalError);
-            return false;
-        }
-
-        // Obtener las páginas permitidas para este rol (con join explícito)
-        const { data: rolePages, error: rolePagesError } = await supabase
-            .from("roles_paginas")
-            .select("pagina_id, paginas(path, activo)", { count: "exact" })
-            .eq("rol_id", portalUser.rol_id);
-
-        if (rolePagesError) {
-            console.error("Error obteniendo páginas del rol", rolePagesError);
-            return false;
-        }
-
-        // Verificar si /portal/usuarios está en las páginas permitidas
-        const hasAccess = (rolePages as Array<{ paginas: { path: string; activo: boolean }[] | null }>).some((rp) => {
-            // paginas es un array, verificamos el primer elemento
-            const pagina = Array.isArray(rp.paginas) && rp.paginas.length > 0 ? rp.paginas[0] : null;
-            return pagina?.path === "/portal/usuarios" && pagina?.activo === true;
-        });
-
-        return hasAccess;
-    } catch (error) {
-        console.error("Error en checkAccessToUsersPage:", error);
-        return false;
-    }
-}
 
 export async function GET() {
     try {
@@ -68,7 +23,7 @@ export async function GET() {
         }
 
         // 2. Verificar que el usuario tenga acceso a /portal/usuarios
-        const hasAccess = await checkAccessToUsersPage(supabase, user.id);
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/usuarios");
 
         if (!hasAccess) {
             console.warn(`Acceso denegado a /api/employees para usuario ${user.email}: sin permiso a /portal/usuarios`);

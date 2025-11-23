@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 // GET: Obtener todos los roles con sus usuarios y páginas asignadas
 export async function GET() {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
 
         // Obtener roles
         const { data: roles, error: rolesError } = await supabase
@@ -91,6 +103,18 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { nombre, descripcion } = body;
@@ -121,6 +145,18 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         const { id, nombre, descripcion } = body;
@@ -155,6 +191,18 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/roles");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");
 

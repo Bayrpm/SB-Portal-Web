@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 import {
     createUserSchema,
     updateUserSchema,
@@ -67,6 +68,19 @@ export const GET = withAuth(async (req: NextRequest) => {
 
 async function registerStaff(req: NextRequest) {
     try {
+        // Verificar acceso a /portal/usuarios
+        const supabase = await createServerClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/usuarios");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado para acceder a esta funcionalidad" }, { status: 403 });
+        }
+
         const body = await req.json();
 
         // Validar entrada
@@ -195,6 +209,19 @@ async function getUserInfo(email: string) {
 
 async function updateUser(req: NextRequest) {
     try {
+        // Verificar acceso a /portal/usuarios
+        const supabase = await createServerClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/usuarios");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado para acceder a esta funcionalidad" }, { status: 403 });
+        }
+
         const body = await req.json();
 
         // Validar entrada
@@ -283,6 +310,19 @@ async function updateUser(req: NextRequest) {
 
 async function deleteUser(req: NextRequest) {
     try {
+        // Verificar acceso a /portal/usuarios
+        const supabase = await createServerClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/usuarios");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado para acceder a esta funcionalidad" }, { status: 403 });
+        }
+
         const body = await req.json();
 
         // Validar entrada

@@ -6,7 +6,7 @@ import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
 import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import SearchComponent from "@/app/components/SearchComponent";
-import PageAccessValidator from "@/app/components/PageAccessValidator";
+import { withPageProtection } from "@/lib/security/withPageProtection";
 import CategoriaPublicaModal, {
   CategoriaPublicaFormData,
 } from "./components/CategoriaPublicaModal";
@@ -66,7 +66,7 @@ interface Requerimiento {
   };
 }
 
-export default function CategoriasPage() {
+function CategoriasPage() {
   const [activeTab, setActiveTab] = useState<"publicas" | "internas">(
     "publicas"
   );
@@ -431,466 +431,466 @@ export default function CategoriasPage() {
     : requerimientos;
 
   return (
-    <PageAccessValidator pagePath="/portal/catalogos/categorias">
-      <div className="w-full min-h-screen flex flex-col bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-6 py-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <FolderTree className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Catálogo de Categorías
-                  </h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Gestiona las categorías públicas e internas del sistema
-                  </p>
-                </div>
+    <div className="w-full min-h-screen flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <FolderTree className="w-6 h-6 text-blue-600" />
               </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="px-6">
-            <div className="flex gap-4 border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab("publicas")}
-                className={`px-4 py-3 font-medium text-sm transition-all ${
-                  activeTab === "publicas"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Categorías Públicas (Ciudadanos)
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab("internas")}
-                className={`px-4 py-3 font-medium text-sm transition-all ${
-                  activeTab === "internas"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <FolderTree className="w-4 h-4" />
-                  Categorías Internas (Operadores)
-                </div>
-              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Catálogo de Categorías
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Gestiona las categorías públicas e internas del sistema
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Contenido */}
-        <div className="flex-1 p-6">
-          {activeTab === "publicas" ? (
+        {/* Tabs */}
+        <div className="px-6">
+          <div className="flex gap-4 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab("publicas")}
+              className={`px-4 py-3 font-medium text-sm transition-all ${
+                activeTab === "publicas"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Categorías Públicas (Ciudadanos)
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("internas")}
+              className={`px-4 py-3 font-medium text-sm transition-all ${
+                activeTab === "internas"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <FolderTree className="w-4 h-4" />
+                Categorías Internas (Operadores)
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <div className="flex-1 p-6">
+        {activeTab === "publicas" ? (
+          <div className="bg-white rounded-lg shadow-sm">
+            {/* Toolbar */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-4">
+                <SearchComponent
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar categorías..."
+                  className="flex-1 max-w-md"
+                />
+                <ButtonComponent
+                  accion="agregar"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={handleCreatePublica}
+                >
+                  Nueva Categoría
+                </ButtonComponent>
+              </div>
+            </div>
+
+            {/* Tabla */}
+            <TableComponent
+              data={filteredPublicas}
+              columns={[
+                {
+                  key: "orden",
+                  header: "Orden",
+                  width: "80px",
+                  render: (row) => (
+                    <span className="text-sm text-gray-600">{row.orden}</span>
+                  ),
+                },
+                {
+                  key: "nombre",
+                  header: "Nombre",
+                  render: (row) => (
+                    <span className="font-medium text-gray-900">
+                      {row.nombre}
+                    </span>
+                  ),
+                },
+                {
+                  key: "descripcion",
+                  header: "Descripción",
+                  render: (row) => (
+                    <span className="text-sm text-gray-600">
+                      {row.descripcion || "-"}
+                    </span>
+                  ),
+                },
+                {
+                  key: "activo",
+                  header: "Estado",
+                  width: "120px",
+                  align: "center",
+                  render: (row) => (
+                    <ToggleSwitch
+                      isActive={row.activo}
+                      onChange={(enabled) =>
+                        handleTogglePublica(row.id, enabled)
+                      }
+                    />
+                  ),
+                },
+                {
+                  key: "actions",
+                  header: "Acciones",
+                  width: "120px",
+                  align: "center",
+                  render: (row) => (
+                    <button
+                      onClick={() => handleEditPublica(row.id)}
+                      className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  ),
+                },
+              ]}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              loading={loadingPublicas}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Familias */}
             <div className="bg-white rounded-lg shadow-sm">
-              {/* Toolbar */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between gap-4">
-                  <SearchComponent
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar categorías..."
-                    className="flex-1 max-w-md"
-                  />
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Familias</h3>
                   <ButtonComponent
                     accion="agregar"
-                    leftIcon={<Plus className="w-4 h-4" />}
-                    onClick={handleCreatePublica}
+                    size="sm"
+                    leftIcon={<Plus className="w-3 h-3" />}
+                    onClick={() => handleCreateInterna("familia")}
                   >
-                    Nueva Categoría
+                    Nueva
                   </ButtonComponent>
                 </div>
               </div>
-
-              {/* Tabla */}
-              <TableComponent
-                data={filteredPublicas}
-                columns={[
-                  {
-                    key: "orden",
-                    header: "Orden",
-                    width: "80px",
-                    render: (row) => (
-                      <span className="text-sm text-gray-600">{row.orden}</span>
-                    ),
-                  },
-                  {
-                    key: "nombre",
-                    header: "Nombre",
-                    render: (row) => (
-                      <span className="font-medium text-gray-900">
-                        {row.nombre}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "descripcion",
-                    header: "Descripción",
-                    render: (row) => (
-                      <span className="text-sm text-gray-600">
-                        {row.descripcion || "-"}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "activo",
-                    header: "Estado",
-                    width: "120px",
-                    align: "center",
-                    render: (row) => (
-                      <ToggleSwitch
-                        isActive={row.activo}
-                        onChange={(enabled) =>
-                          handleTogglePublica(row.id, enabled)
-                        }
-                      />
-                    ),
-                  },
-                  {
-                    key: "actions",
-                    header: "Acciones",
-                    width: "120px",
-                    align: "center",
-                    render: (row) => (
-                      <button
-                        onClick={() => handleEditPublica(row.id)}
-                        className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    ),
-                  },
-                ]}
-                page={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                loading={loadingPublicas}
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              {/* Familias */}
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Familias</h3>
-                    <ButtonComponent
-                      accion="agregar"
-                      size="sm"
-                      leftIcon={<Plus className="w-3 h-3" />}
-                      onClick={() => handleCreateInterna("familia")}
-                    >
-                      Nueva
-                    </ButtonComponent>
-                  </div>
-                </div>
-                <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                  {filteredFamilias.map((fam) => (
-                    <div
-                      key={fam.id}
-                      className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        selectedFamilia === fam.id ? "bg-blue-50" : ""
-                      }`}
-                      onClick={() => {
-                        if (selectedFamilia === fam.id) {
-                          // Deseleccionar familia y limpiar hijos
-                          setSelectedFamilia(null);
-                          setSelectedGrupo(null);
-                          setSelectedSubgrupo(null);
-                        } else {
-                          setSelectedFamilia(fam.id);
-                          setSelectedGrupo(null);
-                          setSelectedSubgrupo(null);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <ChevronRight
-                            className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                              selectedFamilia === fam.id ? "rotate-90" : ""
-                            }`}
-                          />
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {fam.nombre}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            isActive={fam.activo}
-                            onChange={(enabled) =>
-                              handleToggleInterna("familia", fam.id, enabled)
-                            }
-                            size="sm"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditInterna("familia", fam.id);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        </div>
+              <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                {filteredFamilias.map((fam) => (
+                  <div
+                    key={fam.id}
+                    className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedFamilia === fam.id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => {
+                      if (selectedFamilia === fam.id) {
+                        // Deseleccionar familia y limpiar hijos
+                        setSelectedFamilia(null);
+                        setSelectedGrupo(null);
+                        setSelectedSubgrupo(null);
+                      } else {
+                        setSelectedFamilia(fam.id);
+                        setSelectedGrupo(null);
+                        setSelectedSubgrupo(null);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <ChevronRight
+                          className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                            selectedFamilia === fam.id ? "rotate-90" : ""
+                          }`}
+                        />
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {fam.nombre}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ToggleSwitch
+                          isActive={fam.activo}
+                          onChange={(enabled) =>
+                            handleToggleInterna("familia", fam.id, enabled)
+                          }
+                          size="sm"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditInterna("familia", fam.id);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Grupos */}
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Grupos</h3>
-                    <ButtonComponent
-                      accion="agregar"
-                      size="sm"
-                      leftIcon={<Plus className="w-3 h-3" />}
-                      onClick={() => handleCreateInterna("grupo")}
-                      disabled={!selectedFamilia}
-                    >
-                      Nuevo
-                    </ButtonComponent>
                   </div>
-                </div>
-                <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                  {gruposFiltrados.map((grp) => (
-                    <div
-                      key={grp.id}
-                      className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        selectedGrupo === grp.id ? "bg-green-50" : ""
-                      }`}
-                      onClick={() => {
-                        if (selectedGrupo === grp.id) {
-                          setSelectedGrupo(null);
-                          setSelectedSubgrupo(null);
-                        } else {
-                          setSelectedGrupo(grp.id);
-                          setSelectedSubgrupo(null);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <ChevronRight
-                            className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                              selectedGrupo === grp.id ? "rotate-90" : ""
-                            }`}
-                          />
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {grp.nombre}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            isActive={grp.activo}
-                            onChange={(enabled) =>
-                              handleToggleInterna("grupo", grp.id, enabled)
-                            }
-                            size="sm"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditInterna("grupo", grp.id);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Subgrupos */}
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-yellow-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Subgrupos</h3>
-                    <ButtonComponent
-                      accion="agregar"
-                      size="sm"
-                      leftIcon={<Plus className="w-3 h-3" />}
-                      onClick={() => handleCreateInterna("subgrupo")}
-                      disabled={!selectedGrupo}
-                    >
-                      Nuevo
-                    </ButtonComponent>
-                  </div>
-                </div>
-                <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                  {subgruposFiltrados.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        selectedSubgrupo === sub.id ? "bg-yellow-50" : ""
-                      }`}
-                      onClick={() => {
-                        if (selectedSubgrupo === sub.id) {
-                          setSelectedSubgrupo(null);
-                        } else {
-                          setSelectedSubgrupo(sub.id);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <ChevronRight
-                            className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                              selectedSubgrupo === sub.id ? "rotate-90" : ""
-                            }`}
-                          />
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {sub.nombre}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            isActive={sub.activo}
-                            onChange={(enabled) =>
-                              handleToggleInterna("subgrupo", sub.id, enabled)
-                            }
-                            size="sm"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditInterna("subgrupo", sub.id);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Requerimientos */}
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-purple-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">
-                      Requerimientos
-                    </h3>
-                    <ButtonComponent
-                      accion="agregar"
-                      size="sm"
-                      leftIcon={<Plus className="w-3 h-3" />}
-                      onClick={() => handleCreateInterna("requerimiento")}
-                      disabled={!selectedSubgrupo}
-                    >
-                      Nuevo
-                    </ButtonComponent>
-                  </div>
-                </div>
-                <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                  {requerimientosFiltrados.map((req) => (
-                    <div
-                      key={req.id}
-                      className="p-3 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium text-gray-900 block truncate">
-                            {req.nombre}
-                          </span>
-                          {req.prioridad !== undefined && (
-                            <span className="text-xs text-gray-500">
-                              Prioridad:{" "}
-                              {prioridades.find((p) => p.id === req.prioridad)
-                                ?.nombre || req.prioridad}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            isActive={req.activo}
-                            onChange={(enabled) =>
-                              handleToggleInterna(
-                                "requerimiento",
-                                req.id,
-                                enabled
-                              )
-                            }
-                            size="sm"
-                          />
-                          <button
-                            onClick={() =>
-                              handleEditInterna("requerimiento", req.id)
-                            }
-                            className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Modales */}
-        <CategoriaPublicaModal
-          isOpen={modalPublicaOpen}
-          onClose={() => {
-            setModalPublicaOpen(false);
-            setSelectedPublica(null);
-          }}
-          onSubmit={handleSubmitPublica}
-          initialData={selectedPublica}
-          title={
-            selectedPublica
-              ? "Editar Categoría Pública"
-              : "Nueva Categoría Pública"
-          }
-        />
+            {/* Grupos */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Grupos</h3>
+                  <ButtonComponent
+                    accion="agregar"
+                    size="sm"
+                    leftIcon={<Plus className="w-3 h-3" />}
+                    onClick={() => handleCreateInterna("grupo")}
+                    disabled={!selectedFamilia}
+                  >
+                    Nuevo
+                  </ButtonComponent>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                {gruposFiltrados.map((grp) => (
+                  <div
+                    key={grp.id}
+                    className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedGrupo === grp.id ? "bg-green-50" : ""
+                    }`}
+                    onClick={() => {
+                      if (selectedGrupo === grp.id) {
+                        setSelectedGrupo(null);
+                        setSelectedSubgrupo(null);
+                      } else {
+                        setSelectedGrupo(grp.id);
+                        setSelectedSubgrupo(null);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <ChevronRight
+                          className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                            selectedGrupo === grp.id ? "rotate-90" : ""
+                          }`}
+                        />
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {grp.nombre}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ToggleSwitch
+                          isActive={grp.activo}
+                          onChange={(enabled) =>
+                            handleToggleInterna("grupo", grp.id, enabled)
+                          }
+                          size="sm"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditInterna("grupo", grp.id);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        <CategoriaInternaModal
-          isOpen={modalInternaOpen}
-          onClose={() => {
-            setModalInternaOpen(false);
-            setSelectedInterna(null);
-          }}
-          onSubmit={handleSubmitInterna}
-          initialData={selectedInterna}
-          title={
-            selectedInterna
-              ? `Editar ${
-                  modalInternaType.charAt(0).toUpperCase() +
-                  modalInternaType.slice(1)
-                }`
-              : `Nuevo ${
-                  modalInternaType.charAt(0).toUpperCase() +
-                  modalInternaType.slice(1)
-                }`
-          }
-          type={modalInternaType}
-          familias={familias}
-          grupos={grupos}
-          subgrupos={subgrupos}
-          selectedFamiliaId={selectedFamilia || undefined}
-          selectedGrupoId={selectedGrupo || undefined}
-        />
+            {/* Subgrupos */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-yellow-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Subgrupos</h3>
+                  <ButtonComponent
+                    accion="agregar"
+                    size="sm"
+                    leftIcon={<Plus className="w-3 h-3" />}
+                    onClick={() => handleCreateInterna("subgrupo")}
+                    disabled={!selectedGrupo}
+                  >
+                    Nuevo
+                  </ButtonComponent>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                {subgruposFiltrados.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedSubgrupo === sub.id ? "bg-yellow-50" : ""
+                    }`}
+                    onClick={() => {
+                      if (selectedSubgrupo === sub.id) {
+                        setSelectedSubgrupo(null);
+                      } else {
+                        setSelectedSubgrupo(sub.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <ChevronRight
+                          className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                            selectedSubgrupo === sub.id ? "rotate-90" : ""
+                          }`}
+                        />
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {sub.nombre}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ToggleSwitch
+                          isActive={sub.activo}
+                          onChange={(enabled) =>
+                            handleToggleInterna("subgrupo", sub.id, enabled)
+                          }
+                          size="sm"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditInterna("subgrupo", sub.id);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Requerimientos */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-purple-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    Requerimientos
+                  </h3>
+                  <ButtonComponent
+                    accion="agregar"
+                    size="sm"
+                    leftIcon={<Plus className="w-3 h-3" />}
+                    onClick={() => handleCreateInterna("requerimiento")}
+                    disabled={!selectedSubgrupo}
+                  >
+                    Nuevo
+                  </ButtonComponent>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                {requerimientosFiltrados.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-gray-900 block truncate">
+                          {req.nombre}
+                        </span>
+                        {req.prioridad !== undefined && (
+                          <span className="text-xs text-gray-500">
+                            Prioridad:{" "}
+                            {prioridades.find((p) => p.id === req.prioridad)
+                              ?.nombre || req.prioridad}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ToggleSwitch
+                          isActive={req.activo}
+                          onChange={(enabled) =>
+                            handleToggleInterna(
+                              "requerimiento",
+                              req.id,
+                              enabled
+                            )
+                          }
+                          size="sm"
+                        />
+                        <button
+                          onClick={() =>
+                            handleEditInterna("requerimiento", req.id)
+                          }
+                          className="text-blue-600 hover:text-blue-800 p-1.5 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </PageAccessValidator>
+
+      {/* Modales */}
+      <CategoriaPublicaModal
+        isOpen={modalPublicaOpen}
+        onClose={() => {
+          setModalPublicaOpen(false);
+          setSelectedPublica(null);
+        }}
+        onSubmit={handleSubmitPublica}
+        initialData={selectedPublica}
+        title={
+          selectedPublica
+            ? "Editar Categoría Pública"
+            : "Nueva Categoría Pública"
+        }
+      />
+
+      <CategoriaInternaModal
+        isOpen={modalInternaOpen}
+        onClose={() => {
+          setModalInternaOpen(false);
+          setSelectedInterna(null);
+        }}
+        onSubmit={handleSubmitInterna}
+        initialData={selectedInterna}
+        title={
+          selectedInterna
+            ? `Editar ${
+                modalInternaType.charAt(0).toUpperCase() +
+                modalInternaType.slice(1)
+              }`
+            : `Nuevo ${
+                modalInternaType.charAt(0).toUpperCase() +
+                modalInternaType.slice(1)
+              }`
+        }
+        type={modalInternaType}
+        familias={familias}
+        grupos={grupos}
+        subgrupos={subgrupos}
+        selectedFamiliaId={selectedFamilia || undefined}
+        selectedGrupoId={selectedGrupo || undefined}
+      />
+    </div>
   );
 }
+
+export default withPageProtection(CategoriasPage);

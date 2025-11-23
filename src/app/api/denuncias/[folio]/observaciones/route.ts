@@ -1,9 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { checkPageAccess } from '@/lib/security/checkPageAccess';
 
 export async function GET(_req: Request, context: { params: Promise<{ folio: string }> }) {
     const params = await context.params;
     const supabase = await createClient();
+
+    // Verificar autenticación y autorización
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const hasAccess = await checkPageAccess(supabase, user.id, "/portal/denuncias");
+    if (!hasAccess) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
 
     // Primero obtener el ID de la denuncia desde el folio
     const { data: denuncia, error: denunciaError } = await supabase

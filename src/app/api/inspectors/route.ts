@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 const CHILEAN_PHONE_REGEX = /^\+56\s?9\s?\d{4}\s?\d{4}$/;
 
@@ -25,6 +26,19 @@ export async function DELETE(req: NextRequest) {
 
 async function getInspectors() {
     try {
+        const supabase = await createServerClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/inspectores");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         console.log("Obteniendo lista de inspectores...");
 
         // Consultar inspectores con información relacionada
@@ -93,6 +107,19 @@ async function getInspectors() {
 }
 
 async function registerInspector(req: NextRequest) {
+    const supabase = await createServerClient();
+
+    // Verificar autenticación y autorización
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/inspectores");
+    if (!hasAccess) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+
     const { email, password, name, last_name, phone, turno_id } = await req.json();
 
     // Validaciones
@@ -202,6 +229,19 @@ async function registerInspector(req: NextRequest) {
 }
 
 async function updateInspector(req: NextRequest) {
+    const supabase = await createServerClient();
+
+    // Verificar autenticación y autorización
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/inspectores");
+    if (!hasAccess) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+
     const { usuario_id, name, last_name, phone, turno_id } = await req.json();
 
     // Validaciones
@@ -281,6 +321,19 @@ async function updateInspector(req: NextRequest) {
 }
 
 async function deleteInspector(req: NextRequest) {
+    const supabase = await createServerClient();
+
+    // Verificar autenticación y autorización
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/inspectores");
+    if (!hasAccess) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+
     const url = new URL(req.url);
     const usuario_id = url.searchParams.get("usuario_id");
 

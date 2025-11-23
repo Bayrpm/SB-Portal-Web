@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import { useRouter } from "next/navigation";
+import { withPageProtection } from "@/lib/security/withPageProtection";
 import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
 import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
 import AsignarAcompanantesDropdown from "./components/AsignarAcompanantesDropdown";
@@ -49,7 +50,7 @@ const prioridadColor: Record<string, string> = {
   Urgencia: "bg-red-600 text-white border border-red-700", // id 4
 };
 
-export default function DenunciaDetallePage({
+function DenunciaDetallePage({
   params,
 }: {
   params: Promise<{ folio: string }>;
@@ -739,3 +740,5 @@ export default function DenunciaDetallePage({
     </div>
   );
 }
+
+export default withPageProtection(DenunciaDetallePage);

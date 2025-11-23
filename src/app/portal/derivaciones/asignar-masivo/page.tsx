@@ -205,7 +205,7 @@ function AsignarMasivoContent() {
   );
 }
 
-export default function AsignarMasivoPage() {
+function AsignarMasivoPage() {
   return (
     <Suspense
       fallback={
@@ -222,3 +222,5 @@ export default function AsignarMasivoPage() {
     </Suspense>
   );
 }
+
+export default AsignarMasivoPage;

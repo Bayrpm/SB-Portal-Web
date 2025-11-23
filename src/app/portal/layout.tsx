@@ -69,7 +69,7 @@ export default function PortalLayout({
       // Las páginas ya están cargadas (desde localStorage)
       setHasLoadedPages(true);
     }
-  }, [role, loadAllowedPages]);
+  }, [role, loadAllowedPages, allowedPages.length, hasLoadedPages]);
 
   const roleLabel =
     role === 1 ? "Administrador" : role === 2 ? "Operador" : "Usuario";

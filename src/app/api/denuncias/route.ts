@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatFullName } from "@/lib/utils/formatName";
+import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
 export async function GET() {
     try {
         const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/denuncias");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
 
         // Obtener hora actual para filtrar solo denuncias hasta hoy (sin futuras)
         const ahora = new Date().toISOString();

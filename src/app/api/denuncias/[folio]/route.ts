@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { formatFullName } from '@/lib/utils/formatName';
 import { logger } from '@/lib/validation/utils/logger';
+import { checkPageAccess } from '@/lib/security/checkPageAccess';
 
 export const runtime = 'nodejs';
 
@@ -32,6 +33,19 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
     const { folio } = params;
 
     try {
+        const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/denuncias");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
         // Verificar caché primero
         const cached = getCachedData(folio);
         if (cached) {
@@ -42,8 +56,6 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
                 }
             });
         }
-
-        const supabase = await createClient();
 
         // Obtener hora actual para validar que la denuncia no sea futura
         const ahora = new Date().toISOString();
