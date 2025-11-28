@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import ButtonComponent from "@/app/components/ButtonComponent";
+import ToggleSwitchComponent from "@/app/components/ToggleSwitchComponent";
 import { useRouter } from "next/navigation";
 import { withPageProtection } from "@/lib/security/withPageProtection";
+import Swal from "sweetalert2";
 import AsignarPrioridadDropdown from "./components/AsignarPrioridadDropdown";
 import AsignarInspectorDropdown from "./components/AsignarInspectorDropdown";
 import AsignarAcompanantesDropdown from "./components/AsignarAcompanantesDropdown";
@@ -25,6 +27,7 @@ interface DenunciaDetalle {
   fecha_creacion: string;
   ciudadano_nombre: string;
   ciudadano_telefono: string;
+  consentir_publicacion: boolean;
 }
 
 interface Evidencia {
@@ -39,8 +42,8 @@ interface Evidencia {
 
 const estadoColor: Record<string, string> = {
   Pendiente: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-  Resuelta: "bg-green-100 text-green-800 border border-green-200",
-  Cerrada: "bg-gray-100 text-gray-700 border border-gray-200",
+  "En proceso": "bg-blue-100 text-green-800 border border-green-200",
+  Cerrada: "bg-green-100 text-gray-700 border border-gray-200",
 };
 
 const prioridadColor: Record<string, string> = {
@@ -65,6 +68,7 @@ function DenunciaDetallePage({
   const [loading, setLoading] = useState(true);
   const [editandoPrioridad, setEditandoPrioridad] = useState(false);
   const [editandoInspector, setEditandoInspector] = useState(false);
+  const [guardandoConsentimiento, setGuardandoConsentimiento] = useState(false);
   const [inspectorAsignadoId, setInspectorAsignadoId] = useState<string | null>(
     null
   );
@@ -133,6 +137,67 @@ function DenunciaDetallePage({
       setLoadingTab(false);
     }
   }, [tabActiva, folio, evidencias.length]);
+
+  // Función para guardar el cambio de consentimiento de publicación
+  const guardarConsentimiento = async (nuevoValor: boolean) => {
+    const estadoTexto = nuevoValor
+      ? "permitir publicación"
+      : "prohibir publicación";
+    const result = await Swal.fire({
+      title: "¿Cambiar consentimiento?",
+      html: `<p>¿Confirmar ${estadoTexto} de esta denuncia?</p>`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, confirmar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#003C96",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setGuardandoConsentimiento(true);
+    try {
+      const response = await fetch(`/api/denuncias/${folio}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          consentir_publicacion: nuevoValor,
+        }),
+      });
+
+      if (response.ok) {
+        setDenuncia((d) =>
+          d ? { ...d, consentir_publicacion: nuevoValor } : d
+        );
+        await Swal.fire({
+          title: "¡Éxito!",
+          text: "Consentimiento actualizado correctamente",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        console.error("Error al guardar consentimiento:", response.statusText);
+        await Swal.fire({
+          title: "Error",
+          text: "No se pudo actualizar el consentimiento",
+          icon: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error al guardar consentimiento:", error);
+      await Swal.fire({
+        title: "Error",
+        text: "Ocurrió un error al actualizar el consentimiento",
+        icon: "error",
+      });
+    } finally {
+      setGuardandoConsentimiento(false);
+    }
+  };
 
   // Manejar tecla ESC para cerrar imagen ampliada
   useEffect(() => {
@@ -311,6 +376,10 @@ function DenunciaDetallePage({
                           <AsignarInspectorDropdown
                             folio={denuncia.folio}
                             acompanantesActuales={acompanantes}
+                            forceOpen={true}
+                            inspectorActualId={inspectorAsignadoId}
+                            inspectorActualNombre={inspectorAsignadoNombre}
+                            onCancelar={() => setEditandoInspector(false)}
                             onAsignar={(
                               inspectorNombre: string,
                               inspectorId: string
@@ -381,6 +450,7 @@ function DenunciaDetallePage({
                             <AsignarAcompanantesDropdown
                               folio={denuncia.folio}
                               inspectorPrincipalId={inspectorAsignadoId}
+                              forceOpen={true}
                               onAsignar={(lista) => {
                                 setAcompanantes(lista);
                                 setEditandoAcompanantes(false);
@@ -483,6 +553,9 @@ function DenunciaDetallePage({
                         <span className="flex items-center gap-2">
                           <AsignarPrioridadDropdown
                             folio={denuncia.folio}
+                            forceOpen={editandoPrioridad}
+                            prioridadActual={denuncia.prioridad}
+                            onCancelar={() => setEditandoPrioridad(false)}
                             onAsignar={(p: string) => {
                               setDenuncia((d) =>
                                 d ? { ...d, prioridad: p } : d
@@ -502,10 +575,34 @@ function DenunciaDetallePage({
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56">
-                      Fecha Creación
+                    <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
+                      Consentir Publicación
                     </td>
-                    <td className="py-3 px-5">
+                    <td className="py-3 px-5 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <ToggleSwitchComponent
+                          isActive={denuncia.consentir_publicacion || false}
+                          onChange={(nuevoValor) => {
+                            guardarConsentimiento(nuevoValor);
+                          }}
+                          disabled={guardandoConsentimiento}
+                          size="md"
+                        />
+                        <span className="text-sm text-gray-700">
+                          {guardandoConsentimiento
+                            ? "Guardando..."
+                            : denuncia.consentir_publicacion
+                            ? "Puede publicarse"
+                            : "No puede publicarse"}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-5 font-medium text-gray-700 bg-gray-50 align-top w-56 border-b border-gray-100">
+                      Fecha de Creación
+                    </td>
+                    <td className="py-3 px-5 border-b border-gray-100">
                       {(() => {
                         const date = new Date(denuncia.fecha_creacion);
                         if (isNaN(date.getTime()))
@@ -734,8 +831,6 @@ function DenunciaDetallePage({
             )}
           </div>
         )}
-
-        {/* Tab Historial REMOVIDO - Ahora integrado en resumen */}
       </div>
     </div>
   );

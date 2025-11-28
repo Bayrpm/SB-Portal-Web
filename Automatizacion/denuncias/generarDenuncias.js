@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Script principal para generar 1000 denuncias
+ * Script principal para generar denuncias
  * Arquitectura modular - San Bernardo Portal Web
  */
 
@@ -9,33 +9,19 @@ import "dotenv/config";
 import { cargarTodosDatos } from "./loaders/cargarDatos.js";
 import { procesarTodasDenuncias } from "./processors/procesarLote.js";
 import { generarReportes } from "./reports/generarReportes.js";
-import { CONFIG } from "./config/configuracion.js";
+import { CONFIG, actualizarCONFIG } from "./config/configuracion.js";
 import {
   tieneCheckpointPendiente,
   cargarCheckpoint,
   limpiarCheckpoint,
 } from "./utils/checkpoint.js";
-import readline from "readline";
-
-/**
- * Pregunta al usuario si desea reanudar desde checkpoint
- */
-async function preguntarReanudar() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    rl.question(
-      "\n¿Desea reanudar desde el checkpoint anterior? (s/n): ",
-      (respuesta) => {
-        rl.close();
-        resolve(respuesta.toLowerCase() === "s");
-      }
-    );
-  });
-}
+import {
+  solicitarCantidadesDenuncias,
+  solicitarSeleccionUbicacion,
+  solicitarConfiguracionFechas,
+  solicitarRangoHorario,
+  hacerPreguntaConfirmacion,
+} from "./utils/interactive.js";
 
 /**
  * Función principal
@@ -47,16 +33,77 @@ async function main() {
   console.log("═".repeat(80));
   console.log("  GENERADOR DE DENUNCIAS - PORTAL WEB SAN BERNARDO");
   console.log("═".repeat(80));
-  console.log(`\n📋 Configuración:`);
-  console.log(`   Total denuncias: ${CONFIG.TOTAL_DENUNCIAS}`);
-  console.log(`   - Cerradas: ${CONFIG.CANTIDAD_CERRADAS}`);
-  console.log(`   - En Proceso: ${CONFIG.CANTIDAD_EN_PROCESO}`);
-  console.log(`   - Pendientes: ${CONFIG.CANTIDAD_PENDIENTES}`);
-  console.log(`   Delay entre denuncias: ${CONFIG.DELAY_ENTRE_DENUNCIAS}ms`);
-  console.log(`   Delay entre lotes: ${CONFIG.DELAY_ENTRE_LOTES}ms`);
 
   try {
-    // Verificar si existe checkpoint pendiente
+    // 1. Solicitar configuración al usuario
+    const cantidades = await solicitarCantidadesDenuncias();
+    const ubicacion = await solicitarSeleccionUbicacion();
+    const fechas = await solicitarConfiguracionFechas();
+    const rangoHorario = await solicitarRangoHorario();
+
+    if (!ubicacion) {
+      throw new Error("No se seleccionó una ubicación válida");
+    }
+
+    // 2. Actualizar CONFIG con los valores del usuario
+    actualizarCONFIG({
+      CANTIDAD_PENDIENTES: cantidades.pendientes,
+      CANTIDAD_EN_PROCESO: cantidades.enProceso,
+      CANTIDAD_CERRADAS: cantidades.cerradas,
+      TOTAL_DENUNCIAS: cantidades.total,
+      UBICACION_SELECCIONADA: ubicacion,
+      FECHA_FIJA: fechas,
+      RANGO_HORARIO: rangoHorario,
+    });
+
+    // 3. Mostrar configuración final
+    console.log("\n" + "═".repeat(80));
+    console.log("  CONFIGURACIÓN FINAL");
+    console.log("═".repeat(80));
+    console.log(`\n📋 Denuncias a crear:`);
+    console.log(`   Total: ${CONFIG.TOTAL_DENUNCIAS}`);
+    console.log(`   - Cerradas: ${CONFIG.CANTIDAD_CERRADAS}`);
+    console.log(`   - En Proceso: ${CONFIG.CANTIDAD_EN_PROCESO}`);
+    console.log(`   - Pendientes: ${CONFIG.CANTIDAD_PENDIENTES}`);
+    console.log(`\n⏱️  Tiempos:`);
+    console.log(`   Delay entre denuncias: ${CONFIG.DELAY_ENTRE_DENUNCIAS}ms`);
+    console.log(`   Delay entre lotes: ${CONFIG.DELAY_ENTRE_LOTES}ms`);
+    console.log(`\n📍 Ubicación:`);
+    console.log(`   ${CONFIG.UBICACION_SELECCIONADA.nombre}`);
+    console.log(`\n📅 Fechas:`);
+    if (fechas.tipo === "recientes") {
+      console.log(`   Tipo: Solo denuncias recientes`);
+      console.log(
+        `   Rango: ${fechas.fechaInicioPasadas} a ${fechas.fechaFinPasadas}`
+      );
+    } else if (fechas.tipo === "futuras") {
+      console.log(`   Tipo: Solo denuncias futuras`);
+      console.log(
+        `   Rango: ${fechas.fechaInicioFuturas} a ${fechas.fechaFinFuturas}`
+      );
+    } else {
+      console.log(`   Tipo: Denuncias recientes y futuras`);
+      console.log(
+        `   Recientes: ${fechas.fechaInicioPasadas} a ${fechas.fechaFinPasadas}`
+      );
+      console.log(
+        `   Futuras: ${fechas.fechaInicioFuturas} a ${fechas.fechaFinFuturas}`
+      );
+    }
+    console.log(`\n⏰ Rango Horario:`);
+    if (rangoHorario.tipo === "automatico") {
+      console.log(`   Automático por categoría`);
+    } else {
+      console.log(
+        `   Fijo: ${String(rangoHorario.horaInicio).padStart(
+          2,
+          "0"
+        )}:00 - ${String(rangoHorario.horaFin).padStart(2, "0")}:00`
+      );
+    }
+    console.log(`\n` + "═".repeat(80) + "\n");
+
+    // 4. Verificar si existe checkpoint pendiente
     let checkpoint = null;
     if (tieneCheckpointPendiente()) {
       checkpoint = await cargarCheckpoint();
@@ -86,7 +133,9 @@ async function main() {
         }
         console.log("─".repeat(80));
 
-        const reanudar = await preguntarReanudar();
+        const reanudar = await hacerPreguntaConfirmacion(
+          "\n¿Desea reanudar desde el checkpoint anterior?"
+        );
 
         if (!reanudar) {
           console.log("\n🔄 Iniciando generación desde cero...");
@@ -98,7 +147,7 @@ async function main() {
       }
     }
 
-    // 1. Cargar datos desde Supabase
+    // 5. Cargar datos desde Supabase
     const datos = await cargarTodosDatos();
 
     // Validaciones
@@ -117,18 +166,18 @@ async function main() {
     console.log(`   - ${datos.inspectores.length} inspectores`);
     console.log(`   - ${datos.operadores.length} operadores`);
 
-    // 2. Procesar denuncias
+    // 6. Procesar denuncias
     const { resultado, contadoresInspectores, progreso } =
       await procesarTodasDenuncias(datos, checkpoint);
 
-    // 3. Calcular duración
+    // 7. Calcular duración
     const fin = Date.now();
     const duracionMs = fin - inicio;
     const minutos = Math.floor(duracionMs / 60000);
     const segundos = Math.floor((duracionMs % 60000) / 1000);
     const duracion = `${minutos}m ${segundos}s`;
 
-    // 4. Generar reportes
+    // 8. Generar reportes
     const { txtPath, jsonPath } = await generarReportes(
       resultado,
       contadoresInspectores,
@@ -137,13 +186,13 @@ async function main() {
       duracion
     );
 
-    // 5. Limpiar checkpoint al completar exitosamente
+    // 9. Limpiar checkpoint al completar exitosamente
     if (tieneCheckpointPendiente()) {
       await limpiarCheckpoint();
       console.log("\n🗑️  Checkpoint limpiado exitosamente");
     }
 
-    // 6. Resumen final
+    // 10. Resumen final
     console.log("\n" + "═".repeat(80));
     console.log("  ✅ GENERACIÓN COMPLETADA");
     console.log("═".repeat(80));
