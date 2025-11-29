@@ -24,6 +24,7 @@ interface AuditoriaRegistro {
   actor_user_id: string | null;
   actor_email: string;
   actor_nombre: string;
+  actor_rol: string | null;
   actor_es_portal: boolean;
   actor_es_admin: boolean;
   tabla: string;
@@ -32,6 +33,76 @@ interface AuditoriaRegistro {
   old_row: Record<string, unknown> | null;
   new_row: Record<string, unknown> | null;
 }
+
+// Mapeo de páginas del portal a tablas relacionadas (fuera del componente para evitar re-renders)
+const paginasConTablas = [
+  {
+    nombre: "Dashboard",
+    path: "/portal/dashboard",
+    tablas: [], // Dashboard solo lee, no modifica
+  },
+  {
+    nombre: "Denuncias",
+    path: "/portal/denuncias",
+    tablas: [
+      "denuncias",
+      "denuncia_evidencias",
+      "denuncia_observaciones",
+      "denuncia_clasificaciones",
+      "asignaciones_inspector",
+    ],
+  },
+  {
+    nombre: "Derivaciones",
+    path: "/portal/derivaciones",
+    tablas: ["asignaciones_inspector", "denuncias"],
+  },
+  {
+    nombre: "Usuarios",
+    path: "/portal/usuarios",
+    tablas: ["usuarios_portal", "perfiles_ciudadanos"],
+  },
+  {
+    nombre: "Inspectores",
+    path: "/portal/catalogos/inspectores",
+    tablas: ["inspectores", "perfiles_ciudadanos"],
+  },
+  {
+    nombre: "Categorías",
+    path: "/portal/catalogos/categorias",
+    tablas: ["categorias_publicas"],
+  },
+  {
+    nombre: "Prioridades",
+    path: "/portal/catalogos/prioridades",
+    tablas: ["prioridades_denuncia"],
+  },
+  {
+    nombre: "Turnos",
+    path: "/portal/catalogos/turnos",
+    tablas: [
+      "turnos",
+      "turnos_planificados",
+      "turnos_excepciones",
+      "turno_tipo",
+    ],
+  },
+  {
+    nombre: "Móviles",
+    path: "/portal/catalogos/moviles",
+    tablas: ["moviles", "movil_tipo", "movil_usos", "movil_uso_kilometraje"],
+  },
+  {
+    nombre: "Roles",
+    path: "/portal/catalogos/roles",
+    tablas: ["roles_portal", "paginas", "roles_paginas"],
+  },
+  {
+    nombre: "Alertas",
+    path: "/portal/alertas",
+    tablas: ["alertas_oficiales"],
+  },
+];
 
 function AuditoriaPage() {
   const [registros, setRegistros] = useState<AuditoriaRegistro[]>([]);
@@ -42,13 +113,10 @@ function AuditoriaPage() {
 
   // Filtros
   const [searchEmail, setSearchEmail] = useState("");
-  const [selectedTabla, setSelectedTabla] = useState("");
+  const [selectedPagina, setSelectedPagina] = useState("");
   const [selectedOperacion, setSelectedOperacion] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-
-  // Tablas disponibles
-  const [tablas, setTablas] = useState<string[]>([]);
 
   // Modal
   const [selectedRegistro, setSelectedRegistro] =
@@ -65,7 +133,15 @@ function AuditoriaPage() {
       });
 
       if (searchEmail) params.append("actorEmail", searchEmail);
-      if (selectedTabla) params.append("tabla", selectedTabla);
+
+      // Si hay página seleccionada, filtrar por sus tablas asociadas
+      if (selectedPagina) {
+        const pagina = paginasConTablas.find((p) => p.path === selectedPagina);
+        if (pagina && pagina.tablas.length > 0) {
+          params.append("tablas", pagina.tablas.join(","));
+        }
+      }
+
       if (selectedOperacion) params.append("operacion", selectedOperacion);
       if (fechaDesde) params.append("fechaDesde", fechaDesde);
       if (fechaHasta) params.append("fechaHasta", fechaHasta);
@@ -80,7 +156,6 @@ function AuditoriaPage() {
       const data = await res.json();
       setRegistros(data.registros || []);
       setTotal(data.total || 0);
-      setTablas(data.tablas || []);
     } catch (error) {
       console.error("Error:", error);
       Swal.fire({
@@ -99,7 +174,7 @@ function AuditoriaPage() {
     page,
     pageSize,
     searchEmail,
-    selectedTabla,
+    selectedPagina,
     selectedOperacion,
     fechaDesde,
     fechaHasta,
@@ -119,7 +194,7 @@ function AuditoriaPage() {
 
   const handleLimpiarFiltros = () => {
     setSearchEmail("");
-    setSelectedTabla("");
+    setSelectedPagina("");
     setSelectedOperacion("");
     setFechaDesde("");
     setFechaHasta("");
@@ -392,18 +467,18 @@ function AuditoriaPage() {
               placeholder="Buscar por email..."
             />
 
-            {/* Filtro por tabla */}
+            {/* Filtro por página */}
             <SelectComponent
-              value={selectedTabla}
+              value={selectedPagina}
               onChange={(e) => {
-                setSelectedTabla(e.target.value);
+                setSelectedPagina(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="">Todas las tablas</option>
-              {tablas.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              <option value="">Todas las páginas</option>
+              {paginasConTablas.map((p) => (
+                <option key={p.path} value={p.path}>
+                  {p.nombre}
                 </option>
               ))}
             </SelectComponent>

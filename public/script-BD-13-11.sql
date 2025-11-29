@@ -265,6 +265,7 @@ CREATE TABLE public.inspectores (
   activo boolean NOT NULL DEFAULT true,
   usuario_id uuid NOT NULL,
   tipo_turno integer,
+  en_turno boolean NOT NULL DEFAULT false,
   CONSTRAINT inspectores_pkey PRIMARY KEY (id),
   CONSTRAINT inspectores_user_id_fkey FOREIGN KEY (usuario_id) REFERENCES auth.users(id),
   CONSTRAINT inspectores_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.perfiles_ciudadanos(usuario_id),

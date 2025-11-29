@@ -49,6 +49,7 @@ async function getInspectors() {
                 usuario_id,
                 tipo_turno,
                 activo,
+                en_turno,
                 perfiles_ciudadanos!inner (
                     nombre,
                     apellido,
@@ -86,6 +87,7 @@ async function getInspectors() {
                 email: perfil.email,
                 telefono: perfil.telefono || "",
                 activo: inspector.activo,
+                en_turno: inspector.en_turno || false,
                 turno: {
                     id: turno.id,
                     nombre: turno.nombre,
@@ -242,7 +244,7 @@ async function updateInspector(req: NextRequest) {
         return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
-    const { usuario_id, name, last_name, phone, turno_id } = await req.json();
+    const { usuario_id, name, last_name, phone, turno_id, activo } = await req.json();
 
     // Validaciones
     if (!usuario_id) {
@@ -294,17 +296,21 @@ async function updateInspector(req: NextRequest) {
         }
 
         // 3) Actualizar turno en inspectores si se proporciona
-        if (turno_id) {
+        if (turno_id !== undefined || activo !== undefined) {
+            const updateData: { tipo_turno?: number; activo?: boolean } = {};
+            if (turno_id !== undefined) updateData.tipo_turno = turno_id;
+            if (activo !== undefined) updateData.activo = activo;
+
             const { error: inspectorError } = await supabaseAdmin
                 .from("inspectores")
-                .update({ tipo_turno: turno_id })
+                .update(updateData)
                 .eq("usuario_id", usuario_id);
 
             if (inspectorError) {
-                console.error("Error actualizando turno del inspector:", inspectorError);
+                console.error("Error actualizando inspector:", inspectorError);
                 return NextResponse.json({ error: inspectorError.message }, { status: 500 });
             }
-            console.log("Turno del inspector actualizado");
+            console.log("Inspector actualizado");
         }
 
         return NextResponse.json({

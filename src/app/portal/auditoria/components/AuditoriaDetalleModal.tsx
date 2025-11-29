@@ -10,6 +10,8 @@ interface AuditoriaDetalleModalProps {
     id: number;
     ts: string;
     actor_email: string;
+    actor_nombre?: string | null;
+    actor_rol?: string | null;
     actor_es_portal: boolean;
     actor_es_admin: boolean;
     tabla: string;
@@ -284,13 +286,38 @@ export default function AuditoriaDetalleModal({
                   Usuario
                 </span>
                 <div className="mt-1">
-                  {registro.actor_email ? (
+                  {registro.actor_nombre ? (
+                    <>
+                      <div className="font-medium text-gray-900">
+                        {registro.actor_nombre}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {registro.actor_email}
+                      </div>
+                    </>
+                  ) : registro.actor_email ? (
                     <div className="font-medium text-gray-900">
                       {registro.actor_email}
                     </div>
                   ) : (
                     <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                       No se encontró usuario registrado
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-600 uppercase">
+                  Rol
+                </span>
+                <div className="mt-1">
+                  {registro.actor_rol ? (
+                    <div className="font-medium text-gray-900">
+                      {registro.actor_rol}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">
+                      Sin rol especificado
                     </div>
                   )}
                 </div>
