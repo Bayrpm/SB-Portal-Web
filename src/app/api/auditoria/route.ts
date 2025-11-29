@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
             if (invalidTables.length > 0) {
                 // Log invalid table names for security monitoring
                 console.warn(
-                    `Invalid table names requested in audit API: [${invalidTables.join(", ")}] by user: ${user.email}`
+                    `Invalid table names requested in audit API: [${invalidTables.join(", ")}] by user ID: ${user.id}`
                 );
                 return NextResponse.json(
                     { error: `Invalid table names provided: ${invalidTables.join(", ")}` },
