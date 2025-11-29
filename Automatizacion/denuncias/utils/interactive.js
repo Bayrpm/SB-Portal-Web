@@ -156,8 +156,15 @@ function validarFecha(fecha) {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(fecha)) return false;
 
-  const date = new Date(fecha);
-  return date instanceof Date && !isNaN(date);
+  // Parse year, month, day
+  const [year, month, day] = fecha.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  // Check that the date components match (to avoid Date auto-correction)
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 /**
