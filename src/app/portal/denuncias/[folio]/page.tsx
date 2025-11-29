@@ -158,7 +158,7 @@ function DenunciaDetallePage({
         cancelButtonColor: "#6B7280",
       });
     } catch (error) {
-      console.error("Error en diálogo de confirmación:", error);
+      console.error("Error mostrando diálogo de confirmación:", error);
       return;
     }
 
