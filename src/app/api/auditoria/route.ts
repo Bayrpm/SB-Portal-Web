@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams;
         const page = parseInt(searchParams.get("page") || "1");
         const pageSize = parseInt(searchParams.get("pageSize") || "20");
-        const tabla = searchParams.get("tabla") || "";
+        const tablasParam = searchParams.get("tablas") || ""; // Tablas separadas por coma
         const operacion = searchParams.get("operacion") || "";
         const actorEmail = searchParams.get("actorEmail") || "";
         const fechaDesde = searchParams.get("fechaDesde") || "";
@@ -48,8 +48,11 @@ export async function GET(request: NextRequest) {
             .order("ts", { ascending: false });
 
         // Aplicar filtros
-        if (tabla) {
-            query = query.eq("tabla", tabla);
+        if (tablasParam) {
+            const tablasArray = tablasParam.split(",").map(t => t.trim()).filter(t => t);
+            if (tablasArray.length > 0) {
+                query = query.in("tabla", tablasArray);
+            }
         }
 
         if (operacion) {
@@ -86,58 +89,12 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Obtener nombres de usuarios desde perfiles_ciudadanos
-        const usuariosIds = [...new Set(
-            (registros || [])
-                .map((r: { actor_user_id: string | null }) => r.actor_user_id)
-                .filter((id: string | null) => id !== null)
-        )] as string[];
-
-        let usuariosMap = new Map<string, string>();
-
-        if (usuariosIds.length > 0) {
-            const { data: perfiles } = await supabase
-                .from("perfiles_ciudadanos")
-                .select("usuario_id, nombre, apellido")
-                .in("usuario_id", usuariosIds);
-
-            if (perfiles) {
-                usuariosMap = new Map(
-                    perfiles.map((p: { usuario_id: string; nombre: string; apellido: string }) => [
-                        p.usuario_id,
-                        `${p.nombre} ${p.apellido}`.trim(),
-                    ])
-                );
-            }
-        }
-
-        // Agregar nombre al registro
-        const registrosConNombre = (registros || []).map((r: {
-            actor_user_id: string;
-            actor_email: string;
-            [key: string]: unknown;
-        }) => ({
-            ...r,
-            actor_nombre: usuariosMap.get(r.actor_user_id) || r.actor_email || "Desconocido",
-        }));
-
-        // Obtener lista de tablas únicas (para filtro)
-        const { data: tablas } = await supabase
-            .from("audit_log")
-            .select("tabla")
-            .order("tabla");
-
-        const tablasUnicas = tablas
-            ? [...new Set(tablas.map((t) => t.tabla))].sort()
-            : [];
-
         return NextResponse.json({
-            registros: registrosConNombre,
+            registros: registros || [],
             total: count || 0,
             page,
             pageSize,
             totalPages: Math.ceil((count || 0) / pageSize),
-            tablas: tablasUnicas,
         });
     } catch (error) {
         console.error("Error inesperado:", error);

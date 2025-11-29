@@ -2,17 +2,20 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
+import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import { User, Phone, UserPlus, Clock } from "lucide-react";
 import TurnoSelectorModal, { Turno } from "./TurnoSelectorModal";
 import { InspectorFormData } from "./InspectorModal";
+import Swal from "sweetalert2";
 
 interface EditInspectorModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: InspectorFormData) => void;
+  onSubmit: (data: InspectorFormData & { activo?: boolean }) => void;
   initialData: {
     name: string;
     telefono: string;
+    activo?: boolean;
     turno?: {
       id: number;
       nombre: string;
@@ -45,6 +48,9 @@ export default function EditInspectorModal({
   // Estado para modal de turnos
   const [turnoModalOpen, setTurnoModalOpen] = useState(false);
 
+  // Estado para activación de cuenta
+  const [activo, setActivo] = useState(true);
+
   // Cargar datos iniciales cuando se abre el modal
   useEffect(() => {
     if (open && initialData) {
@@ -65,6 +71,7 @@ export default function EditInspectorModal({
           : "",
         password: "", // No se edita la contraseña
       });
+      setActivo(initialData.activo !== false); // Default true si no viene definido
       setShow(true);
     } else {
       const timeout = setTimeout(() => setShow(false), 250);
@@ -99,13 +106,33 @@ export default function EditInspectorModal({
     }));
   };
 
+  const handleToggleActivo = async (nuevoValor: boolean) => {
+    const accionTexto = nuevoValor ? "activar" : "desactivar";
+    const result = await Swal.fire({
+      title: `¿Seguro que deseas ${accionTexto} esta cuenta?`,
+      html: `<p>Al ${accionTexto} la cuenta del inspector, ${
+        nuevoValor ? "podrá acceder" : "no podrá acceder"
+      } al sistema.</p>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: `Sí, ${accionTexto}`,
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: nuevoValor ? "#003C96" : "#dc2626",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (result.isConfirmed) {
+      setActivo(nuevoValor);
+    }
+  };
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (form.turno_id === 0) {
       alert("Por favor selecciona un turno");
       return;
     }
-    onSubmit(form);
+    onSubmit({ ...form, activo });
   };
 
   if (!show) return null;
@@ -255,6 +282,37 @@ export default function EditInspectorModal({
               </button>
             </div>
           </div>
+
+          {/* Sección de activación/desactivación de cuenta */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Estado de la Cuenta
+                </label>
+                <p className="text-xs text-gray-600">
+                  {activo
+                    ? "La cuenta está activa y puede acceder al sistema"
+                    : "La cuenta está desactivada y no puede acceder al sistema"}
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <ToggleSwitch
+                  isActive={activo}
+                  onChange={handleToggleActivo}
+                  size="md"
+                />
+                <span
+                  className={`text-xs font-semibold ${
+                    activo ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {activo ? "Activa" : "Desactivada"}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 mt-8">
             <ButtonComponent accion="cancelar" type="button" onClick={onClose}>
               Cancelar

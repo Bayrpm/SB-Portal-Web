@@ -20,6 +20,14 @@ import {
  * Genera una dirección realista de San Bernardo
  */
 export function generarDireccion() {
+  // Si hay una ubicación fija seleccionada, usarla
+  if (
+    CONFIG.UBICACION_SELECCIONADA &&
+    CONFIG.UBICACION_SELECCIONADA.direccion
+  ) {
+    return CONFIG.UBICACION_SELECCIONADA.direccion;
+  }
+
   const tipo = randomFrom(["avenida", "calle", "pasaje"]);
   const nombreVia = randomFrom(
     DIRECCIONES[
@@ -36,8 +44,24 @@ export function generarDireccion() {
 /**
  * Genera coordenadas dentro de San Bernardo
  * Aproximadamente: lat -33.59 a -33.67, lon -70.68 a -70.72
+ * Si hay una ubicación fija, genera coordenadas alrededor de ella
  */
 export function generarCoordenadas() {
+  // Si hay una ubicación fija con coordenadas, generar alrededor de ella
+  if (
+    CONFIG.UBICACION_SELECCIONADA &&
+    CONFIG.UBICACION_SELECCIONADA.coordenadas
+  ) {
+    const { lat, lng } = CONFIG.UBICACION_SELECCIONADA.coordenadas;
+    const radio = (CONFIG.UBICACION_SELECCIONADA.radio_metros || 500) / 111320; // Convertir metros a grados
+
+    return {
+      x: randomFloat(lng - radio, lng + radio),
+      y: randomFloat(lat - radio, lat + radio),
+    };
+  }
+
+  // Coordenadas aleatorias dentro de San Bernardo
   return {
     x: randomFloat(-70.72, -70.68),
     y: randomFloat(-33.67, -33.59),
@@ -45,7 +69,7 @@ export function generarCoordenadas() {
 }
 
 /**
- * Genera fecha aleatoria según el rango de estado
+ * Genera fecha aleatoria según el rango de estado y configuración
  */
 export function generarFechaAleatoria(estadoId) {
   const {
@@ -53,8 +77,36 @@ export function generarFechaAleatoria(estadoId) {
     FECHA_FIN_PASADAS,
     FECHA_INICIO_FUTURAS,
     FECHA_FIN_FUTURAS,
+    FECHA_FIJA,
   } = CONFIG;
 
+  // Si hay fechas fijas configuradas, usarlas según el tipo
+  if (FECHA_FIJA) {
+    let fechaInicio, fechaFin;
+
+    if (FECHA_FIJA.tipo === "recientes") {
+      fechaInicio = new Date(FECHA_FIJA.fechaInicioPasadas);
+      fechaFin = new Date(FECHA_FIJA.fechaFinPasadas);
+    } else if (FECHA_FIJA.tipo === "futuras") {
+      fechaInicio = new Date(FECHA_FIJA.fechaInicioFuturas);
+      fechaFin = new Date(FECHA_FIJA.fechaFinFuturas);
+    } else if (FECHA_FIJA.tipo === "ambas") {
+      // Para denuncias cerradas: usar rango pasado, sino futuro
+      if (estadoId === 3) {
+        fechaInicio = new Date(FECHA_FIJA.fechaInicioPasadas);
+        fechaFin = new Date(FECHA_FIJA.fechaFinPasadas);
+      } else {
+        fechaInicio = new Date(FECHA_FIJA.fechaInicioFuturas);
+        fechaFin = new Date(FECHA_FIJA.fechaFinFuturas);
+      }
+    }
+
+    if (fechaInicio && fechaFin) {
+      return fechaAleatoria(fechaInicio, fechaFin);
+    }
+  }
+
+  // Comportamiento por defecto
   // Cerradas: entre mayo y noviembre 2025
   if (estadoId === 3) {
     return fechaAleatoria(
@@ -120,23 +172,33 @@ export function generarDescripcion(categoriaId) {
 }
 
 /**
- * Ajusta hora según categoría
+ * Ajusta hora según categoría o rango horario fijo
  */
 export function ajustarHoraCategoria(fecha, categoriaId) {
-  const categoriaNombre = {
-    1: "Emergencias",
-    2: "Violencia y agresiones",
-    3: "Robos y daños",
-    4: "Drogas",
-    5: "Armas",
-    6: "Incivilidades",
-    7: "Patrullaje municipal",
-    8: "Otros",
-  }[categoriaId];
+  let hora, minutos;
 
-  const rangoHoras = HORAS_CONFIG[categoriaNombre];
-  const hora = randomInt(rangoHoras.min, rangoHoras.max);
-  const minutos = randomInt(0, 59);
+  // Si hay un rango horario fijo configurado, usarlo
+  if (CONFIG.RANGO_HORARIO && CONFIG.RANGO_HORARIO.tipo === "fijo") {
+    const { horaInicio, horaFin } = CONFIG.RANGO_HORARIO;
+    hora = randomInt(horaInicio, horaFin);
+    minutos = randomInt(0, 59);
+  } else {
+    // Usar rangos automáticos por categoría
+    const categoriaNombre = {
+      1: "Emergencias",
+      2: "Violencia y agresiones",
+      3: "Robos y daños",
+      4: "Drogas",
+      5: "Armas",
+      6: "Incivilidades",
+      7: "Patrullaje municipal",
+      8: "Otros",
+    }[categoriaId];
+
+    const rangoHoras = HORAS_CONFIG[categoriaNombre];
+    hora = randomInt(rangoHoras.min, rangoHoras.max);
+    minutos = randomInt(0, 59);
+  }
 
   fecha.setHours(hora, minutos, 0, 0);
   return fecha;

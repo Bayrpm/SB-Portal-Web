@@ -151,3 +151,79 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
         );
     }
 }
+
+export async function PATCH(req: Request, context: { params: Promise<{ folio: string }> }) {
+    const params = await context.params;
+    const { folio } = params;
+
+    try {
+        const supabase = await createClient();
+
+        // Verificar autenticación y autorización
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+        }
+
+        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/denuncias");
+        if (!hasAccess) {
+            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+        }
+
+        // Obtener el body del request
+        const body = await req.json();
+        const { consentir_publicacion } = body;
+
+        // Validar que se proporcione el campo
+        if (consentir_publicacion === undefined) {
+            return NextResponse.json(
+                { error: "Debe proporcionar consentir_publicacion" },
+                { status: 400 }
+            );
+        }
+
+        // Actualizar la denuncia
+        const { data: updated, error } = await supabase
+            .from('denuncias')
+            .update({
+                consentir_publicacion: Boolean(consentir_publicacion),
+            })
+            .eq('folio', folio)
+            .select()
+            .single();
+
+        if (error) {
+            logger.error('Error al actualizar denuncia', error);
+            return NextResponse.json(
+                { error: 'Error al actualizar' },
+                { status: 500 }
+            );
+        }
+
+        if (!updated) {
+            return NextResponse.json(
+                { error: 'Denuncia no encontrada' },
+                { status: 404 }
+            );
+        }
+
+        // Limpiar caché
+        denunciaCache.delete(getCacheKey(folio));
+
+        logger.info('Denuncia consentimiento actualizado', {
+            folio,
+            consentir_publicacion,
+        });
+
+        return NextResponse.json({
+            success: true,
+            denuncia: updated,
+        });
+    } catch (error) {
+        logger.error('Error en PATCH /api/denuncias/[folio]', error instanceof Error ? error : undefined);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Error inesperado' },
+            { status: 500 }
+        );
+    }
+}

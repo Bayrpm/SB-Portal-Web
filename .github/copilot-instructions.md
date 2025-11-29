@@ -329,7 +329,8 @@ La base de datos en Supabase (PostgreSQL) contiene las siguientes tablas princip
   - `id`: Identificador del inspector
   - `usuario_id` (FK a auth.users y perfiles_ciudadanos): Usuario asociado
   - `tipo_turno` (FK a turno_tipo): Tipo de turno asignado
-  - `activo`: Estado del inspector
+  - `activo`: Estado del inspector (habilitado/deshabilitado)
+  - `en_turno`: Flag booleano que indica si el inspector está actualmente en turno (true = en turno, false = fuera de turno)
 
 #### Denuncias y Categorización
 

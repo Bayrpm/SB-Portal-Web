@@ -1,9 +1,8 @@
-export const CONFIG = {
-  TOTAL_DENUNCIAS: 1000,
-  CANTIDAD_CERRADAS: 700,
-  CANTIDAD_EN_PROCESO: 240,
-  CANTIDAD_PENDIENTES: 60,
-
+/**
+ * Configuración dinámica que se solicita al usuario en tiempo de ejecución
+ * Estas son las constantes fijas que no cambian
+ */
+export const CONFIG_DEFAULTS = {
   DELAY_ENTRE_DENUNCIAS: 100, // 100ms - Seguro para Supabase
   DELAY_ENTRE_LOTES: 2000, // 2s - Pausa entre lotes
 
@@ -13,6 +12,31 @@ export const CONFIG = {
   FECHA_INICIO_FUTURAS: "2025-12-01",
   FECHA_FIN_FUTURAS: "2025-12-15",
 };
+
+/**
+ * Configuración dinámica que se obtiene del usuario
+ * Se inicializa después de solicitar los datos interactivos
+ */
+export let CONFIG = {
+  TOTAL_DENUNCIAS: 0,
+  CANTIDAD_CERRADAS: 0,
+  CANTIDAD_EN_PROCESO: 0,
+  CANTIDAD_PENDIENTES: 0,
+  DELAY_ENTRE_DENUNCIAS: CONFIG_DEFAULTS.DELAY_ENTRE_DENUNCIAS,
+  DELAY_ENTRE_LOTES: CONFIG_DEFAULTS.DELAY_ENTRE_LOTES,
+  FECHA_INICIO_PASADAS: CONFIG_DEFAULTS.FECHA_INICIO_PASADAS,
+  FECHA_FIN_PASADAS: CONFIG_DEFAULTS.FECHA_FIN_PASADAS,
+  FECHA_INICIO_FUTURAS: CONFIG_DEFAULTS.FECHA_INICIO_FUTURAS,
+  FECHA_FIN_FUTURAS: CONFIG_DEFAULTS.FECHA_FIN_FUTURAS,
+  UBICACION_SELECCIONADA: null,
+};
+
+/**
+ * Función para actualizar la configuración
+ */
+export function actualizarCONFIG(nuevaConfig) {
+  Object.assign(CONFIG, nuevaConfig);
+}
 
 export const ESTADOS = {
   PENDIENTE: 1,

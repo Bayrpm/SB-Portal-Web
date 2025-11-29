@@ -13,14 +13,16 @@ interface AsignarAcompanantesDropdownProps {
   folio: string;
   inspectorPrincipalId: string | null;
   onAsignar: (acompanantes: Inspector[]) => void;
+  forceOpen?: boolean;
 }
 
 export default function AsignarAcompanantesDropdown({
   folio,
   inspectorPrincipalId,
   onAsignar,
+  forceOpen = false,
 }: AsignarAcompanantesDropdownProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(forceOpen);
   const [opciones, setOpciones] = useState<Inspector[]>([]);
   const [seleccionados, setSeleccionados] = useState<Inspector[]>([]);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,6 +91,26 @@ export default function AsignarAcompanantesDropdown({
     const acompanantesIds = seleccionados.map((a) => a.id);
     if (acompanantesIds.length === 0) return;
 
+    // Mostrar confirmación con lista de acompañantes
+    const listaAcompanantes = seleccionados
+      .map((a) => `<li>• ${a.nombre}</li>`)
+      .join("");
+
+    const result = await Swal.fire({
+      title: "¿Asignar acompañantes?",
+      html: `<p>¿Estás seguro de que deseas asignar a los siguientes acompañantes a esta denuncia?</p><ul style="text-align: left; margin-top: 15px;">${listaAcompanantes}</ul>`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, asignar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#003C96",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     try {
       const res = await fetch(`/api/denuncias/${folio}/inspector`, {
         method: "POST",
@@ -101,7 +123,9 @@ export default function AsignarAcompanantesDropdown({
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || `Error en la solicitud: ${res.status}`);
+        throw new Error(
+          errorData.error || `Error en la solicitud: ${res.status}`
+        );
       }
 
       await Swal.fire({
@@ -119,7 +143,10 @@ export default function AsignarAcompanantesDropdown({
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error instanceof Error ? error.message : "No se pudieron asignar los acompañantes",
+        text:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron asignar los acompañantes",
         confirmButtonColor: "#003C96",
       });
     }

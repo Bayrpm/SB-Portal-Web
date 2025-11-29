@@ -114,8 +114,13 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
                     : 'información general';
                 return `Se actualizaron los campos: ${camposTexto}`;
             } else if (evento.includes('estado') || evento.includes('cambio')) {
-                const estadoAnteriorNombre = item.detalle?.old_estado_nombre || item.detalle?.estado_anterior_nombre || item.detalle?.old_estado || 'inicial';
-                const nuevoEstadoNombre = item.detalle?.new_estado_nombre || item.detalle?.nuevo_estado_nombre || item.detalle?.new_estado || 'desconocido';
+                const estadoAnteriorNombre = item.detalle?.old_estado_nombre || item.detalle?.estado_anterior_nombre || item.detalle?.old_estado || 'Sin cambio previo';
+                const nuevoEstadoNombre = item.detalle?.new_estado_nombre || item.detalle?.nuevo_estado_nombre || item.detalle?.new_estado || 'Pendiente';
+
+                // Si es la creación (sin estado anterior), mostrar mensaje especial
+                if (estadoAnteriorNombre === 'Sin cambio previo') {
+                    return `La denuncia fue creada en estado ${nuevoEstadoNombre}`;
+                }
                 return `Se cambió el estado de la denuncia de "${estadoAnteriorNombre}" a "${nuevoEstadoNombre}"`;
             } else if (evento.includes('asignada') || evento.includes('asignado')) {
                 // Extraer nombre del inspector del detalle
@@ -184,12 +189,30 @@ export async function GET(_req: Request, context: { params: Promise<{ folio: str
             // Obtener nombres de estados usando el mapa
             const oldEstadoId = String(item.detalle?.old_estado_id || item.detalle?.old_estado || '');
             const newEstadoId = String(item.detalle?.new_estado_id || item.detalle?.new_estado || '');
-            const estadoAnteriorNombre = estadosMap.get(oldEstadoId) || item.detalle?.old_estado_nombre || item.detalle?.estado_anterior_nombre || 'inicial';
-            const nuevoEstadoNombre = estadosMap.get(newEstadoId) || item.detalle?.new_estado_nombre || item.detalle?.nuevo_estado_nombre || 'desconocido';
-            detallesLeibles = {
-                'Estado Anterior': estadoAnteriorNombre,
-                'Nuevo Estado': nuevoEstadoNombre
-            };
+
+            // Intentar obtener del nombre primero, luego del ID
+            const estadoAnteriorNombre = item.detalle?.old_estado_nombre
+                || item.detalle?.estado_anterior_nombre
+                || (oldEstadoId && estadosMap.has(oldEstadoId) ? estadosMap.get(oldEstadoId) : null)
+                || 'Sin cambio previo';
+
+            const nuevoEstadoNombre = item.detalle?.new_estado_nombre
+                || item.detalle?.nuevo_estado_nombre
+                || (newEstadoId && estadosMap.has(newEstadoId) ? estadosMap.get(newEstadoId) : null)
+                || 'Pendiente'; // Fallback a Pendiente ya que es el estado inicial
+
+            // Si es la creación (sin estado anterior), mostrar detalles especiales
+            if (estadoAnteriorNombre === 'Sin cambio previo') {
+                detallesLeibles = {
+                    'Evento': 'Creación de denuncia',
+                    'Estado Inicial': nuevoEstadoNombre
+                };
+            } else {
+                detallesLeibles = {
+                    'Estado Anterior': estadoAnteriorNombre,
+                    'Nuevo Estado': nuevoEstadoNombre
+                };
+            }
             icono = '🔄';
             tipo = 'estado';
         } else if (eventoLower.includes('asignada') || eventoLower.includes('asignado')) {

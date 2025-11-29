@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import ButtonComponent from "@/app/components/ButtonComponent";
 import TableComponent from "@/app/components/TableComponent";
-import ToggleSwitch from "@/app/components/ToggleSwitchComponent";
 import { User } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { withPageProtection } from "@/lib/security/withPageProtection";
 import InspectorModal, { InspectorFormData } from "./components/InspectorModal";
 import EditInspectorModal from "./components/EditInspectorModal";
@@ -19,6 +19,7 @@ interface Inspector {
   telefono: string;
   email: string;
   activo: boolean;
+  en_turno: boolean;
   turno?: {
     id: number;
     nombre: string;
@@ -48,6 +49,46 @@ function InspectoresPage() {
   useEffect(() => {
     fetchInspectors();
     fetchTurnos();
+  }, []);
+
+  // Suscripción Realtime para actualizar estado de turno automáticamente
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel("inspectores-portal-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "inspectores",
+        },
+        (payload) => {
+          console.log("Inspector actualizado:", payload);
+
+          // Actualizar solo el inspector que cambió
+          setInspectors((prev) =>
+            prev.map((inspector) => {
+              // Buscar por el ID del inspector que cambió
+              if (payload.new && inspector.id === payload.new.usuario_id) {
+                return {
+                  ...inspector,
+                  en_turno: payload.new.en_turno ?? inspector.en_turno,
+                  activo: payload.new.activo ?? inspector.activo,
+                };
+              }
+              return inspector;
+            })
+          );
+        }
+      )
+      .subscribe();
+
+    // Cleanup: desuscribirse al desmontar componente
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Función para cargar turnos disponibles
@@ -87,16 +128,6 @@ function InspectoresPage() {
     }
   };
 
-  const handleToggleStatus = (id: string, newStatus: boolean) => {
-    setInspectors((prev) =>
-      prev.map((inspector) =>
-        inspector.id === id ? { ...inspector, activo: newStatus } : inspector
-      )
-    );
-    // Aquí irá la lógica para actualizar en el backend
-    console.log(`Inspector ${id} cambió a estado: ${newStatus}`);
-  };
-
   const handleEdit = (id: string) => {
     const inspector = inspectors.find((i) => i.id === id);
     if (inspector) {
@@ -105,7 +136,9 @@ function InspectoresPage() {
     }
   };
 
-  const handleUpdateInspector = async (formData: InspectorFormData) => {
+  const handleUpdateInspector = async (
+    formData: InspectorFormData & { activo?: boolean }
+  ) => {
     if (!selectedInspector) return;
 
     setLoading(true);
@@ -117,6 +150,7 @@ function InspectoresPage() {
         last_name: formData.apellido,
         phone: formData.telefono,
         turno_id: formData.turno_id,
+        activo: formData.activo,
       };
 
       console.log("Actualizando inspector:", payload);
@@ -342,15 +376,15 @@ function InspectoresPage() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
           <span className="text-2xl font-bold text-green-600">
-            {inspectors.filter((i) => i.activo).length}
+            {inspectors.filter((i) => i.en_turno).length}
           </span>
-          <span className="text-sm text-gray-600 mt-1">Activos</span>
+          <span className="text-sm text-gray-600 mt-1">En turno</span>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 shadow p-4 flex flex-col items-start">
           <span className="text-2xl font-bold text-red-600">
-            {inspectors.filter((i) => !i.activo).length}
+            {inspectors.filter((i) => !i.en_turno).length}
           </span>
-          <span className="text-sm text-gray-600 mt-1">Inactivos</span>
+          <span className="text-sm text-gray-600 mt-1">Fuera de turno</span>
         </div>
       </div>
 
@@ -371,6 +405,7 @@ function InspectoresPage() {
           initialData={{
             name: selectedInspector.name,
             telefono: selectedInspector.telefono,
+            activo: selectedInspector.activo,
             turno: selectedInspector.turno,
           }}
         />
@@ -479,27 +514,20 @@ function InspectoresPage() {
               ),
             },
             {
-              key: "activo",
-              header: "Estado",
+              key: "en_turno",
+              header: "Estado de Turno",
               width: "10%",
               align: "center",
               render: (row: Inspector) => (
-                <div className="flex flex-col items-center gap-2">
-                  <ToggleSwitch
-                    isActive={row.activo}
-                    onChange={(newStatus) =>
-                      handleToggleStatus(row.id, newStatus)
-                    }
-                    size="md"
-                  />
-                  <span
-                    className={`text-xs font-semibold ${
-                      row.activo ? "text-[#003C96]" : "text-gray-500"
-                    }`}
-                  >
-                    {row.activo ? "Activo" : "Inactivo"}
-                  </span>
-                </div>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                    row.en_turno
+                      ? "bg-green-100 text-green-800 border border-green-200"
+                      : "bg-gray-100 text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  {row.en_turno ? "En turno" : "Fuera de turno"}
+                </span>
               ),
             },
             {

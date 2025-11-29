@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ToggleSwitchProps {
   isActive: boolean;
@@ -15,10 +15,14 @@ export default function ToggleSwitch({
 }: ToggleSwitchProps) {
   const [checked, setChecked] = useState(isActive);
 
+  // Sincronizar el estado local con la prop isActive (cuando viene del padre)
+  useEffect(() => {
+    setChecked(isActive);
+  }, [isActive]);
+
   const handleToggle = () => {
     if (disabled) return;
     const newValue = !checked;
-    setChecked(newValue);
     onChange(newValue);
   };
 
