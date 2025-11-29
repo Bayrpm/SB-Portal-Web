@@ -4,6 +4,33 @@ import { checkPageAccess } from "@/lib/security/checkPageAccess";
 
 export const runtime = "nodejs";
 
+// Allowed table names for audit log queries (server-side validation)
+// This list must match the tables used in the frontend paginasConTablas
+const ALLOWED_TABLES = [
+    "denuncias",
+    "denuncia_evidencias",
+    "denuncia_observaciones",
+    "denuncia_clasificaciones",
+    "asignaciones_inspector",
+    "usuarios_portal",
+    "perfiles_ciudadanos",
+    "inspectores",
+    "categorias_publicas",
+    "prioridades_denuncia",
+    "turnos",
+    "turnos_planificados",
+    "turnos_excepciones",
+    "turno_tipo",
+    "moviles",
+    "movil_tipo",
+    "movil_usos",
+    "movil_uso_kilometraje",
+    "roles_portal",
+    "paginas",
+    "roles_paginas",
+    "alertas_oficiales",
+];
+
 export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient();
@@ -50,6 +77,16 @@ export async function GET(request: NextRequest) {
         // Aplicar filtros
         if (tablasParam) {
             const tablasArray = tablasParam.split(",").map(t => t.trim()).filter(t => t);
+            
+            // Validate that all table names are from the allowed list
+            const invalidTables = tablasArray.filter(t => !ALLOWED_TABLES.includes(t));
+            if (invalidTables.length > 0) {
+                return NextResponse.json(
+                    { error: "Invalid table names provided" },
+                    { status: 400 }
+                );
+            }
+            
             if (tablasArray.length > 0) {
                 query = query.in("tabla", tablasArray);
             }
