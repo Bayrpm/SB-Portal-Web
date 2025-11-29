@@ -81,8 +81,12 @@ export async function GET(request: NextRequest) {
             // Validate that all table names are from the allowed list
             const invalidTables = tablasArray.filter(t => !ALLOWED_TABLES.includes(t));
             if (invalidTables.length > 0) {
+                // Log invalid table names for security monitoring
+                console.warn(
+                    `Invalid table names requested in audit API: [${invalidTables.join(", ")}] by user: ${user.email}`
+                );
                 return NextResponse.json(
-                    { error: "Invalid table names provided" },
+                    { error: `Invalid table names provided: ${invalidTables.join(", ")}` },
                     { status: 400 }
                 );
             }
