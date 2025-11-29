@@ -85,7 +85,7 @@ export default function AsignarInspectorDropdown({
       });
 
       if (!response.ok) {
-        throw new Error(`Error en la respuesta: ${response.status}`);
+        throw new Error(`Error en la respuesta: ${response.status} ${response.statusText}`);
       }
 
       Swal.fire({
