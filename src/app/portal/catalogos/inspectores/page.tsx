@@ -71,11 +71,14 @@ function InspectoresPage() {
           setInspectors((prev) =>
             prev.map((inspector) => {
               // Buscar por el ID del inspector que cambió
-              if (payload.new && inspector.id === payload.new.usuario_id) {
+              // El inspector.id del frontend corresponde a usuario_id de la BD
+              // El payload.new contiene las columnas de la tabla inspectores
+              if (payload.new && inspector.id === (payload.new as { usuario_id: string }).usuario_id) {
+                const newData = payload.new as { en_turno?: boolean; activo?: boolean };
                 return {
                   ...inspector,
-                  en_turno: payload.new.en_turno ?? inspector.en_turno,
-                  activo: payload.new.activo ?? inspector.activo,
+                  en_turno: newData.en_turno ?? inspector.en_turno,
+                  activo: newData.activo ?? inspector.activo,
                 };
               }
               return inspector;
