@@ -64,9 +64,9 @@ export function useRealtimeDenunciaDetalle(
         fetchHistorial();
         fetchObservaciones();
 
-        // Listener para cambios en la tabla denuncias (estado, prioridad, etc)
+        // Listener SOLO para cambios en el estado de la denuncia
         const denunciasChannel = supabase
-            .channel(`detalle-denuncia-${folio}`)
+            .channel(`detalle-denuncia-estado-${folio}`)
             .on(
                 "postgres_changes",
                 {
@@ -76,48 +76,13 @@ export function useRealtimeDenunciaDetalle(
                     filter: `folio=eq.${folio}`,
                 },
                 async (payload) => {
-                    console.log("Cambio detectado en denuncia:", payload);
-                    // Recargar los datos de la denuncia
-                    options.onDenunciaUpdate?.();
-                }
-            )
-            .subscribe();
+                    // Solo ejecutar callback si cambió el estado_id
+                    const estadoAnterior = payload.old?.estado_id;
+                    const estadoNuevo = payload.new?.estado_id;
 
-        // Listener para cambios en historial
-        const historialChannel = supabase
-            .channel(`detalle-historial-${folio}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "denuncia_historial",
-                },
-                async (payload) => {
-                    // Verificar si el cambio es para esta denuncia
-                    const denuncia_id = payload.new?.denuncia_id;
-                    if (denuncia_id) {
-                        await fetchHistorial();
-                    }
-                }
-            )
-            .subscribe();
-
-        // Listener para cambios en observaciones
-        const observacionesChannel = supabase
-            .channel(`detalle-observaciones-${folio}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "denuncia_observaciones",
-                },
-                async (payload) => {
-                    // Verificar si el cambio es para esta denuncia
-                    const denuncia_id = payload.new?.denuncia_id;
-                    if (denuncia_id) {
-                        await fetchObservaciones();
+                    if (estadoAnterior !== estadoNuevo) {
+                        console.log("Cambio de estado detectado:", { estadoAnterior, estadoNuevo });
+                        options.onDenunciaUpdate?.();
                     }
                 }
             )
@@ -125,8 +90,6 @@ export function useRealtimeDenunciaDetalle(
 
         return () => {
             supabase.removeChannel(denunciasChannel);
-            supabase.removeChannel(historialChannel);
-            supabase.removeChannel(observacionesChannel);
         };
     }, [folio, fetchHistorial, fetchObservaciones, supabase, options]);
 
