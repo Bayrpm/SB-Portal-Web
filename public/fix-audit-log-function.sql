@@ -61,10 +61,13 @@ begin
     from perfiles_ciudadanos
     where usuario_id = v_actor;
 
-    -- Verificar si es usuario del portal y obtener su rol
-    select exists (select 1 from usuarios_portal where usuario_id = v_actor),
-           rp.nombre
-    into v_es_portal, v_rol
+    -- Verificar si es usuario del portal
+    select exists (select 1 from usuarios_portal where usuario_id = v_actor)
+    into v_es_portal;
+
+    -- Obtener el rol del usuario del portal (si corresponde)
+    select rp.nombre
+    into v_rol
     from usuarios_portal up
     left join roles_portal rp on up.rol_id = rp.id
     where up.usuario_id = v_actor;

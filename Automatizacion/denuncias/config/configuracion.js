@@ -35,7 +35,7 @@ export let CONFIG = {
  * Función para actualizar la configuración
  */
 export function actualizarCONFIG(nuevaConfig) {
-  CONFIG = { ...CONFIG, ...nuevaConfig };
+  Object.assign(CONFIG, nuevaConfig);
 }
 
 export const ESTADOS = {

@@ -97,6 +97,8 @@ export default function AsignarPrioridadDropdown({
         text: "Ocurrió un error al actualizar la prioridad",
         icon: "error",
       });
+      setOpen(false);
+      onCancelar?.();
     }
   }
 

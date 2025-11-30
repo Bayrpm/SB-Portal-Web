@@ -143,16 +143,24 @@ function DenunciaDetallePage({
     const estadoTexto = nuevoValor
       ? "permitir publicación"
       : "prohibir publicación";
-    const result = await Swal.fire({
-      title: "¿Cambiar consentimiento?",
-      html: `<p>¿Confirmar ${estadoTexto} de esta denuncia?</p>`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sí, confirmar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#003C96",
-      cancelButtonColor: "#6B7280",
-    });
+
+    // Handle confirmation dialog separately to avoid state management issues
+    let result;
+    try {
+      result = await Swal.fire({
+        title: "¿Cambiar consentimiento?",
+        html: `<p>¿Confirmar ${estadoTexto} de esta denuncia?</p>`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, confirmar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#003C96",
+        cancelButtonColor: "#6B7280",
+      });
+    } catch (error) {
+      console.error("Error mostrando diálogo de confirmación:", error);
+      return;
+    }
 
     if (!result.isConfirmed) return;
 

@@ -174,10 +174,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ folio: st
         const body = await req.json();
         const { consentir_publicacion } = body;
 
-        // Validar que se proporcione el campo
-        if (consentir_publicacion === undefined) {
+        // Validar que se proporcione el campo y que sea booleano
+        if (typeof consentir_publicacion !== 'boolean') {
             return NextResponse.json(
-                { error: "Debe proporcionar consentir_publicacion" },
+                { error: "consentir_publicacion debe ser un valor de verdadero o falso" },
                 { status: 400 }
             );
         }
@@ -186,7 +186,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ folio: st
         const { data: updated, error } = await supabase
             .from('denuncias')
             .update({
-                consentir_publicacion: Boolean(consentir_publicacion),
+                consentir_publicacion: consentir_publicacion,
             })
             .eq('folio', folio)
             .select()
