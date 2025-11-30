@@ -9,35 +9,29 @@ import "dotenv/config";
 import { cargarTodosDatos } from "./loaders/cargarDatos.js";
 
 async function testConexion() {
-  console.log("\n🔍 Verificando conexión y datos...\n");
+  
 
   try {
     const datos = await cargarTodosDatos();
 
-    console.log("\n✅ Conexión exitosa!\n");
-    console.log("📊 Datos disponibles:");
-    console.log(`   - Ciudadanos: ${datos.ciudadanos.length}`);
-    console.log(`   - Inspectores: ${datos.inspectores.length}`);
-    console.log(`   - Operadores: ${datos.operadores.length}`);
+    
+    
+    
+    
+    
 
     // Validaciones
     if (datos.ciudadanos.length < 50) {
-      console.log(
-        "\n⚠️  Advertencia: Se recomienda tener al menos 50 ciudadanos"
-      );
+      
     }
     if (datos.inspectores.length < 20) {
-      console.log(
-        "\n⚠️  Advertencia: Se recomienda tener al menos 20 inspectores"
-      );
+      
     }
     if (datos.operadores.length < 15) {
-      console.log(
-        "\n⚠️  Advertencia: Se recomienda tener al menos 15 operadores"
-      );
+      
     }
 
-    console.log("\n✅ Todo listo para generar denuncias!\n");
+    
   } catch (error) {
     console.error("\n❌ Error de conexión:", error.message);
     console.error("\n💡 Verifica que:");

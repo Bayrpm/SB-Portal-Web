@@ -96,7 +96,7 @@ export async function procesarTodasDenuncias(datos, checkpoint = null) {
     pendientes: [],
   };
 
-  console.log("\n📝 Generando denuncias...\n");
+  
 
   // Determinar desde dónde reanudar
   const inicioCerradas = checkpoint?.denuncias.cerradas || 0;
@@ -104,21 +104,17 @@ export async function procesarTodasDenuncias(datos, checkpoint = null) {
   const inicioPendientes = checkpoint?.denuncias.pendientes || 0;
 
   if (checkpoint) {
-    console.log(`\n🔄 REANUDANDO desde checkpoint anterior:`);
-    console.log(`   Ya generadas: ${progreso.actual} denuncias`);
-    console.log(`   - Cerradas: ${inicioCerradas}`);
-    console.log(`   - En Proceso: ${inicioEnProceso}`);
-    console.log(`   - Pendientes: ${inicioPendientes}`);
-    console.log(`   Errores previos: ${progreso.errores}\n`);
+    
+    
+    
+    
+    
+    
   }
 
   // 1. Denuncias cerradas (700)
   if (inicioCerradas < CONFIG.CANTIDAD_CERRADAS) {
-    console.log(
-      `\n🔵 Creando ${
-        CONFIG.CANTIDAD_CERRADAS - inicioCerradas
-      } denuncias CERRADAS...`
-    );
+    
     await procesarLote(
       CONFIG.CANTIDAD_CERRADAS,
       ESTADOS.CERRADA,
@@ -136,16 +132,12 @@ export async function procesarTodasDenuncias(datos, checkpoint = null) {
       pendientes: resultado.pendientes.length,
     });
   } else {
-    console.log(`\n✅ Denuncias CERRADAS ya completadas (${inicioCerradas})`);
+    
   }
 
   // 2. Denuncias en proceso (240)
   if (inicioEnProceso < CONFIG.CANTIDAD_EN_PROCESO) {
-    console.log(
-      `\n\n🟡 Creando ${
-        CONFIG.CANTIDAD_EN_PROCESO - inicioEnProceso
-      } denuncias EN PROCESO...`
-    );
+    
     await procesarLote(
       CONFIG.CANTIDAD_EN_PROCESO,
       ESTADOS.EN_PROCESO,
@@ -163,18 +155,12 @@ export async function procesarTodasDenuncias(datos, checkpoint = null) {
       pendientes: resultado.pendientes.length,
     });
   } else {
-    console.log(
-      `\n✅ Denuncias EN PROCESO ya completadas (${inicioEnProceso})`
-    );
+    
   }
 
   // 3. Denuncias pendientes (60)
   if (inicioPendientes < CONFIG.CANTIDAD_PENDIENTES) {
-    console.log(
-      `\n\n🟠 Creando ${
-        CONFIG.CANTIDAD_PENDIENTES - inicioPendientes
-      } denuncias PENDIENTES...`
-    );
+    
     await procesarLote(
       CONFIG.CANTIDAD_PENDIENTES,
       ESTADOS.PENDIENTE,
@@ -192,12 +178,10 @@ export async function procesarTodasDenuncias(datos, checkpoint = null) {
       pendientes: resultado.pendientes.length,
     });
   } else {
-    console.log(
-      `\n✅ Denuncias PENDIENTES ya completadas (${inicioPendientes})`
-    );
+    
   }
 
-  console.log("\n");
+  
 
   return {
     resultado,

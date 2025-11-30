@@ -168,7 +168,7 @@ export async function generarReportes(
   inspectores,
   duracion
 ) {
-  console.log("\n📄 Generando reportes...\n");
+  
 
   const [txtPath, jsonPath] = await Promise.all([
     generarReporteTXT(

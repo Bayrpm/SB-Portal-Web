@@ -54,9 +54,8 @@ export async function GET() {
             );
         }
 
-        console.log(
-            `[/api/users/allowed-pages] Usuario ${user.id} con rol_id=${userPortal.rol_id} solicita sus páginas permitidas`
-        );
+        
+        
 
         // Obtener las páginas permitidas para el rol del usuario
         const { data: rolePages, error: rolePagesError } = await supabase
@@ -135,14 +134,9 @@ export async function GET() {
                 return a.path.localeCompare(b.path);
             });
 
-        console.log(
-            `[/api/users/allowed-pages] ✅ Usuario ${user.id} tiene ${activePaginas.length} páginas permitidas`
-        );
+        
         if (activePaginas.length > 0) {
-            console.log(
-                `[/api/users/allowed-pages] Páginas:`,
-                activePaginas.map((p) => p.path).join(", ")
-            );
+            
         }
 
         return NextResponse.json({

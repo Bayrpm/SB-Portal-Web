@@ -88,7 +88,7 @@ export function useRealtimeDenuncias(options: UseRealtimeDenunciasOptions = {}) 
                     table: "denuncias",
                 },
                 (payload) => {
-                    console.log("Cambio en denuncias:", payload);
+                    
 
                     if (payload.eventType === "UPDATE") {
                         const newData = payload.new as DenunciaDB;
@@ -127,7 +127,7 @@ export function useRealtimeDenuncias(options: UseRealtimeDenunciasOptions = {}) 
                     table: "asignaciones_inspector",
                 },
                 (payload) => {
-                    console.log("Nueva asignación:", payload);
+                    
                     const newAssignment = payload.new as AsignacionDB;
 
                     if (newAssignment.denuncia_id) {

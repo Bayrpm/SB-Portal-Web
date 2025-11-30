@@ -65,7 +65,7 @@ function InspectoresPage() {
           table: "inspectores",
         },
         (payload) => {
-          console.log("Inspector actualizado:", payload);
+          
 
           // Actualizar solo el inspector que cambió
           setInspectors((prev) =>
@@ -153,7 +153,7 @@ function InspectoresPage() {
         activo: formData.activo,
       };
 
-      console.log("Actualizando inspector:", payload);
+      
 
       // Llamar al endpoint de actualización
       const res = await fetch("/api/inspectors", {
@@ -271,7 +271,7 @@ function InspectoresPage() {
         turno_id: formData.turno_id,
       };
 
-      console.log("Enviando datos del inspector:", payload);
+      
 
       // Llamar al endpoint de creación de inspector
       const res = await fetch("/api/inspectors", {

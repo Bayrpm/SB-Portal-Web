@@ -82,7 +82,7 @@ export async function cargarCiudadanos() {
     throw new Error(`Error al cargar ciudadanos: ${error.message}`);
   }
 
-  console.log(`✓ Cargados ${data.length} ciudadanos`);
+  
   return data;
 }
 
@@ -143,7 +143,7 @@ export async function cargarInspectores() {
     email: i.perfiles_ciudadanos.email,
   }));
 
-  console.log(`✓ Cargados ${inspectores.length} inspectores`);
+  
   return inspectores;
 }
 
@@ -180,7 +180,7 @@ export async function cargarOperadores() {
     throw new Error(`Error al cargar operadores: ${error.message}`);
   }
 
-  console.log(`✓ Cargados ${data.length} operadores`);
+  
   return data;
 }
 
@@ -188,7 +188,7 @@ export async function cargarOperadores() {
  * Carga todos los datos necesarios
  */
 export async function cargarTodosDatos() {
-  console.log("\n📥 Cargando datos desde Supabase...\n");
+  
 
   const [ciudadanos, inspectores, operadores] = await Promise.all([
     cargarCiudadanos(),

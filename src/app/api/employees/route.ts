@@ -15,7 +15,7 @@ export async function GET() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-            console.log("Acceso denegado: Usuario no autenticado");
+            
             return NextResponse.json(
                 { error: "No autenticado" },
                 { status: 401 }
@@ -43,7 +43,7 @@ export async function GET() {
             return NextResponse.json({ error: portalError.message }, { status: 500 });
         }
 
-        console.log(`Encontrados ${portalUsers?.length || 0} usuarios en usuarios_portal`);
+        
 
         if (!portalUsers || portalUsers.length === 0) {
             return NextResponse.json({ employees: [] });
@@ -131,7 +131,7 @@ export async function GET() {
             }
         }
 
-        console.log(`Enviando ${employees.length} empleados al frontend`);
+        
         return NextResponse.json({ employees });
     } catch (error) {
         console.error("Error inesperado obteniendo funcionarios:", error);

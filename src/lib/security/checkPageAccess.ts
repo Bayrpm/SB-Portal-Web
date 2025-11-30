@@ -99,7 +99,7 @@ export async function checkPageAccess(
             .filter((p) => p.activo) // Filtrar solo las páginas activas
             .map((p) => p.path); // Obtener el path
 
-        console.log(`[checkPageAccess] Páginas permitidas para rol_id ${portalUser.rol_id}:`, paginasPermitidas);
+        
 
         // 5. Verificar si la ruta solicitada está en las páginas permitidas
         const hasAccess = paginasPermitidas.some((path) => pagePath.startsWith(path));

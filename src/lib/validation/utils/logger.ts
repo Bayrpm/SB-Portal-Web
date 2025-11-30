@@ -70,7 +70,7 @@ class Logger {
             }
         } else {
             // En producción, siempre usar console.log para compatibilidad con sistemas de logging
-            console.log(JSON.stringify(entry));
+            
         }
     }
 

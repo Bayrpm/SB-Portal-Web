@@ -39,7 +39,7 @@ async function getInspectors() {
             return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }
 
-        console.log("Obteniendo lista de inspectores...");
+        
 
         // Consultar inspectores con información relacionada
         const { data, error } = await supabaseAdmin
@@ -97,7 +97,7 @@ async function getInspectors() {
             };
         }) || [];
 
-        console.log(`Se encontraron ${inspectors.length} inspectores`);
+        
         return NextResponse.json({ inspectors });
 
     } catch (error) {
@@ -140,7 +140,7 @@ async function registerInspector(req: NextRequest) {
 
     try {
         // 1) Crear usuario en auth.users con service role (server-side)
-        console.log("Intentando crear inspector con Supabase Admin...");
+        
         const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
@@ -159,13 +159,13 @@ async function registerInspector(req: NextRequest) {
         }
 
         const usuario_id = created.user.id;
-        console.log("Usuario creado correctamente:", usuario_id);
-        console.log("Perfil ciudadano se creará automáticamente por trigger");
+        
+        
 
         // 2) Insertar en tabla inspectores con service role
         let inspectorError;
         try {
-            console.log("Insertando en inspectores...");
+            
             const result = await supabaseAdmin
                 .from("inspectores")
                 .insert([{
@@ -177,8 +177,7 @@ async function registerInspector(req: NextRequest) {
             inspectorError = result.error;
 
             if (inspectorError) {
-                console.error("Error insertando en inspectores:", inspectorError);
-                console.log("Intentando método alternativo...");
+                
 
                 // Método alternativo usando createServerClient
                 const supabaseServer = await createServerClient();
@@ -191,10 +190,10 @@ async function registerInspector(req: NextRequest) {
                     }]);
 
                 if (serverResult.error) {
-                    console.error("Error con método alternativo:", serverResult.error);
+                    
                     inspectorError = serverResult.error;
                 } else {
-                    console.log("Método alternativo exitoso");
+                    
                     inspectorError = null;
                 }
             }
@@ -204,18 +203,18 @@ async function registerInspector(req: NextRequest) {
         }
 
         if (inspectorError) {
-            console.error("Error final insertando en inspectores:", inspectorError);
+            
             // Rollback: eliminar usuario (el perfil se eliminará automáticamente en cascada)
             try {
                 await supabaseAdmin.auth.admin.deleteUser(usuario_id);
-                console.log("Usuario eliminado en rollback");
+                
             } catch (deleteError) {
                 console.error("Error durante rollback:", deleteError);
             }
             return NextResponse.json({ error: inspectorError.message }, { status: 500 });
         }
 
-        console.log("Inspector registrado completamente con éxito");
+        
         return NextResponse.json({
             success: true,
             user: created.user,
@@ -255,7 +254,7 @@ async function updateInspector(req: NextRequest) {
     }
 
     try {
-        console.log("Actualizando inspector:", usuario_id);
+        
 
         // 1) Actualizar user_metadata en auth.users si se proporciona nombre o teléfono
         if (name || last_name || phone) {
@@ -270,10 +269,10 @@ async function updateInspector(req: NextRequest) {
             );
 
             if (authError) {
-                console.error("Error actualizando metadata del usuario:", authError);
+                
                 return NextResponse.json({ error: authError.message }, { status: 500 });
             }
-            console.log("Metadata de usuario actualizada");
+            
         }
 
         // 2) Actualizar perfiles_ciudadanos si es necesario
@@ -289,10 +288,10 @@ async function updateInspector(req: NextRequest) {
                 .eq("usuario_id", usuario_id);
 
             if (perfilError) {
-                console.error("Error actualizando perfil:", perfilError);
+                
                 return NextResponse.json({ error: perfilError.message }, { status: 500 });
             }
-            console.log("Perfil actualizado");
+            
         }
 
         // 3) Actualizar turno en inspectores si se proporciona
@@ -307,10 +306,10 @@ async function updateInspector(req: NextRequest) {
                 .eq("usuario_id", usuario_id);
 
             if (inspectorError) {
-                console.error("Error actualizando inspector:", inspectorError);
+                
                 return NextResponse.json({ error: inspectorError.message }, { status: 500 });
             }
-            console.log("Inspector actualizado");
+            
         }
 
         return NextResponse.json({
@@ -348,43 +347,43 @@ async function deleteInspector(req: NextRequest) {
     }
 
     try {
-        console.log("Eliminando inspector:", usuario_id);
+        
 
         // 1) Eliminar de tabla inspectores
-        console.log("Eliminando de inspectores...");
+        
         const { error: inspectorError } = await supabaseAdmin
             .from("inspectores")
             .delete()
             .eq("usuario_id", usuario_id);
 
         if (inspectorError) {
-            console.error("Error eliminando de inspectores:", inspectorError);
+            
             return NextResponse.json({ error: inspectorError.message }, { status: 500 });
         }
-        console.log("Registro de inspectores eliminado");
+        
 
         // 2) Eliminar de perfiles_ciudadanos
-        console.log("Eliminando de perfiles_ciudadanos...");
+        
         const { error: perfilError } = await supabaseAdmin
             .from("perfiles_ciudadanos")
             .delete()
             .eq("usuario_id", usuario_id);
 
         if (perfilError) {
-            console.error("Error eliminando perfil:", perfilError);
+            
             return NextResponse.json({ error: perfilError.message }, { status: 500 });
         }
-        console.log("Perfil ciudadano eliminado");
+        
 
         // 3) Eliminar de auth.users (esto debe ser lo último)
-        console.log("Eliminando usuario de auth...");
+        
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(usuario_id);
 
         if (authError) {
-            console.error("Error eliminando usuario de auth:", authError);
+            
             return NextResponse.json({ error: authError.message }, { status: 500 });
         }
-        console.log("Usuario eliminado de auth");
+        
 
         return NextResponse.json({
             success: true,

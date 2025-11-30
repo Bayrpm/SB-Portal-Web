@@ -73,7 +73,7 @@ export default function InspectorModal({
           form.apellido,
           { table: "perfiles_ciudadanos", column: "email" }
         );
-        console.log("Correo generado:", email); // <-- Depuración
+        
         setForm((prev: InspectorFormData) => ({ ...prev, email }));
       } catch (e) {
         console.error("Error generando correo:", e);
