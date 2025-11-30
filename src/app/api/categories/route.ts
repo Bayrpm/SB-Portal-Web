@@ -8,16 +8,12 @@ export async function GET() {
     try {
         const supabase = await createClient();
 
-        // Verificar autenticación y autorización
+        // Solo requiere autenticación para lectura
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
             return NextResponse.json({ error: "No autenticado" }, { status: 401 });
         }
 
-        const hasAccess = await checkPageAccess(supabase, user.id, "/portal/catalogos/categorias");
-        if (!hasAccess) {
-            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-        }
         const { data, error } = await supabase
             .from("categorias_publicas")
             .select("*")
