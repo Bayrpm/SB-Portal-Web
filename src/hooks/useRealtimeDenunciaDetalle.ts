@@ -22,7 +22,14 @@ interface Observacion {
     cargo: string;
 }
 
-export function useRealtimeDenunciaDetalle(folio: string) {
+interface UseRealtimeDenunciaDetalleOptions {
+    onDenunciaUpdate?: () => void;
+}
+
+export function useRealtimeDenunciaDetalle(
+    folio: string,
+    options: UseRealtimeDenunciaDetalleOptions = {}
+) {
     const [historial, setHistorial] = useState<HistorialItem[]>([]);
     const [observaciones, setObservaciones] = useState<Observacion[]>([]);
     const [loadingHistorial, setLoadingHistorial] = useState(true);
@@ -56,6 +63,25 @@ export function useRealtimeDenunciaDetalle(folio: string) {
     useEffect(() => {
         fetchHistorial();
         fetchObservaciones();
+
+        // Listener para cambios en la tabla denuncias (estado, prioridad, etc)
+        const denunciasChannel = supabase
+            .channel(`detalle-denuncia-${folio}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "denuncias",
+                    filter: `folio=eq.${folio}`,
+                },
+                async (payload) => {
+                    console.log("Cambio detectado en denuncia:", payload);
+                    // Recargar los datos de la denuncia
+                    options.onDenunciaUpdate?.();
+                }
+            )
+            .subscribe();
 
         // Listener para cambios en historial
         const historialChannel = supabase
@@ -98,10 +124,11 @@ export function useRealtimeDenunciaDetalle(folio: string) {
             .subscribe();
 
         return () => {
+            supabase.removeChannel(denunciasChannel);
             supabase.removeChannel(historialChannel);
             supabase.removeChannel(observacionesChannel);
         };
-    }, [folio, fetchHistorial, fetchObservaciones, supabase]);
+    }, [folio, fetchHistorial, fetchObservaciones, supabase, options]);
 
     return {
         historial,
