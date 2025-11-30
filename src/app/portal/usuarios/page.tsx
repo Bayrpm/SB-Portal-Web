@@ -15,6 +15,7 @@ import { withPageProtection } from "@/lib/security/withPageProtection";
 const rolColor: Record<string, string> = {
   Administrador: "bg-red-100 text-red-700",
   Operador: "bg-blue-100 text-blue-700",
+  Inspector: "bg-green-100 text-green-700",
 };
 
 interface Employee {
@@ -27,11 +28,6 @@ interface Employee {
   telefono?: string;
   apellido?: string;
 }
-
-const rolMap: Record<number, string> = {
-  1: "Administrador",
-  2: "Operador",
-};
 
 interface UserForm {
   nombre: string;
@@ -476,15 +472,19 @@ function UsuariosPage() {
               header: "Rol",
               width: "15%",
               align: "center",
-              render: (row) => (
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    rolColor[rolMap[row.rol_id] || "Sin rol"]
-                  }`}
-                >
-                  {rolMap[row.rol_id] || "Sin rol"}
-                </span>
-              ),
+              render: (row) => {
+                const rolNombre =
+                  roles.find((r) => r.id === row.rol_id)?.nombre || "Sin rol";
+                return (
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      rolColor[rolNombre] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {rolNombre}
+                  </span>
+                );
+              },
             },
             {
               key: "activo",

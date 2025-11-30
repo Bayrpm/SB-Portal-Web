@@ -75,7 +75,7 @@ export default function AsignarInspectorDropdown({
     // Guardar en la BD con acompañantes actuales
     const acompanantesIds = acompanantesActuales.map((a) => a.id);
     try {
-      await fetch(`/api/denuncias/${folio}/inspector`, {
+      const response = await fetch(`/api/denuncias/${folio}/inspector`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,6 +83,10 @@ export default function AsignarInspectorDropdown({
           acompanantes_ids: acompanantesIds,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Error en la respuesta: ${response.status} ${response.statusText}`);
+      }
 
       Swal.fire({
         icon: "success",
@@ -102,6 +106,8 @@ export default function AsignarInspectorDropdown({
         text: "No se pudo asignar el inspector",
         confirmButtonColor: "#003C96",
       });
+      setOpen(false);
+      onCancelar?.();
     }
   }
 
