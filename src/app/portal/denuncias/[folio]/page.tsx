@@ -60,9 +60,6 @@ function DenunciaDetallePage({
 }) {
   const router = useRouter();
   const { folio } = React.use(params);
-  // Realtime hooks para historial y observaciones
-  const { historial, observaciones, loadingHistorial } =
-    useRealtimeDenunciaDetalle(folio);
 
   const [denuncia, setDenuncia] = useState<DenunciaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,39 +85,48 @@ function DenunciaDetallePage({
   const [loadingTab, setLoadingTab] = useState(false);
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
+  // Función para recargar la denuncia
+  const fetchDenunciaData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      // Cargar denuncia y asignaciones en paralelo
+      const [denunciaData, asignacionesData] = await Promise.all([
+        fetch(`/api/denuncias/${folio}`).then((res) => res.json()),
+        fetch(`/api/denuncias/${folio}/asignaciones`).then((res) => res.json()),
+      ]);
 
-    // Cargar denuncia y asignaciones en paralelo
-    Promise.all([
-      fetch(`/api/denuncias/${folio}`).then((res) => res.json()),
-      fetch(`/api/denuncias/${folio}/asignaciones`).then((res) => res.json()),
-    ])
-      .then(([denunciaData, asignacionesData]) => {
-        // Setear datos de la denuncia
-        setDenuncia(denunciaData.denuncia);
+      // Setear datos de la denuncia
+      setDenuncia(denunciaData.denuncia);
 
-        // Setear inspector y acompañantes desde asignaciones
-        if (asignacionesData.inspector_principal) {
-          setInspectorAsignadoId(asignacionesData.inspector_principal.id);
-          setInspectorAsignadoNombre(
-            asignacionesData.inspector_principal.nombre
-          );
-        }
-        if (
-          asignacionesData.acompanantes &&
-          asignacionesData.acompanantes.length > 0
-        ) {
-          setAcompanantes(asignacionesData.acompanantes);
-        }
+      // Setear inspector y acompañantes desde asignaciones
+      if (asignacionesData.inspector_principal) {
+        setInspectorAsignadoId(asignacionesData.inspector_principal.id);
+        setInspectorAsignadoNombre(asignacionesData.inspector_principal.nombre);
+      }
+      if (
+        asignacionesData.acompanantes &&
+        asignacionesData.acompanantes.length > 0
+      ) {
+        setAcompanantes(asignacionesData.acompanantes);
+      }
 
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error al cargar denuncia:", error);
-        setLoading(false);
-      });
+      setLoading(false);
+    } catch (error) {
+      console.error("Error al cargar denuncia:", error);
+      setLoading(false);
+    }
   }, [folio]);
+
+  // Realtime hooks para historial, observaciones y cambios en la denuncia
+  const { historial, observaciones, loadingHistorial } =
+    useRealtimeDenunciaDetalle(folio, {
+      onDenunciaUpdate: fetchDenunciaData,
+    });
+
+  // Cargar datos de la denuncia al montar el componente
+  useEffect(() => {
+    fetchDenunciaData();
+  }, [fetchDenunciaData]);
 
   // Cargar evidencias cuando se abre la tab
   useEffect(() => {

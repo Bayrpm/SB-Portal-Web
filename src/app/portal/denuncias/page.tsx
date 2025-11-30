@@ -53,7 +53,7 @@ function DenunciasPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   type Sort = { key: keyof Denuncia | string; dir: "asc" | "desc" };
-  const [sort, setSort] = useState<Sort>({ key: "folio", dir: "asc" });
+  const [sort, setSort] = useState<Sort>({ key: "folio", dir: "desc" });
   const [fecha, setFecha] = useState<DateRange>({
     start: undefined,
     end: undefined,
