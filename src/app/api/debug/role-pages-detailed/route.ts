@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
             .select("*")
             .eq("rol_id", rolId);
 
-        console.log(`[DEBUG] roles_paginas raw para rol ${rolId}:`, rolePaginasRaw);
+        
 
         // Obtener con join
         const { data: rolePaginasWithJoin, error: e2 } = await supabase
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
             )
             .eq("rol_id", rolId);
 
-        console.log(`[DEBUG] roles_paginas with join para rol ${rolId}:`, rolePaginasWithJoin);
+        
 
         return NextResponse.json({
             rolId,

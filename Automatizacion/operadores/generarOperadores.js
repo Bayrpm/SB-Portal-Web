@@ -160,7 +160,7 @@ async function obtenerRolOperador() {
 
 // Función principal para crear operadores
 async function generarOperadores() {
-  console.log("🚀 Iniciando generación de 15 operadores...\n");
+  
 
   // Obtener el rol de operador
   const rolOperador = await obtenerRolOperador();
@@ -170,9 +170,7 @@ async function generarOperadores() {
     );
     return;
   }
-  console.log(
-    `✅ Rol encontrado: ${rolOperador.nombre} (ID: ${rolOperador.id})\n`
-  );
+  
 
   const operadoresCreados = [];
   const errores = [];
@@ -190,7 +188,7 @@ async function generarOperadores() {
 
       const password = `${nombre}${randomNumber(100, 999)}`;
 
-      console.log(`[${i}/15] Creando: ${nombreCompleto} (${email})...`);
+      
 
       // Crear usuario en Supabase Auth
       const { data: authData, error: authError } =
@@ -257,7 +255,7 @@ async function generarOperadores() {
       });
 
       exitosos++;
-      console.log(`   ✅ Creado exitosamente (${exitosos}/15)\n`);
+      
 
       // Delay entre creaciones (1.5 segundos)
       await delay(1500);
@@ -275,23 +273,23 @@ async function generarOperadores() {
   generarArchivoJSON(operadoresCreados);
 
   // Resumen final
-  console.log("\n" + "=".repeat(60));
-  console.log("📊 RESUMEN DE GENERACIÓN DE OPERADORES");
-  console.log("=".repeat(60));
-  console.log(`✅ Operadores creados exitosamente: ${exitosos}`);
-  console.log(`❌ Errores: ${errores.length}`);
-  console.log("=".repeat(60));
+  
+  
+  
+  
+  
+  
 
   if (errores.length > 0) {
-    console.log("\n⚠️  ERRORES ENCONTRADOS:");
+    
     errores.forEach((err) => {
-      console.log(`   [${err.numero}] ${err.email || "N/A"}: ${err.error}`);
+      
     });
   }
 
-  console.log("\n✨ Proceso completado!");
-  console.log(`📄 Credenciales guardadas en: credenciales_operadores.txt`);
-  console.log(`📄 Datos completos guardados en: operadores_generados.json\n`);
+  
+  
+  
 }
 
 // Generar archivo TXT con credenciales

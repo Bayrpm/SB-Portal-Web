@@ -86,7 +86,7 @@ export default function UserModal({ open, onClose, onSubmit }: UserModalProps) {
           form.apellido,
           { table: "perfiles_ciudadanos", column: "email" }
         );
-        console.log("Correo generado:", email); // <-- Depuración
+        
         setForm((prev) => ({ ...prev, email }));
       } catch (e) {
         console.error("Error generando correo:", e);

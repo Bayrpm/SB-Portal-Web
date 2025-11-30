@@ -22,7 +22,7 @@ const createAdminClient = () => {
 
     // Solo mostrar logs en desarrollo
     if (isDev) {
-        console.log("Creando cliente Supabase Admin");
+        
 
         // Verificación adicional para depurar
         const JWT_REGEX = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;

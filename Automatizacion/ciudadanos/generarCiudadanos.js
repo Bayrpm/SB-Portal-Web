@@ -48,7 +48,7 @@ function delay(ms) {
 
 // Función principal para crear ciudadanos
 async function generarCiudadanos() {
-  console.log("🚀 Iniciando generación de 50 ciudadanos...\n");
+  
 
   const ciudadanosCreados = [];
   const errores = [];
@@ -69,7 +69,7 @@ async function generarCiudadanos() {
       const telefono = `+569${randomNumber(10000000, 99999999)}`;
       const password = `${nombre}${randomNumber(100, 999)}`;
 
-      console.log(`[${i}/50] Creando: ${nombreCompleto} (${email})...`);
+      
 
       // Crear usuario en Supabase Auth
       const { data: authData, error: authError } =
@@ -127,7 +127,7 @@ async function generarCiudadanos() {
       });
 
       exitosos++;
-      console.log(`   ✅ Creado exitosamente (${exitosos}/50)\n`);
+      
 
       // Delay entre creaciones para no saturar Supabase (1 segundo)
       await delay(1000);
@@ -147,23 +147,23 @@ async function generarCiudadanos() {
   generarArchivoJSON(ciudadanosCreados);
 
   // Resumen final
-  console.log("\n" + "=".repeat(60));
-  console.log("📊 RESUMEN DE GENERACIÓN");
-  console.log("=".repeat(60));
-  console.log(`✅ Ciudadanos creados exitosamente: ${exitosos}`);
-  console.log(`❌ Errores: ${errores.length}`);
-  console.log("=".repeat(60));
+  
+  
+  
+  
+  
+  
 
   if (errores.length > 0) {
-    console.log("\n⚠️  ERRORES ENCONTRADOS:");
+    
     errores.forEach((err) => {
-      console.log(`   [${err.numero}] ${err.email || "N/A"}: ${err.error}`);
+      
     });
   }
 
-  console.log("\n✨ Proceso completado!");
-  console.log(`📄 Credenciales guardadas en: credenciales_ciudadanos.txt`);
-  console.log(`📄 Datos completos guardados en: ciudadanos_generados.json\n`);
+  
+  
+  
 }
 
 // Generar archivo TXT con credenciales

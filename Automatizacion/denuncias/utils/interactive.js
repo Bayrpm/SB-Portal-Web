@@ -41,7 +41,7 @@ export async function hacerPreguntaNumerica(pregunta) {
     const respuesta = await hacerPregunta(pregunta);
     valor = parseInt(respuesta);
     if (isNaN(valor) || valor < 0) {
-      console.log("❌ Por favor ingresa un número válido y positivo");
+      
     }
   }
   return valor;
@@ -59,9 +59,9 @@ export async function hacerPreguntaConfirmacion(pregunta) {
  * Solicitar cantidades de denuncias al usuario
  */
 export async function solicitarCantidadesDenuncias() {
-  console.log("\n" + "═".repeat(80));
-  console.log("  CONFIGURACIÓN DE DENUNCIAS A GENERAR");
-  console.log("═".repeat(80) + "\n");
+  
+  
+  
 
   const pendientes = await hacerPreguntaNumerica(
     "¿Cuántas denuncias PENDIENTES deseas crear? "
@@ -75,20 +75,18 @@ export async function solicitarCantidadesDenuncias() {
 
   const total = pendientes + enProceso + cerradas;
 
-  console.log("\n" + "─".repeat(80));
-  console.log("📊 RESUMEN DE CONFIGURACIÓN:");
-  console.log("─".repeat(80));
-  console.log(`   Denuncias Pendientes: ${pendientes}`);
-  console.log(`   Denuncias En Proceso: ${enProceso}`);
-  console.log(`   Denuncias Cerradas:   ${cerradas}`);
-  console.log(`   ────────────────────────────`);
-  console.log(`   TOTAL A CREAR:        ${total} denuncias`);
-  console.log("─".repeat(80) + "\n");
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (total === 0) {
-    console.log(
-      "❌ No puedes crear 0 denuncias. Por favor intenta nuevamente.\n"
-    );
+    
     return solicitarCantidadesDenuncias();
   }
 
@@ -97,7 +95,7 @@ export async function solicitarCantidadesDenuncias() {
   );
 
   if (!aceptar) {
-    console.log("\n🔄 Reconfigurando...\n");
+    
     return solicitarCantidadesDenuncias();
   }
 
@@ -175,9 +173,7 @@ async function hacerPreguntaFecha(pregunta) {
   while (!fecha || !validarFecha(fecha)) {
     const respuesta = await hacerPregunta(pregunta);
     if (!validarFecha(respuesta)) {
-      console.log(
-        "❌ Formato inválido. Usa el formato YYYY-MM-DD (ej: 2025-11-24)"
-      );
+      
       fecha = null;
     } else {
       fecha = respuesta;
@@ -190,21 +186,21 @@ async function hacerPreguntaFecha(pregunta) {
  * Solicitar configuración de fechas al usuario
  */
 export async function solicitarConfiguracionFechas() {
-  console.log("\n" + "═".repeat(80));
-  console.log("  CONFIGURACIÓN DE FECHAS");
-  console.log("═".repeat(80) + "\n");
+  
+  
+  
 
-  console.log("¿Qué tipo de denuncias deseas crear?\n");
-  console.log("   1. Solo denuncias recientes (pasadas)");
-  console.log("   2. Solo denuncias futuras");
-  console.log("   3. Ambas (recientes y futuras)\n");
+  
+  
+  
+  
 
   let opcion;
   while (!opcion || opcion < 1 || opcion > 3) {
     const respuesta = await hacerPregunta("Selecciona una opción (1, 2 o 3): ");
     opcion = parseInt(respuesta);
     if (isNaN(opcion) || opcion < 1 || opcion > 3) {
-      console.log("❌ Opción inválida. Intenta nuevamente.");
+      
       opcion = null;
     }
   }
@@ -213,9 +209,9 @@ export async function solicitarConfiguracionFechas() {
 
   if (opcion === 1) {
     // Solo denuncias recientes
-    console.log("\n" + "─".repeat(80));
-    console.log("📅 DENUNCIAS RECIENTES");
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
 
     config.fechaInicioPasadas = await hacerPreguntaFecha(
       "Ingresa la fecha de inicio (YYYY-MM-DD): "
@@ -226,9 +222,9 @@ export async function solicitarConfiguracionFechas() {
     config.tipo = "recientes";
   } else if (opcion === 2) {
     // Solo denuncias futuras
-    console.log("\n" + "─".repeat(80));
-    console.log("📅 DENUNCIAS FUTURAS");
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
 
     config.fechaInicioFuturas = await hacerPreguntaFecha(
       "Ingresa la fecha de inicio (YYYY-MM-DD): "
@@ -239,9 +235,9 @@ export async function solicitarConfiguracionFechas() {
     config.tipo = "futuras";
   } else {
     // Ambas
-    console.log("\n" + "─".repeat(80));
-    console.log("📅 DENUNCIAS RECIENTES");
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
 
     config.fechaInicioPasadas = await hacerPreguntaFecha(
       "Ingresa la fecha de inicio (YYYY-MM-DD): "
@@ -250,9 +246,9 @@ export async function solicitarConfiguracionFechas() {
       "Ingresa la fecha de fin (YYYY-MM-DD): "
     );
 
-    console.log("\n" + "─".repeat(80));
-    console.log("📅 DENUNCIAS FUTURAS");
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
 
     config.fechaInicioFuturas = await hacerPreguntaFecha(
       "Ingresa la fecha de inicio (YYYY-MM-DD): "
@@ -264,26 +260,22 @@ export async function solicitarConfiguracionFechas() {
   }
 
   // Mostrar resumen de fechas
-  console.log("\n" + "─".repeat(80));
-  console.log("📅 FECHAS CONFIGURADAS:");
-  console.log("─".repeat(80));
+  
+  
+  
 
   if (config.fechaInicioPasadas) {
-    console.log(
-      `   Denuncias Recientes: ${config.fechaInicioPasadas} a ${config.fechaFinPasadas}`
-    );
+    
   }
   if (config.fechaInicioFuturas) {
-    console.log(
-      `   Denuncias Futuras: ${config.fechaInicioFuturas} a ${config.fechaFinFuturas}`
-    );
+    
   }
-  console.log("─".repeat(80) + "\n");
+  
 
   const aceptar = await hacerPreguntaConfirmacion("¿Deseas usar estas fechas?");
 
   if (!aceptar) {
-    console.log("\n🔄 Reconfigurando fechas...\n");
+    
     return solicitarConfiguracionFechas();
   }
 
@@ -296,21 +288,21 @@ export async function solicitarConfiguracionFechas() {
 export async function solicitarSeleccionUbicacion() {
   const archivos = obtenerArchivosUbicacion();
 
-  console.log("\n" + "═".repeat(80));
-  console.log("  SELECCIONAR ARCHIVO DE UBICACIÓN");
-  console.log("═".repeat(80) + "\n");
+  
+  
+  
 
   if (archivos.length === 0) {
-    console.log("❌ No se encontraron archivos de ubicación disponibles.\n");
+    
     return null;
   }
 
-  console.log("📍 Archivos de ubicación disponibles:\n");
+  
   archivos.forEach((archivo, index) => {
-    console.log(`   ${index + 1}. ${archivo}`);
+    
   });
 
-  console.log();
+  
   let opcion;
   while (!opcion || opcion < 1 || opcion > archivos.length) {
     const respuesta = await hacerPregunta(
@@ -325,41 +317,39 @@ export async function solicitarSeleccionUbicacion() {
     else if (archivos.includes(respuesta)) {
       opcion = archivos.indexOf(respuesta) + 1;
     } else {
-      console.log("❌ Opción inválida. Intenta nuevamente.");
+      
     }
   }
 
   const archivoSeleccionado = archivos[opcion - 1];
-  console.log(`\n✓ Cargando ubicación desde: ${archivoSeleccionado}`);
+  
 
   const ubicacion = await cargarUbicacion(archivoSeleccionado);
 
   if (!ubicacion) {
-    console.log("❌ No se pudo cargar la ubicación. Intenta nuevamente.\n");
+    
     return solicitarSeleccionUbicacion();
   }
 
-  console.log("\n" + "─".repeat(80));
-  console.log("📍 UBICACIÓN SELECCIONADA:");
-  console.log("─".repeat(80));
-  console.log(`   Nombre: ${ubicacion.nombre || "N/A"}`);
-  console.log(`   Dirección: ${ubicacion.direccion || "N/A"}`);
+  
+  
+  
+  
+  
   if (ubicacion.coordenadas) {
-    console.log(
-      `   Coordenadas: ${ubicacion.coordenadas.lat}, ${ubicacion.coordenadas.lng}`
-    );
+    
   }
   if (ubicacion.radio_metros) {
-    console.log(`   Radio: ${ubicacion.radio_metros} metros`);
+    
   }
-  console.log("─".repeat(80) + "\n");
+  
 
   const aceptar = await hacerPreguntaConfirmacion(
     "¿Deseas usar esta ubicación?"
   );
 
   if (!aceptar) {
-    console.log("\n🔄 Seleccionando otra ubicación...\n");
+    
     return solicitarSeleccionUbicacion();
   }
 
@@ -370,20 +360,20 @@ export async function solicitarSeleccionUbicacion() {
  * Solicitar configuración de rango horario
  */
 export async function solicitarRangoHorario() {
-  console.log("\n" + "═".repeat(80));
-  console.log("  CONFIGURACIÓN DE RANGO HORARIO");
-  console.log("═".repeat(80) + "\n");
+  
+  
+  
 
-  console.log("¿Deseas especificar un rango horario para las denuncias?\n");
-  console.log("   1. Utilizar rangos automáticos por categoría");
-  console.log("   2. Especificar un rango horario fijo\n");
+  
+  
+  
 
   let opcion;
   while (!opcion || opcion < 1 || opcion > 2) {
     const respuesta = await hacerPregunta("Selecciona una opción (1 o 2): ");
     opcion = parseInt(respuesta);
     if (isNaN(opcion) || opcion < 1 || opcion > 2) {
-      console.log("❌ Opción inválida. Intenta nuevamente.");
+      
       opcion = null;
     }
   }
@@ -392,15 +382,13 @@ export async function solicitarRangoHorario() {
 
   if (opcion === 1) {
     config.tipo = "automatico";
-    console.log(
-      "\n✓ Se utilizarán rangos horarios automáticos por categoría.\n"
-    );
+    
   } else {
     config.tipo = "fijo";
 
-    console.log("\n" + "─".repeat(80));
-    console.log("⏰ RANGO HORARIO FIJO");
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
 
     let horaInicio;
     while (
@@ -414,7 +402,7 @@ export async function solicitarRangoHorario() {
       );
       horaInicio = parseInt(respuesta);
       if (isNaN(horaInicio) || horaInicio < 0 || horaInicio > 23) {
-        console.log("❌ Por favor ingresa una hora válida (0-23).");
+        
         horaInicio = undefined;
       }
     }
@@ -429,7 +417,7 @@ export async function solicitarRangoHorario() {
       const respuesta = await hacerPregunta("Ingresa la hora de fin (0-23): ");
       horaFin = parseInt(respuesta);
       if (isNaN(horaFin) || horaFin < 0 || horaFin > 23) {
-        console.log("❌ Por favor ingresa una hora válida (0-23).");
+        
         horaFin = undefined;
       }
     }
@@ -437,19 +425,19 @@ export async function solicitarRangoHorario() {
     config.horaInicio = horaInicio;
     config.horaFin = horaFin;
 
-    console.log("\n" + "─".repeat(80));
-    console.log("⏰ RANGO HORARIO CONFIGURADO:");
-    console.log("─".repeat(80));
-    console.log(`   De: ${String(horaInicio).padStart(2, "0")}:00`);
-    console.log(`   Hasta: ${String(horaFin).padStart(2, "0")}:00`);
-    console.log("─".repeat(80) + "\n");
+    
+    
+    
+    
+    
+    
 
     const aceptar = await hacerPreguntaConfirmacion(
       "¿Deseas usar este rango horario?"
     );
 
     if (!aceptar) {
-      console.log("\n🔄 Reconfigurando rango horario...\n");
+      
       return solicitarRangoHorario();
     }
   }

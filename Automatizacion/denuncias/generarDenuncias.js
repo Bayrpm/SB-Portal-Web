@@ -30,9 +30,9 @@ async function main() {
   const inicio = Date.now();
 
   console.clear();
-  console.log("═".repeat(80));
-  console.log("  GENERADOR DE DENUNCIAS - PORTAL WEB SAN BERNARDO");
-  console.log("═".repeat(80));
+  
+  
+  
 
   try {
     // 1. Solicitar configuración al usuario
@@ -57,51 +57,38 @@ async function main() {
     });
 
     // 3. Mostrar configuración final
-    console.log("\n" + "═".repeat(80));
-    console.log("  CONFIGURACIÓN FINAL");
-    console.log("═".repeat(80));
-    console.log(`\n📋 Denuncias a crear:`);
-    console.log(`   Total: ${CONFIG.TOTAL_DENUNCIAS}`);
-    console.log(`   - Cerradas: ${CONFIG.CANTIDAD_CERRADAS}`);
-    console.log(`   - En Proceso: ${CONFIG.CANTIDAD_EN_PROCESO}`);
-    console.log(`   - Pendientes: ${CONFIG.CANTIDAD_PENDIENTES}`);
-    console.log(`\n⏱️  Tiempos:`);
-    console.log(`   Delay entre denuncias: ${CONFIG.DELAY_ENTRE_DENUNCIAS}ms`);
-    console.log(`   Delay entre lotes: ${CONFIG.DELAY_ENTRE_LOTES}ms`);
-    console.log(`\n📍 Ubicación:`);
-    console.log(`   ${CONFIG.UBICACION_SELECCIONADA.nombre}`);
-    console.log(`\n📅 Fechas:`);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (fechas.tipo === "recientes") {
-      console.log(`   Tipo: Solo denuncias recientes`);
-      console.log(
-        `   Rango: ${fechas.fechaInicioPasadas} a ${fechas.fechaFinPasadas}`
-      );
+      
+      
     } else if (fechas.tipo === "futuras") {
-      console.log(`   Tipo: Solo denuncias futuras`);
-      console.log(
-        `   Rango: ${fechas.fechaInicioFuturas} a ${fechas.fechaFinFuturas}`
-      );
+      
+      
     } else {
-      console.log(`   Tipo: Denuncias recientes y futuras`);
-      console.log(
-        `   Recientes: ${fechas.fechaInicioPasadas} a ${fechas.fechaFinPasadas}`
-      );
-      console.log(
-        `   Futuras: ${fechas.fechaInicioFuturas} a ${fechas.fechaFinFuturas}`
-      );
+      
+      
+      
     }
-    console.log(`\n⏰ Rango Horario:`);
+    
     if (rangoHorario.tipo === "automatico") {
-      console.log(`   Automático por categoría`);
+      
     } else {
-      console.log(
-        `   Fijo: ${String(rangoHorario.horaInicio).padStart(
-          2,
-          "0"
-        )}:00 - ${String(rangoHorario.horaFin).padStart(2, "0")}:00`
-      );
+      
     }
-    console.log(`\n` + "═".repeat(80) + "\n");
+    
 
     // 4. Verificar si existe checkpoint pendiente
     let checkpoint = null;
@@ -109,40 +96,30 @@ async function main() {
       checkpoint = await cargarCheckpoint();
 
       if (checkpoint) {
-        console.log("\n" + "─".repeat(80));
-        console.log("⚠️  SE ENCONTRÓ UN CHECKPOINT ANTERIOR");
-        console.log("─".repeat(80));
-        console.log(
-          `   Fecha: ${new Date(checkpoint.timestamp).toLocaleString("es-CL")}`
-        );
-        console.log(
-          `   Progreso: ${checkpoint.progreso.actual}/${checkpoint.progreso.total} denuncias`
-        );
-        console.log(
-          `   - Cerradas: ${checkpoint.denuncias.cerradas}/${CONFIG.CANTIDAD_CERRADAS}`
-        );
-        console.log(
-          `   - En Proceso: ${checkpoint.denuncias.enProceso}/${CONFIG.CANTIDAD_EN_PROCESO}`
-        );
-        console.log(
-          `   - Pendientes: ${checkpoint.denuncias.pendientes}/${CONFIG.CANTIDAD_PENDIENTES}`
-        );
-        console.log(`   Errores: ${checkpoint.progreso.errores}`);
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if (checkpoint.ultimoFolio) {
-          console.log(`   Último folio: ${checkpoint.ultimoFolio}`);
+          
         }
-        console.log("─".repeat(80));
+        
 
         const reanudar = await hacerPreguntaConfirmacion(
           "\n¿Desea reanudar desde el checkpoint anterior?"
         );
 
         if (!reanudar) {
-          console.log("\n🔄 Iniciando generación desde cero...");
+          
           await limpiarCheckpoint();
           checkpoint = null;
         } else {
-          console.log("\n✅ Reanudando desde checkpoint anterior...");
+          
         }
       }
     }
@@ -161,10 +138,10 @@ async function main() {
       throw new Error("No hay operadores en la base de datos");
     }
 
-    console.log(`\n✓ Datos cargados correctamente`);
-    console.log(`   - ${datos.ciudadanos.length} ciudadanos`);
-    console.log(`   - ${datos.inspectores.length} inspectores`);
-    console.log(`   - ${datos.operadores.length} operadores`);
+    
+    
+    
+    
 
     // 6. Procesar denuncias
     const { resultado, contadoresInspectores, progreso } =
@@ -189,31 +166,29 @@ async function main() {
     // 9. Limpiar checkpoint al completar exitosamente
     if (tieneCheckpointPendiente()) {
       await limpiarCheckpoint();
-      console.log("\n🗑️  Checkpoint limpiado exitosamente");
+      
     }
 
     // 10. Resumen final
-    console.log("\n" + "═".repeat(80));
-    console.log("  ✅ GENERACIÓN COMPLETADA");
-    console.log("═".repeat(80));
-    console.log(`\n📊 Estadísticas:`);
-    console.log(`   Total generadas: ${progreso.actual}`);
-    console.log(`   Errores: ${progreso.errores}`);
-    console.log(`   Duración: ${duracion}`);
-    console.log(`\n📄 Reportes generados:`);
-    console.log(`   - ${txtPath}`);
-    console.log(`   - ${jsonPath}`);
-    console.log("\n" + "═".repeat(80) + "\n");
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   } catch (error) {
     console.error("\n" + "═".repeat(80));
     console.error("  ❌ ERROR FATAL");
     console.error("═".repeat(80));
     console.error(`\n${error.message}`);
     console.error("\n💾 El checkpoint se ha guardado automáticamente.");
-    console.log(
-      "   Puede reanudar el proceso ejecutando el script nuevamente.\n"
-    );
-    console.log("═".repeat(80) + "\n");
+    
+    
     process.exit(1);
   }
 }

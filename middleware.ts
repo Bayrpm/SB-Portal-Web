@@ -5,14 +5,14 @@ import { createClient } from "@/lib/supabase/middleware";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  console.log(`\n=== MIDDLEWARE EJECUTADO ===`);
-  console.log(`Ruta solicitada: ${pathname}`);
-  console.log(`Timestamp: ${new Date().toISOString()}`);
+  
+  
+  
 
   // Rutas públicas que no requieren autenticación
   const publicPaths = ["/", "/not-found", "/unauthorized"];
   if (publicPaths.includes(pathname)) {
-    console.log(`✅ Ruta pública permitida: ${pathname}`);
+    
     return NextResponse.next();
   }
 
@@ -24,11 +24,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log(`Usuario autenticado: ${user ? user.email : "NO"}`);
+  
 
   // Si no está autenticado y está intentando acceder al portal, redirigir al login
   if (!user && pathname.startsWith("/portal")) {
-    console.log(`❌ Usuario no autenticado intenta acceder a ${pathname}. Redirigiendo a login.`);
+    
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
   // Si está autenticado y accediendo al portal
   if (user && pathname.startsWith("/portal")) {
-    console.log(`🔐 Validando acceso a ${pathname} para usuario: ${user.email}`);
+    
 
     try {
       // Obtener el rol del usuario desde usuarios_portal
@@ -61,11 +61,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
 
-      console.log(`📋 Usuario encontrado. Rol ID: ${portalUser.rol_id}`);
+      
 
       // Dashboard siempre está permitido
       if (pathname === "/portal/dashboard") {
-        console.log(`✅ ACCESO PERMITIDO a dashboard (acceso por defecto)`);
+        
         return supabaseResponse;
       }
 
@@ -88,8 +88,8 @@ export async function middleware(request: NextRequest) {
         .map((rp: any) => rp.paginas?.path)
         .filter((p: any) => p && p !== null);
 
-      console.log(`📍 Rutas permitidas para rol ${portalUser.rol_id}:`, allowedPaths);
-      console.log(`🎯 Intentando acceder a: ${pathname}`);
+      
+      
 
       // Verificar si la ruta actual está permitida (match exacto o prefijo)
       const isAllowed = allowedPaths.some((allowedPath: string) => {
@@ -101,7 +101,7 @@ export async function middleware(request: NextRequest) {
       });
 
       if (isAllowed) {
-        console.log(`✅ ACCESO PERMITIDO a ${pathname}`);
+        
         return supabaseResponse;
       } else {
         console.warn(`❌ ACCESO DENEGADO a ${pathname} para usuario ${user.email} (rol: ${portalUser.rol_id})`);
@@ -118,7 +118,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  console.log(`✅ Continuando con la solicitud...\n`);
+  
   return supabaseResponse;
 }
 

@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        console.log(`[DEBUG] Usuario ${user.id} con rol_id=${userPortal.rol_id} solicita páginas para rol_id=${rolId}`);
+        
 
         // Obtener las páginas asignadas al rol que estén activas
         const { data: rolePages, error: rolePagesError } = await supabase
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        console.log(`[DEBUG /api/roles/pages] rolePages raw:`, JSON.stringify(rolePages, null, 2));
+        
 
         // Filtrar solo páginas activas y mapear al formato correcto
         interface PageData {
@@ -128,11 +128,11 @@ export async function GET(req: NextRequest) {
                 return a.path.localeCompare(b.path);
             });
 
-        console.log(`[DEBUG /api/roles/pages] ✅ rolId=${rolId}, rolePages count=${rolePages?.length || 0}, activePaginas count=${activePaginas.length}`);
+        
         if (activePaginas.length === 0) {
-            console.log(`[DEBUG /api/roles/pages] ⚠️ NO SE ENCONTRARON PÁGINAS PARA ROL ${rolId}`);
+            
         } else {
-            console.log(`[DEBUG /api/roles/pages] Páginas:`, activePaginas.map(p => p.path).join(", "));
+            
         }
 
         return NextResponse.json({

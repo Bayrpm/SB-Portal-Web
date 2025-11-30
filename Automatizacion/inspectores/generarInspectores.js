@@ -151,7 +151,7 @@ async function obtenerTiposTurno() {
 
 // Función principal para crear inspectores
 async function generarInspectores() {
-  console.log("🚀 Iniciando generación de 20 inspectores...\n");
+  
 
   // Obtener tipos de turno
   const tiposTurno = await obtenerTiposTurno();
@@ -159,11 +159,7 @@ async function generarInspectores() {
     console.error("❌ No se encontraron tipos de turno. Abortando.");
     return;
   }
-  console.log(
-    `✅ Tipos de turno disponibles: ${tiposTurno
-      .map((t) => t.nombre)
-      .join(", ")}\n`
-  );
+  
 
   const inspectoresCreados = [];
   const errores = [];
@@ -188,7 +184,7 @@ async function generarInspectores() {
       // Asignar turno aleatorio
       const turnoAleatorio = tiposTurno[randomNumber(0, tiposTurno.length - 1)];
 
-      console.log(`[${i}/20] Creando: ${nombreCompleto} (${email})...`);
+      
 
       // Crear usuario en Supabase Auth
       const { data: authData, error: authError } =
@@ -274,7 +270,7 @@ async function generarInspectores() {
       });
 
       exitosos++;
-      console.log(`   ✅ Creado exitosamente (${exitosos}/20)\n`);
+      
 
       // Delay entre creaciones (1.5 segundos)
       await delay(1500);
@@ -292,23 +288,23 @@ async function generarInspectores() {
   generarArchivoJSON(inspectoresCreados);
 
   // Resumen final
-  console.log("\n" + "=".repeat(60));
-  console.log("📊 RESUMEN DE GENERACIÓN DE INSPECTORES");
-  console.log("=".repeat(60));
-  console.log(`✅ Inspectores creados exitosamente: ${exitosos}`);
-  console.log(`❌ Errores: ${errores.length}`);
-  console.log("=".repeat(60));
+  
+  
+  
+  
+  
+  
 
   if (errores.length > 0) {
-    console.log("\n⚠️  ERRORES ENCONTRADOS:");
+    
     errores.forEach((err) => {
-      console.log(`   [${err.numero}] ${err.email || "N/A"}: ${err.error}`);
+      
     });
   }
 
-  console.log("\n✨ Proceso completado!");
-  console.log(`📄 Credenciales guardadas en: credenciales_inspectores.txt`);
-  console.log(`📄 Datos completos guardados en: inspectores_generados.json\n`);
+  
+  
+  
 }
 
 // Generar archivo TXT con credenciales
