@@ -123,8 +123,5 @@ export const chileanPlateSchema = z.string()
  * Rol ID del sistema
  */
 export const rolIdSchema = z.number()
-    .int()
-    .positive()
-    .refine(val => [1, 2, 3].includes(val), {
-        message: 'Rol ID debe ser 1 (Admin), 2 (Operador) o 3 (Inspector)'
-    });
+    .int({ message: 'Rol ID debe ser un número entero' })
+    .positive({ message: 'Rol ID debe ser un número positivo' });
