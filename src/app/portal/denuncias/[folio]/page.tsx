@@ -117,11 +117,17 @@ function DenunciaDetallePage({
     }
   }, [folio]);
 
+  // Memoizar el objeto de opciones para evitar re-renders innecesarios
+  const denunciaDetailOptions = React.useMemo(
+    () => ({
+      onDenunciaUpdate: fetchDenunciaData,
+    }),
+    [fetchDenunciaData]
+  );
+
   // Realtime hooks para historial, observaciones y cambios en la denuncia
   const { historial, observaciones, loadingHistorial } =
-    useRealtimeDenunciaDetalle(folio, {
-      onDenunciaUpdate: fetchDenunciaData,
-    });
+    useRealtimeDenunciaDetalle(folio, denunciaDetailOptions);
 
   // Cargar datos de la denuncia al montar el componente
   useEffect(() => {

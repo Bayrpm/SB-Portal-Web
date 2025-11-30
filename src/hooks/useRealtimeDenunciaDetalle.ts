@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface HistorialItem {
@@ -34,36 +34,49 @@ export function useRealtimeDenunciaDetalle(
     const [observaciones, setObservaciones] = useState<Observacion[]>([]);
     const [loadingHistorial, setLoadingHistorial] = useState(true);
     const supabase = createClient();
+    const optionsRef = useRef(options);
 
-    const fetchHistorial = useCallback(async () => {
-        try {
-            setLoadingHistorial(true);
-            const response = await fetch(`/api/denuncias/${folio}/historial`);
-            if (!response.ok) throw new Error("Error fetching historial");
-            const data = await response.json();
-            setHistorial(data.historial || []);
-        } catch (error) {
-            console.error("Error cargando historial:", error);
-        } finally {
-            setLoadingHistorial(false);
-        }
-    }, [folio]);
-
-    const fetchObservaciones = useCallback(async () => {
-        try {
-            const response = await fetch(`/api/denuncias/${folio}/observaciones`);
-            if (!response.ok) throw new Error("Error fetching observaciones");
-            const data = await response.json();
-            setObservaciones(data.observaciones || []);
-        } catch (error) {
-            console.error("Error cargando observaciones:", error);
-        }
-    }, [folio]);
-
+    // Actualizar ref cuando options cambia
     useEffect(() => {
-        fetchHistorial();
-        fetchObservaciones();
+        optionsRef.current = options;
+    }, [options]);
 
+    // Crear funciones estables usando useRef
+    // Se crean una sola vez en el montaje del componente
+    const functionsRef = useRef({
+        fetchHistorial: async () => {
+            try {
+                setLoadingHistorial(true);
+                const response = await fetch(`/api/denuncias/${folio}/historial`);
+                if (!response.ok) throw new Error("Error fetching historial");
+                const data = await response.json();
+                setHistorial(data.historial || []);
+            } catch (error) {
+                console.error("Error cargando historial:", error);
+            } finally {
+                setLoadingHistorial(false);
+            }
+        },
+        fetchObservaciones: async () => {
+            try {
+                const response = await fetch(`/api/denuncias/${folio}/observaciones`);
+                if (!response.ok) throw new Error("Error fetching observaciones");
+                const data = await response.json();
+                setObservaciones(data.observaciones || []);
+            } catch (error) {
+                console.error("Error cargando observaciones:", error);
+            }
+        },
+    });
+
+    // Efecto para carga inicial de datos
+    useEffect(() => {
+        functionsRef.current.fetchHistorial();
+        functionsRef.current.fetchObservaciones();
+    }, [folio]);
+
+    // Efecto para realtime subscription
+    useEffect(() => {
         // Listener SOLO para cambios en el estado de la denuncia
         const denunciasChannel = supabase
             .channel(`detalle-denuncia-estado-${folio}`)
@@ -82,7 +95,7 @@ export function useRealtimeDenunciaDetalle(
 
                     if (estadoAnterior !== estadoNuevo) {
                         console.log("Cambio de estado detectado:", { estadoAnterior, estadoNuevo });
-                        options.onDenunciaUpdate?.();
+                        optionsRef.current.onDenunciaUpdate?.();
                     }
                 }
             )
@@ -91,13 +104,13 @@ export function useRealtimeDenunciaDetalle(
         return () => {
             supabase.removeChannel(denunciasChannel);
         };
-    }, [folio, fetchHistorial, fetchObservaciones, supabase, options]);
+    }, [folio, supabase]);
 
     return {
         historial,
         observaciones,
         loadingHistorial,
-        refetchHistorial: fetchHistorial,
-        refetchObservaciones: fetchObservaciones,
+        refetchHistorial: functionsRef.current.fetchHistorial,
+        refetchObservaciones: functionsRef.current.fetchObservaciones,
     };
 }
